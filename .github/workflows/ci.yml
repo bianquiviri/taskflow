@@ -42,6 +42,9 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
+      - name: Generate app key
+        run: cp .env.example .env && php artisan key:generate
+
       - name: Cache config
         run: php artisan config:clear
 
@@ -101,6 +104,9 @@ jobs:
 
       - name: Build assets
         run: npm run build
+
+      - name: Generate app key
+        run: cp .env.example .env && php artisan key:generate
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
