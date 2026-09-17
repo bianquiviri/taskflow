@@ -1,0 +1,82 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "scaffolder",
+  "instructions": ["AGENTS.md", "docs/ARCHITECTURE.md"],
+  "mcp": {
+    "github": {
+      "type": "remote",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "enabled": true,
+      "headers": {
+        "Authorization": "Bearer {env:GITHUB_TOKEN}"
+      }
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp@latest"],
+      "enabled": true,
+      "env": {
+        "BROWSER": "chromium"
+      }
+    },
+    "mysql": {
+      "type": "local",
+      "command": ["npx", "-y", "@benborla29/mcp-server-mysql"],
+      "enabled": true,
+      "env": {
+        "MYSQL_HOST": "127.0.0.1",
+        "MYSQL_PORT": "3306",
+        "MYSQL_USER": "taskflow",
+        "MYSQL_PASS": "taskflow",
+        "MYSQL_DB": "taskflow"
+      }
+    },
+    "docker": {
+      "type": "local",
+      "command": ["npx", "-y", "mcp-docker"],
+      "enabled": true
+    }
+  },
+  "agent": {
+    "auth-agent": {
+      "model": "opencode/big-pickle",
+      "mode": "primary"
+    },
+    "domain-agent": {
+      "model": "opencode/big-pickle",
+      "mode": "primary"
+    },
+    "reporting-agent": {
+      "model": "opencode/big-pickle",
+      "mode": "primary"
+    },
+    "frontend-agent": {
+      "model": "opencode/big-pickle",
+      "mode": "primary"
+    },
+    "infra-agent": {
+      "model": "opencode/big-pickle",
+      "mode": "primary"
+    }
+  },
+  "permission": {
+    "bash": {
+      "git add *": "allow",
+      "git commit *": "allow",
+      "git checkout *": "allow",
+      "make test": "allow",
+      "make lint": "allow",
+      "php artisan *": "allow",
+      "composer *": "allow",
+      "npm run *": "allow",
+      "docker*": "ask",
+      "rm -rf *": "deny",
+      "*": "ask"
+    },
+    "edit": "allow",
+    "external_directory": {
+      "/Users/bianquiviri/Code/**": "allow",
+      "*": "ask"
+    }
+  }
+}

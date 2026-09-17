@@ -1,0 +1,113 @@
+services:
+  traefik:
+    image: traefik:v3.3
+    container_name: taskflow-traefik
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.file.directory=/etc/traefik/dynamic
+      - --providers.file.watch=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./docker/traefik/cert.pem:/etc/traefik/cert.pem:ro
+      - ./docker/traefik/key.pem:/etc/traefik/key.pem:ro
+      - ./docker/traefik/dynamic:/etc/traefik/dynamic:ro
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.taskflow-web.rule=Host(`taskflow.josebianco.local`)
+      - traefik.http.routers.taskflow-web.entrypoints=web
+      - traefik.http.routers.taskflow-web.service=taskflow-app
+      - traefik.http.routers.taskflow-secure.rule=Host(`taskflow.josebianco.local`)
+      - traefik.http.routers.taskflow-secure.entrypoints=websecure
+      - traefik.http.routers.taskflow-secure.service=taskflow-app
+      - traefik.http.routers.taskflow-secure.tls=true
+      - traefik.http.services.taskflow-app.loadbalancer.server.port=80
+    networks:
+      - taskflow
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/app/Dockerfile
+    container_name: taskflow-app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+      - ./docker/app/php.ini:/usr/local/etc/php/conf.d/zz-taskflow.ini:ro
+    env_file:
+      - .env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - taskflow
+
+  mysql:
+    image: mysql:8.4
+    container_name: taskflow-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-taskflow}
+      MYSQL_USER: ${DB_USERNAME:-taskflow}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-taskflow}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-taskflow}
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost', '-u', 'root', '-p${DB_PASSWORD:-taskflow}']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - taskflow
+
+  redis:
+    image: redis:7-alpine
+    container_name: taskflow-redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - taskflow
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: taskflow-mailpit
+    restart: unless-stopped
+    ports:
+      - '8025:8025'
+    networks:
+      - taskflow
+
+  node:
+    image: node:22-alpine
+    container_name: taskflow-node
+    restart: unless-stopped
+    working_dir: /var/www/html
+    command: sh -c "npm install --silent && npm run dev -- --host 0.0.0.0"
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - taskflow
+
+volumes:
+  mysql_data:
+
+networks:
+  taskflow:
