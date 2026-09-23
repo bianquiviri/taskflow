@@ -38,7 +38,7 @@ certs: ## Generate mkcert wildcard certificate for HTTPS
 	mkcert -cert-file docker/traefik/cert.pem -key-file docker/traefik/key.pem "$(DOMAIN)"
 
 test: ## Run backend test suite (Pest)
-	docker compose exec app php artisan test --ci
+	docker compose exec app php artisan test --ci --no-coverage
 
 test-fe: ## Run frontend unit tests (Vitest)
 	docker compose exec node npm run test

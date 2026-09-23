@@ -42,8 +42,8 @@ export default defineConfig({
               },
           }
         : {
-              command: 'docker compose up -d --wait',
-              url: 'https://taskflow.josebianco.local/up',
+              command: 'sh -c "docker compose up -d --wait && exec tail -f /dev/null"',
+              url: 'http://taskflow.josebianco.local/up',
               reuseExistingServer: true,
           },
 });
