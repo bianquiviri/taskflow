@@ -121,3 +121,16 @@ app/
 - `.env` is gitignored; use `.env.example` as the template.
 - Never commit secrets, keys, certs, or DB dumps.
 - Use `make up` to start the stack and `make certs` to (re)generate TLS certs.
+
+## DEVLOG — Session History (MANDATORY)
+
+- `docs/DEVLOG.md` is the project's running history of changes and decisions.
+  It is loaded by OpenCode on every session start (`opencode.json` →
+  `instructions`), so agents do not need the project re-explained.
+- **Never close a working session without appending an entry to `docs/DEVLOG.md`**
+  (what changed, decisions, verification run, open items). One entry per session,
+  newest first, written in English. Commit it as `docs: ...`.
+- Every new feature/fix MUST also reference its DEVLOG entry in the PR body.
+- OpenCode conversations are auto-stored locally; resume with `opencode -c`,
+  list with `opencode session list`, archive important ones with
+  `opencode export <session-id>` (see DEVLOG for the full cheatsheet).
