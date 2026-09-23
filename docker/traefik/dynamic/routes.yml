@@ -1,0 +1,19 @@
+http:
+  routers:
+    taskflow-web:
+      rule: "Host(`taskflow.josebianco.local`)"
+      entryPoints:
+        - web
+      service: taskflow-app
+    taskflow-secure:
+      rule: "Host(`taskflow.josebianco.local`)"
+      entryPoints:
+        - websecure
+      tls: true
+      service: taskflow-app
+
+  services:
+    taskflow-app:
+      loadBalancer:
+        servers:
+          - url: "http://app:80"

@@ -33,3 +33,5 @@ Homestead.yaml
 /build/
 test-results/
 playwright-report/
+/.playwright-mcp/
+/supervisord.pid
