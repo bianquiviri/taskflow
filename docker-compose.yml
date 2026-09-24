@@ -45,6 +45,12 @@ services:
       DB_DATABASE: ${DB_DATABASE:-taskflow}
       DB_USERNAME: ${DB_USERNAME:-taskflow}
       DB_PASSWORD: ${DB_PASSWORD:-taskflow}
+      QUEUE_CONNECTION: ${QUEUE_CONNECTION:-redis}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      MAIL_MAILER: ${MAIL_MAILER:-smtp}
+      MAIL_HOST: ${MAIL_HOST:-mailpit}
+      MAIL_PORT: ${MAIL_PORT:-1025}
     healthcheck:
       test: ['CMD', 'curl', '-fsS', 'http://localhost/up']
       interval: 5s
