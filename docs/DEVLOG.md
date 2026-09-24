@@ -30,6 +30,38 @@ truth for the project's evolution.
 
 ---
 
+## 2026-09-24 — HTTPS trust fix & stale mkcert CA cleanup
+
+**Context:** Browser was showing an HTTPS certificate error on
+`https://taskflow.josebianco.local` while the stack itself worked.
+
+**Diagnosis:**
+- Server cert valid (mkcert, SAN `taskflow.josebianco.local`, expires Dec 2028).
+- System trust store had **three** mkcert root CAs from different machines:
+  `pop-os`, `FedoraRemolonas`, and the current `Joses-MacBook-Pro.local`.
+- The cert is issued by the MacBook CA, which **was** installed and trusted —
+  `curl` (`ssl_verify_result: 0`) and `security verify-cert` both passed, and a
+  real Chromium browser (Playwright MCP) loaded the page with 0 console errors.
+  The failure was browser-session-only: browsers loaded the trust store before
+  the CA was registered, so sessions opened earlier kept rejecting it.
+
+**Changes:**
+- Deleted the two obsolete mkcert CAs (`pop-os`, `FedoraRemolonas`) from the
+  System keychain via `osascript` with admin privileges (by SHA-1 hash, keeping
+  `Joses-MacBook-Pro.local` untouched).
+- Re-verified after cleanup: keychain holds a single mkcert CA, `curl` returns
+  HTTP 200 with SSL verify 0, Playwright Chromium loads the app with no errors.
+
+**Action for the user:** fully quit and reopen Chrome, Brave and Safari
+(`Cmd+Q`) so they reload the trust store; flush Chrome/Brave socket pools if a
+cached cert error persists.
+
+**Status:** HTTPS trust issue resolved at system level. NOTE: uncommitted
+auth-agent work (Team models/migrations/policies) is still on
+`feature/7-team-membership` — untouched. Machine was rebooted after this entry.
+
+---
+
 ## 2026-09-22 — Project bootstrap review & stack startup
 
 **Context:** First working session. Taskflow was scaffolded (M1) but the stack
