@@ -15,6 +15,10 @@ export default defineConfig({
         baseURL,
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',
+        // Playwright's Chromium does not read the host/container system CA
+        // store. Locally the real TLS is validated separately via `make doctor`
+        // (curl); CI e2e runs over plain HTTP anyway.
+        ignoreHTTPSErrors: !isCI,
     },
 
     projects: [
@@ -41,9 +45,5 @@ export default defineConfig({
                   APP_URL: 'http://localhost:8000',
               },
           }
-        : {
-              command: 'sh -c "docker compose up -d --wait && exec tail -f /dev/null"',
-              url: 'http://taskflow.josebianco.local/up',
-              reuseExistingServer: true,
-          },
+        : undefined, // local runs inside Docker against the stack started by `make up`
 });

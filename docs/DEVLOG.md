@@ -30,7 +30,51 @@ truth for the project's evolution.
 
 ---
 
-## 2026-09-22 — Project bootstrap review & stack startup
+## 2026-09-24 — Full-stack runs inside Docker (no host tooling required)
+
+**Context:** The stack previously depended on host tools: `mkcert` for TLS,
+`npx playwright` for e2e, and manual `composer install` / `npm install`. Goal:
+a fresh machine with only Docker should be able to lift the whole project.
+
+**Changes (branch `feature/dockerize-full-stack`):**
+
+- **TLS certs dockerized** (`docker/certs/Dockerfile` + `entrypoint.sh`): the
+  `certs` compose service runs mkcert inside a container and persists the root
+  CA under `docker/traefik/ca/` (gitignored). Existing CA is reused → browsers
+  that already trust it keep working without re-trust. The old host-based CA
+  was migrated into `docker/traefik/ca/` (verified: `cert.pem: OK`).
+- **E2E dockerized** (`docker/e2e/entrypoint.sh` + compose `e2e` service on the
+  `e2e` profile, image `mcr.microsoft.com/playwright:v1.63.0-noble`): `make e2e`
+  now runs Playwright inside a container against the real HTTPS app. The
+  entrypoint rewrites `/etc/hosts` (app domain → Docker gateway) and builds
+  production assets while hiding `public/hot`, then restores it via EXIT trap —
+  Playwright's Chromium hardcodes `localhost` to `127.0.0.1` and cannot reach
+  the Vite dev server, and the system CA store is ignored by Chromium (local
+  e2e uses `ignoreHTTPSErrors: !isCI`; real TLS is checked by `make doctor`).
+- **Self-bootstrapping stack** (`docker-compose.yml`): the `app` container now
+  creates `.env` from `.env.example`, runs `composer install`, and generates
+  `APP_KEY` when missing; `env_file` is optional with sane defaults; app has a
+  `/up` healthcheck; `node` reconciles npm deps on boot.
+- **New Make targets:** `doctor` (prereq check), `hosts` (one-time `/etc/hosts`
+  entry), `trust-ca` (one-time keychain trust), `deps`.
+- README quick start updated: only Docker needed.
+
+**Verification:** `make lint` (Pint 33 files + ESLint PASS), `make test`
+(Pest 5 passed), `make test-fe` (Vitest 2 passed), `make e2e` (Playwright
+1 passed, `public/hot` restored after run), `make doctor` all OK, HTTPS
+`/up` 200.
+
+**Remaining host steps (unavoidable — the browser lives on the host):** one-time
+`make hosts` and, only when a new root CA is created, `make trust-ca`.
+
+**Session notes:** a long debugging chain showed the value of full diagnostics
+upfront: layers were resolved one at a time (cert → CA trust → Chromium doesn't
+use system CAs → Vite assets unreachable → `localhost` hardcoded in
+curl/Chromium → `/etc/hosts` is mounted, `sed -i` fails → IPv6-first
+resolution). The final design sidesteps all of it instead of fighting each
+layer.
+
+---
 
 **Context:** First working session. Taskflow was scaffolded (M1) but the stack
 was not running.
