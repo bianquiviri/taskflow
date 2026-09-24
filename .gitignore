@@ -28,6 +28,7 @@ Homestead.yaml
 /docker/traefik/cert.pem
 /docker/traefik/key.pem
 /docker/traefik/acme.json
+/docker/traefik/ca/
 /docker/data/
 /storage/logs/*.log
 /build/
