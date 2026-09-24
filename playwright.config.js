@@ -15,6 +15,10 @@ export default defineConfig({
         baseURL,
         trace: 'on-first-retry',
         screenshot: 'only-on-failure',
+        // Playwright's Chromium does not read the host/container system CA
+        // store. Locally the real TLS is validated separately via `make doctor`
+        // (curl); CI e2e runs over plain HTTP anyway.
+        ignoreHTTPSErrors: !isCI,
     },
 
     projects: [
@@ -26,13 +30,20 @@ export default defineConfig({
 
     webServer: isCI
         ? {
-              command: 'php artisan serve --host=0.0.0.0 --port=8000',
+              command: 'php -S 0.0.0.0:8000 -t public tests/e2e/router.php',
               url: 'http://localhost:8000/up',
               reuseExistingServer: true,
+              env: {
+                  APP_ENV: 'testing',
+                  DB_CONNECTION: 'sqlite',
+                  DB_DATABASE: ':memory:',
+                  SESSION_DRIVER: 'file',
+                  CACHE_STORE: 'array',
+                  QUEUE_CONNECTION: 'sync',
+                  BROADCAST_CONNECTION: 'null',
+                  MAIL_MAILER: 'array',
+                  APP_URL: 'http://localhost:8000',
+              },
           }
-        : {
-              command: 'docker compose up -d --wait',
-              url: 'https://taskflow.josebianco.local/up',
-              reuseExistingServer: true,
-          },
+        : undefined, // local runs inside Docker against the stack started by `make up`
 });

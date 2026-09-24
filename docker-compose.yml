@@ -4,8 +4,6 @@ services:
     container_name: taskflow-traefik
     restart: unless-stopped
     command:
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
       - --providers.file.directory=/etc/traefik/dynamic
       - --providers.file.watch=true
       - --entrypoints.web.address=:80
@@ -14,20 +12,9 @@ services:
       - '80:80'
       - '443:443'
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./docker/traefik/cert.pem:/etc/traefik/cert.pem:ro
       - ./docker/traefik/key.pem:/etc/traefik/key.pem:ro
       - ./docker/traefik/dynamic:/etc/traefik/dynamic:ro
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.taskflow-web.rule=Host(`taskflow.josebianco.local`)
-      - traefik.http.routers.taskflow-web.entrypoints=web
-      - traefik.http.routers.taskflow-web.service=taskflow-app
-      - traefik.http.routers.taskflow-secure.rule=Host(`taskflow.josebianco.local`)
-      - traefik.http.routers.taskflow-secure.entrypoints=websecure
-      - traefik.http.routers.taskflow-secure.service=taskflow-app
-      - traefik.http.routers.taskflow-secure.tls=true
-      - traefik.http.services.taskflow-app.loadbalancer.server.port=80
     networks:
       - taskflow
 
@@ -38,11 +25,32 @@ services:
     container_name: taskflow-app
     restart: unless-stopped
     working_dir: /var/www/html
+    # Bootstrap from zero: create .env, install composer deps, generate APP_KEY.
+    command: >-
+      sh -c "test -f .env || cp .env.example .env;
+      test -d vendor || composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader;
+      test -n \"$$APP_KEY\" || php artisan key:generate --force;
+      exec /usr/bin/supervisord -c /etc/supervisord.conf"
     volumes:
       - ./:/var/www/html
       - ./docker/app/php.ini:/usr/local/etc/php/conf.d/zz-taskflow.ini:ro
     env_file:
-      - .env
+      - path: .env
+        required: false
+    environment:
+      APP_ENV: ${APP_ENV:-local}
+      APP_URL: ${APP_URL:-https://taskflow.josebianco.local}
+      DB_HOST: ${DB_HOST:-mysql}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_DATABASE: ${DB_DATABASE:-taskflow}
+      DB_USERNAME: ${DB_USERNAME:-taskflow}
+      DB_PASSWORD: ${DB_PASSWORD:-taskflow}
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://localhost/up']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
     depends_on:
       mysql:
         condition: service_healthy
@@ -100,9 +108,46 @@ services:
     container_name: taskflow-node
     restart: unless-stopped
     working_dir: /var/www/html
+    # npm install reconciles any host-installed platform binaries (darwin)
+    # with the ones required inside this linux container, then starts Vite.
     command: sh -c "npm install --silent && npm run dev -- --host 0.0.0.0"
+    ports:
+      - '5173:5173'
     volumes:
       - ./:/var/www/html
+    networks:
+      - taskflow
+
+  certs:
+    build:
+      context: .
+      dockerfile: docker/certs/Dockerfile
+    container_name: taskflow-certs
+    environment:
+      DOMAIN: ${APP_URL_DOMAIN:-taskflow.josebianco.local}
+    volumes:
+      - ./docker/traefik:/certs
+    networks:
+      - taskflow
+
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.63.0-noble
+    container_name: taskflow-e2e
+    profiles: ['e2e']
+    working_dir: /work
+    command: ['/entrypoint.sh', 'npx', 'playwright', 'test']
+    volumes:
+      - ./:/work
+      - ./docker/e2e/entrypoint.sh:/entrypoint.sh:ro
+    # Resolve the app domain and host.docker.internal back to the Docker
+    # gateway so this container reaches Traefik (app on :443) and Vite (:5173),
+    # both published on localhost by the host.
+    extra_hosts:
+      - 'taskflow.josebianco.local:host-gateway'
+      - 'host.docker.internal:host-gateway'
+    depends_on:
+      app:
+        condition: service_healthy
     networks:
       - taskflow
 
