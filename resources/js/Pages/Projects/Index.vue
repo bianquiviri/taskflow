@@ -14,7 +14,10 @@ defineProps({
       Projects
     </h1>
 
-    <p v-if="projects.length === 0" class="mt-6 text-gray-600 dark:text-gray-300">
+    <p
+      v-if="projects.length === 0"
+      class="mt-6 text-gray-600 dark:text-gray-300"
+    >
       No active projects yet.
     </p>
 
@@ -27,7 +30,10 @@ defineProps({
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
           {{ project.name }}
         </h2>
-        <p v-if="project.description" class="mt-1 text-sm text-gray-600 dark:text-gray-300">
+        <p
+          v-if="project.description"
+          class="mt-1 text-sm text-gray-600 dark:text-gray-300"
+        >
           {{ project.description }}
         </p>
       </li>
