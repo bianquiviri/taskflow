@@ -68,6 +68,16 @@ implemented by parallel agents on disjoint domains and integrated into
 - **Fix (#42):** ESLint `vue/max-attributes-per-line` warnings in
   `Pages/Projects/Index.vue` introduced by #39 (the domain agent had not run
   the frontend linter).
+- **#7 — Team & TeamMember models** (`feature/7-team-membership`, merged via
+  PR #44): commit WIP auth-agent → `teams`/`team_members`/`team_invitations`
+  migrations, `Team`/`TeamMember`/`TeamInvitation` models (casts, relations),
+  `TeamRole` enum (label/color/canManageMembers), factories, `TeamObserver`
+  registration, `TeamInvitationService` (hashed tokens, 7-day expiry,
+  revoke), `TeamPolicy` (manageMembers = owner/admin), `User` relations
+  (ownedTeams/memberships/teams), 4 test files (23 tests · 53 assertions).
+  Integration fixes: `forOwner()/forTeam()/forUser()` don't take model
+  instances in Laravel 13 → FK attributes; Carbon 3 `diffInHours()` is signed
+  → absolute flag; Pint EOF newlines.
 
 **Decisions:**
 
@@ -84,9 +94,9 @@ implemented by parallel agents on disjoint domains and integrated into
 - Pint clean · Pest 22 passed (76 assertions) · ESLint clean (max-warnings=0)
   · Vitest 44 passed (100% stmt coverage) · `docker compose config` OK.
 
-**Status:** `develop` green with #11/#16/#27; `main` at v0.1.0. Auth teams WIP
-still uncommitted on `feature/7-team-membership`. Next: auth milestones (email
-verification #6, invitations #8, profile #9), then #10/#12 domain issues.
+**Status:** `develop` green with #11/#16/#27/#7 (PRs #39–#44). Next: auth
+milestones (email verification #6, invitations #8, profile #9), then #10/#12
+domain issues.
 
 ---
 
