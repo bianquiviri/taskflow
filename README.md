@@ -15,31 +15,59 @@ layered architecture, GitFlow, and CI/CD from day one.**
 
 ## Quick Start (Docker)
 
-**Prerequisites:** Docker, mkcert, and one `/etc/hosts` entry:
-
-```
-127.0.0.1  taskflow.josebianco.local
-```
+**Prerequisite:** Docker (Desktop or Engine) with the Docker daemon running.
+No PHP, Node, Composer, npm, or mkcert installation on your machine is needed —
+everything (including TLS certificate generation and Playwright) runs inside
+containers.
 
 ```sh
-make certs   # generate TLS certificate (once per machine)
-make up      # build & start the full stack
+make doctor   # verifies the only host requirements (optional but recommended)
+make hosts    # adds the local domain to /etc/hosts (one-time, asks for admin)
+make certs    # generates the TLS certificate in Docker (one-time)
+make up       # build & start the full stack (installs deps + app key automatically)
+make migrate  # run database migrations
 ```
 
 Open **https://taskflow.josebianco.local** and your work is live over HTTPS.
 
+> The only two steps that touch your machine are unavoidable because your
+> browser lives there: the `/etc/hosts` entry (`make hosts`) and — only when a
+> new root CA is created — trusting it in the keychain (`make trust-ca`).
+> Both are run **once**; `make certs` keeps reusing the same CA afterwards, so
+> you will not be asked again.
+
 ### Useful commands
 
 ```sh
-make test        # backend tests (Pest)
-make test-fe     # frontend tests (Vitest)
-make e2e         # end-to-end (Playwright)
-make lint        # Pint + ESLint
-make fix         # auto-fix Pint violations
-make shell       # bash inside the app container
-make mysql       # MySQL client
-make logs        # tail all service logs
+make doctor       # check Docker, .env, hosts, certs, app health
+make test         # backend tests (Pest)
+make test-fe      # frontend tests (Vitest)
+make e2e          # end-to-end (Playwright, inside Docker)
+make lint         # Pint + ESLint
+make fix          # auto-fix Pint violations
+make shell        # bash inside the app container
+make mysql        # MySQL client
+make logs         # tail all service logs
+make queue        # run the Redis queue worker (attached; Ctrl+C to stop)
+make deps         # (re)install composer + npm dependencies
 ```
+
+### Queued email & Mailpit
+
+Transactional email (auth notifications, etc.) is delivered asynchronously:
+notifications that `implement ShouldQueue` are pushed onto the **Redis** `default`
+queue and consumed by the queue worker, which then sends them through the SMTP
+mailer to **Mailpit** (the local capture inbox).
+
+```sh
+make up       # start the stack
+make queue    # start the queue worker in a terminal
+```
+
+While `make queue` is running, open **http://localhost:8025** to inspect every
+outgoing email that the app would send in production. If the worker sees no
+jobs, verify the worker terminal is attached and that `.env` keeps
+`QUEUE_CONNECTION=redis` (the default in `.env.example`).
 
 ## GitFlow
 

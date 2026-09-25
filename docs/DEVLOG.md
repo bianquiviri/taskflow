@@ -30,39 +30,111 @@ truth for the project's evolution.
 
 ---
 
-## 2026-09-24 — HTTPS trust fix & stale mkcert CA cleanup
+## 2026-09-25 — Release v0.1.0 + parallel agents (#11/#16/#27)
 
-**Context:** Browser was showing an HTTPS certificate error on
-`https://taskflow.josebianco.local` while the stack itself worked.
-
-**Diagnosis:**
-- Server cert valid (mkcert, SAN `taskflow.josebianco.local`, expires Dec 2028).
-- System trust store had **three** mkcert root CAs from different machines:
-  `pop-os`, `FedoraRemolonas`, and the current `Joses-MacBook-Pro.local`.
-- The cert is issued by the MacBook CA, which **was** installed and trusted —
-  `curl` (`ssl_verify_result: 0`) and `security verify-cert` both passed, and a
-  real Chromium browser (Playwright MCP) loaded the page with 0 console errors.
-  The failure was browser-session-only: browsers loaded the trust store before
-  the CA was registered, so sessions opened earlier kept rejecting it.
+**Context:** The Dockerized stack was released to `main`; three P0 issues were
+implemented by parallel agents on disjoint domains and integrated into
+`develop`; an integration lint issue was fixed.
 
 **Changes:**
-- Deleted the two obsolete mkcert CAs (`pop-os`, `FedoraRemolonas`) from the
-  System keychain via `osascript` with admin privileges (by SHA-1 hash, keeping
-  `Joses-MacBook-Pro.local` untouched).
-- Re-verified after cleanup: keychain holds a single mkcert CA, `curl` returns
-  HTTP 200 with SSL verify 0, Playwright Chromium loads the app with no errors.
 
-**Action for the user:** fully quit and reopen Chrome, Brave and Safari
-(`Cmd+Q`) so they reload the trust store; flush Chrome/Brave socket pools if a
-cached cert error persists.
+- **GitFlow:** `release/v0.1.0` was fast-forwarded to `develop` and merged to
+  `main` via PR #36 → tag `v0.1.0` + GitHub release notes created. `develop`
+  was then merged back to `main` parity (`99de8ee`).
+- **Parallel agents:** three agents ran concurrently, each in an isolated clone
+  (no shared working tree; TDD; own `feature/*` branch; no DEVLOG edits — kept
+  for the scaffolder to avoid merge conflicts). Integrated via PRs #39/#40/#41
+  (squash).
+- **#11 — Project entity** (`feature/11-project-model`): `projects` +
+  `project_members` migrations, `Project` model (slug + numeric disambiguation,
+  `archived_at` cast, `forUser`/`active`/`archived` scopes), `ProjectMember`,
+  `ProjectRole` enum, factory, `Create/Update/ArchiveProjectAction`,
+  `ProjectController` (index/show/store/update/archive), `ProjectPolicy`
+  (view=member, update/archive=owner/admin), FormRequests, `/projects` routes,
+  minimal Inertia pages, 17 feature tests. Guest-gating test deferred until
+  login routes exist (auth-agent scope, `route('login')` not yet defined).
+- **#16 — Application shell** (`feature/16-app-shell`): `AppLayout.vue`
+  (responsive sidebar + topbar + mobile drawer), 14 inline-SVG `Icon`s +
+  resolver, `Avatar` (image/initials), `FlashMessages` decoding the `flash`
+  shared prop (wired in `HandleInertiaRequests`), Inertia progress bar
+  (framework-native, no new dependency), `eslint.config.js` timer globals; 44
+  Vitest specs, 100% statement coverage.
+- **#27 — Redis queue worker** (`feature/27-redis-queue-worker`): `make queue`
+  (attached worker `queue:work redis --tries=3`; no floating compose service —
+  KISS), compose `app` env mirrors `QUEUE_CONNECTION`/`MAIL_*`, notifications
+  queued via Laravel 13-native `ShouldQueue` (no `config/notifications.php`
+  exists in the framework), `QueuedNotificationsTest`, README + ARCHITECTURE
+  "queued mail" sections.
+- **Fix (#42):** ESLint `vue/max-attributes-per-line` warnings in
+  `Pages/Projects/Index.vue` introduced by #39 (the domain agent had not run
+  the frontend linter).
 
-**Status:** HTTPS trust issue resolved at system level. NOTE: uncommitted
-auth-agent work (Team models/migrations/policies) is still on
-`feature/7-team-membership` — untouched. Machine was rebooted after this entry.
+**Decisions:**
+
+- Queue worker is an attached `make queue` target — simplest thing that works
+  for a local dev stack; a detached worker service can come with deployment.
+- Agents worked in isolated clones; scaffolding docs (DEVLOG/AGENTS) stay with
+  the scaffolder to serialize writes to shared files.
+- Guarding a *bare-clone* verification run: backend tests need `.env` with
+  `APP_KEY` and a `npm run build` (Vite manifest) — exactly what CI provides —
+  otherwise `MissingAppKeyException` / `ViteManifestNotFoundException` appear.
+
+**Verification run (develop `41c3f2a` + fix):**
+
+- Pint clean · Pest 22 passed (76 assertions) · ESLint clean (max-warnings=0)
+  · Vitest 44 passed (100% stmt coverage) · `docker compose config` OK.
+
+**Status:** `develop` green with #11/#16/#27; `main` at v0.1.0. Auth teams WIP
+still uncommitted on `feature/7-team-membership`. Next: auth milestones (email
+verification #6, invitations #8, profile #9), then #10/#12 domain issues.
 
 ---
 
-## 2026-09-22 — Project bootstrap review & stack startup
+## 2026-09-24 — Full-stack runs inside Docker (no host tooling required)
+
+**Context:** The stack previously depended on host tools: `mkcert` for TLS,
+`npx playwright` for e2e, and manual `composer install` / `npm install`. Goal:
+a fresh machine with only Docker should be able to lift the whole project.
+
+**Changes (branch `feature/dockerize-full-stack`):**
+
+- **TLS certs dockerized** (`docker/certs/Dockerfile` + `entrypoint.sh`): the
+  `certs` compose service runs mkcert inside a container and persists the root
+  CA under `docker/traefik/ca/` (gitignored). Existing CA is reused → browsers
+  that already trust it keep working without re-trust. The old host-based CA
+  was migrated into `docker/traefik/ca/` (verified: `cert.pem: OK`).
+- **E2E dockerized** (`docker/e2e/entrypoint.sh` + compose `e2e` service on the
+  `e2e` profile, image `mcr.microsoft.com/playwright:v1.63.0-noble`): `make e2e`
+  now runs Playwright inside a container against the real HTTPS app. The
+  entrypoint rewrites `/etc/hosts` (app domain → Docker gateway) and builds
+  production assets while hiding `public/hot`, then restores it via EXIT trap —
+  Playwright's Chromium hardcodes `localhost` to `127.0.0.1` and cannot reach
+  the Vite dev server, and the system CA store is ignored by Chromium (local
+  e2e uses `ignoreHTTPSErrors: !isCI`; real TLS is checked by `make doctor`).
+- **Self-bootstrapping stack** (`docker-compose.yml`): the `app` container now
+  creates `.env` from `.env.example`, runs `composer install`, and generates
+  `APP_KEY` when missing; `env_file` is optional with sane defaults; app has a
+  `/up` healthcheck; `node` reconciles npm deps on boot.
+- **New Make targets:** `doctor` (prereq check), `hosts` (one-time `/etc/hosts`
+  entry), `trust-ca` (one-time keychain trust), `deps`.
+- README quick start updated: only Docker needed.
+
+**Verification:** `make lint` (Pint 33 files + ESLint PASS), `make test`
+(Pest 5 passed), `make test-fe` (Vitest 2 passed), `make e2e` (Playwright
+1 passed, `public/hot` restored after run), `make doctor` all OK, HTTPS
+`/up` 200.
+
+**Remaining host steps (unavoidable — the browser lives on the host):** one-time
+`make hosts` and, only when a new root CA is created, `make trust-ca`.
+
+**Session notes:** a long debugging chain showed the value of full diagnostics
+upfront: layers were resolved one at a time (cert → CA trust → Chromium doesn't
+use system CAs → Vite assets unreachable → `localhost` hardcoded in
+curl/Chromium → `/etc/hosts` is mounted, `sed -i` fails → IPv6-first
+resolution). The final design sidesteps all of it instead of fighting each
+layer.
+
+---
 
 **Context:** First working session. Taskflow was scaffolded (M1) but the stack
 was not running.
