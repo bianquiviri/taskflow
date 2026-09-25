@@ -78,6 +78,22 @@ implemented by parallel agents on disjoint domains and integrated into
   Integration fixes: `forOwner()/forTeam()/forUser()` don't take model
   instances in Laravel 13 → FK attributes; Carbon 3 `diffInHours()` is signed
   → absolute flag; Pint EOF newlines.
+- **Release v0.2.0** (PR #46 → `main` `ae9a80b`, tag + release notes; #47 sync
+  back to `develop`).
+- **#12 — Task entity** (`feature/12-task-entity`, PR #48): Task model + factory
+  + migration (`position` ordering), `TaskStatus`/`TaskPriority` enums, filter
+  scopes, Create/Update/Assign/ChangeTaskStatus actions, `TaskOrderService`,
+  `TaskPolicy` matrix, `TaskController` + FormRequests + `/projects/{project}/
+  tasks` routes, 18 feature tests (Pest 58 total).
+- **#6 — Authentication** (`feature/6-authentication`, PR #49): native Laravel
+  auth controllers + `routes/auth.php`, Inertia pages under `Pages/Auth`,
+  `MustVerifyEmail` + verified gating on `/projects`, signed verification URLs,
+  throttled resend, password reset via queued `ShouldQueue` notifications;
+  unblocked the guest-gating tests deferred in #11.
+- **#17 — Form components** (`feature/17-form-components`, PR #50):
+  FormInput/Textarea/Select, Button, Badge, StatusPill, Modal (focus trap),
+  EmptyState, Skeleton — all with v-model + error display; 96 Vitest specs
+  (94% stmt).
 
 **Decisions:**
 
@@ -94,9 +110,9 @@ implemented by parallel agents on disjoint domains and integrated into
 - Pint clean · Pest 22 passed (76 assertions) · ESLint clean (max-warnings=0)
   · Vitest 44 passed (100% stmt coverage) · `docker compose config` OK.
 
-**Status:** `develop` green with #11/#16/#27/#7 (PRs #39–#44). Next: auth
-milestones (email verification #6, invitations #8, profile #9), then #10/#12
-domain issues.
+**Status:** `develop` green with #11/#16/#27/#7/#12/#6/#17 (PRs #39–#50);
+`main` at v0.2.0. Next: invitations #8, profile #9, #10 (ProjectMember — largely
+covered by #11, verify/close), then #13/#14/#15 domain issues.
 
 ---
 
