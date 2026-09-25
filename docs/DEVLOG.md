@@ -30,6 +30,76 @@ truth for the project's evolution.
 
 ---
 
+## 2026-09-25 — Release v0.1.0 + parallel agents (#11/#16/#27)
+
+**Context:** The Dockerized stack was released to `main`; three P0 issues were
+implemented by parallel agents on disjoint domains and integrated into
+`develop`; an integration lint issue was fixed.
+
+**Changes:**
+
+- **GitFlow:** `release/v0.1.0` was fast-forwarded to `develop` and merged to
+  `main` via PR #36 → tag `v0.1.0` + GitHub release notes created. `develop`
+  was then merged back to `main` parity (`99de8ee`).
+- **Parallel agents:** three agents ran concurrently, each in an isolated clone
+  (no shared working tree; TDD; own `feature/*` branch; no DEVLOG edits — kept
+  for the scaffolder to avoid merge conflicts). Integrated via PRs #39/#40/#41
+  (squash).
+- **#11 — Project entity** (`feature/11-project-model`): `projects` +
+  `project_members` migrations, `Project` model (slug + numeric disambiguation,
+  `archived_at` cast, `forUser`/`active`/`archived` scopes), `ProjectMember`,
+  `ProjectRole` enum, factory, `Create/Update/ArchiveProjectAction`,
+  `ProjectController` (index/show/store/update/archive), `ProjectPolicy`
+  (view=member, update/archive=owner/admin), FormRequests, `/projects` routes,
+  minimal Inertia pages, 17 feature tests. Guest-gating test deferred until
+  login routes exist (auth-agent scope, `route('login')` not yet defined).
+- **#16 — Application shell** (`feature/16-app-shell`): `AppLayout.vue`
+  (responsive sidebar + topbar + mobile drawer), 14 inline-SVG `Icon`s +
+  resolver, `Avatar` (image/initials), `FlashMessages` decoding the `flash`
+  shared prop (wired in `HandleInertiaRequests`), Inertia progress bar
+  (framework-native, no new dependency), `eslint.config.js` timer globals; 44
+  Vitest specs, 100% statement coverage.
+- **#27 — Redis queue worker** (`feature/27-redis-queue-worker`): `make queue`
+  (attached worker `queue:work redis --tries=3`; no floating compose service —
+  KISS), compose `app` env mirrors `QUEUE_CONNECTION`/`MAIL_*`, notifications
+  queued via Laravel 13-native `ShouldQueue` (no `config/notifications.php`
+  exists in the framework), `QueuedNotificationsTest`, README + ARCHITECTURE
+  "queued mail" sections.
+- **Fix (#42):** ESLint `vue/max-attributes-per-line` warnings in
+  `Pages/Projects/Index.vue` introduced by #39 (the domain agent had not run
+  the frontend linter).
+- **#7 — Team & TeamMember models** (`feature/7-team-membership`, merged via
+  PR #44): commit WIP auth-agent → `teams`/`team_members`/`team_invitations`
+  migrations, `Team`/`TeamMember`/`TeamInvitation` models (casts, relations),
+  `TeamRole` enum (label/color/canManageMembers), factories, `TeamObserver`
+  registration, `TeamInvitationService` (hashed tokens, 7-day expiry,
+  revoke), `TeamPolicy` (manageMembers = owner/admin), `User` relations
+  (ownedTeams/memberships/teams), 4 test files (23 tests · 53 assertions).
+  Integration fixes: `forOwner()/forTeam()/forUser()` don't take model
+  instances in Laravel 13 → FK attributes; Carbon 3 `diffInHours()` is signed
+  → absolute flag; Pint EOF newlines.
+
+**Decisions:**
+
+- Queue worker is an attached `make queue` target — simplest thing that works
+  for a local dev stack; a detached worker service can come with deployment.
+- Agents worked in isolated clones; scaffolding docs (DEVLOG/AGENTS) stay with
+  the scaffolder to serialize writes to shared files.
+- Guarding a *bare-clone* verification run: backend tests need `.env` with
+  `APP_KEY` and a `npm run build` (Vite manifest) — exactly what CI provides —
+  otherwise `MissingAppKeyException` / `ViteManifestNotFoundException` appear.
+
+**Verification run (develop `41c3f2a` + fix):**
+
+- Pint clean · Pest 22 passed (76 assertions) · ESLint clean (max-warnings=0)
+  · Vitest 44 passed (100% stmt coverage) · `docker compose config` OK.
+
+**Status:** `develop` green with #11/#16/#27/#7 (PRs #39–#44). Next: auth
+milestones (email verification #6, invitations #8, profile #9), then #10/#12
+domain issues.
+
+---
+
 ## 2026-09-24 — Full-stack runs inside Docker (no host tooling required)
 
 **Context:** The stack previously depended on host tools: `mkcert` for TLS,

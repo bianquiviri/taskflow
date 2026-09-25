@@ -48,8 +48,26 @@ make fix          # auto-fix Pint violations
 make shell        # bash inside the app container
 make mysql        # MySQL client
 make logs         # tail all service logs
+make queue        # run the Redis queue worker (attached; Ctrl+C to stop)
 make deps         # (re)install composer + npm dependencies
 ```
+
+### Queued email & Mailpit
+
+Transactional email (auth notifications, etc.) is delivered asynchronously:
+notifications that `implement ShouldQueue` are pushed onto the **Redis** `default`
+queue and consumed by the queue worker, which then sends them through the SMTP
+mailer to **Mailpit** (the local capture inbox).
+
+```sh
+make up       # start the stack
+make queue    # start the queue worker in a terminal
+```
+
+While `make queue` is running, open **http://localhost:8025** to inspect every
+outgoing email that the app would send in production. If the worker sees no
+jobs, verify the worker terminal is attached and that `.env` keeps
+`QUEUE_CONNECTION=redis` (the default in `.env.example`).
 
 ## GitFlow
 

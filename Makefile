@@ -26,6 +26,9 @@ restart: ## Restart the stack
 logs: ## Tail logs from all services
 	docker compose logs -f --tail=100
 
+queue: ## Run the Redis queue worker (attached; processes queued email/notifications)
+	docker compose exec app php artisan queue:work redis --tries=3
+
 shell: ## Open a shell inside the app container
 	docker compose exec app bash
 

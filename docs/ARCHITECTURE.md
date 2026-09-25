@@ -66,8 +66,19 @@ Action. If two Actions share logic, extract it into a Service.
   `ActivityLog` entry on create/update.
 - `app/Http/Requests/**`: one FormRequest per mutation; validation lives here,
   never in controllers.
-- `app/Notifications/**`: transactional email/database notifications.
+- `app/Notifications/**`: transactional email/database notifications. Email
+  notifications must `implement ShouldQueue` (see below for queued delivery).
 - `app/Support/**`: small framework-agnostic helpers.
+
+### Queued mail & the queue worker
+
+Mail is delivered asynchronously. Notifications implementing `ShouldQueue` are
+pushed as `SendQueuedNotifications` jobs onto the **Redis `default` queue**
+(`QUEUE_CONNECTION=redis`). A single attached worker consumes that queue with the
+`queue:work redis --tries=3` command (`make queue`). During local development the
+worker forwards messages to **Mailpit** (`smtp://mailpit:1025`), whose capture
+inbox is browsable at `http://localhost:8025`. There is no long-running detached
+queue service in Compose; the attached worker keeps the local footprint minimal.
 
 ## Domain Model (v1)
 
