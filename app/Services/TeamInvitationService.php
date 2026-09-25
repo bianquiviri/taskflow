@@ -32,7 +32,7 @@ class TeamInvitationService
             ->where('expires_at', '>', now())
             ->get()
             ->first(
-                fn (TeamInvitation $invitation) => Hash::check($token, $invitation->token_hash)
+                fn (TeamInvitation $invitation) => Hash::check($token, $invitation->token_hash),
             );
     }
 
