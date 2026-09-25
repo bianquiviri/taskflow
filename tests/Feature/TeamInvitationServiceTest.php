@@ -37,7 +37,7 @@ test('an invitation can be created with a custom expiry', function () {
     $token = $service->create($team, 'invitee@example.com', now()->addHours(2));
     $invitation = $service->findValid($token);
 
-    expect($invitation->expires_at->diffInHours(now()))->toEqualWithDelta(2, 1)
+    expect($invitation->expires_at->diffInHours(now(), true))->toEqualWithDelta(2, 0.1)
         ->and($invitation->expires_at->isFuture())->toBeTrue();
 });
 

@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Gate;
 
 function addTeamMember(Team $team, User $user, TeamRole $role = TeamRole::Member): TeamMember
 {
-    return TeamMember::factory()->forTeam($team)->forUser($user)->create(['role' => $role]);
+    return TeamMember::factory()->create(['team_id' => $team->id, 'user_id' => $user->id, 'role' => $role]);
 }
 
 test('team owner can manage its members', function () {

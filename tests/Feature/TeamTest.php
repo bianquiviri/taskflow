@@ -10,7 +10,7 @@ use App\Models\User;
 test('creating a team adds the owner as a member with the owner role', function () {
     $owner = User::factory()->create();
 
-    $team = Team::factory()->forOwner($owner)->create();
+    $team = Team::factory()->create(['owner_id' => $owner->id]);
 
     expect($team->owner->is($owner))->toBeTrue()
         ->and($team->memberships)->toHaveCount(1)
@@ -22,7 +22,7 @@ test('a user can join a team as a member', function () {
     $team = Team::factory()->create();
     $user = User::factory()->create();
 
-    $membership = TeamMember::factory()->forTeam($team)->forUser($user)->create();
+    $membership = TeamMember::factory()->create(['team_id' => $team->id, 'user_id' => $user->id]);
 
     expect($membership->team->is($team))->toBeTrue()
         ->and($membership->user->is($user))->toBeTrue()
@@ -41,7 +41,7 @@ test('a team member role can be promoted or demoted', function () {
     $team = Team::factory()->create();
     $user = User::factory()->create();
 
-    TeamMember::factory()->forTeam($team)->forUser($user)->create(['role' => TeamRole::Member]);
+    TeamMember::factory()->create(['team_id' => $team->id, 'user_id' => $user->id, 'role' => TeamRole::Member]);
     $membership = TeamMember::where('team_id', $team->id)->where('user_id', $user->id)->firstOrFail();
 
     $membership->update(['role' => TeamRole::Admin]);
