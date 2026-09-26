@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Models\Project;
 use App\Models\Task;
+use App\Models\Team;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -16,6 +17,7 @@ use Illuminate\Http\Request;
 Relation::morphMap([
     'project' => Project::class,
     'task' => Task::class,
+    'team' => Team::class,
 ]);
 
 return Application::configure(basePath: dirname(__DIR__))
