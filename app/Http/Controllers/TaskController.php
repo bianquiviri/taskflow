@@ -67,6 +67,7 @@ class TaskController extends Controller
 
         return Inertia::render('Tasks/Show', [
             'task' => $task->load(['project', 'assignee']),
+            'comments' => $task->comments()->with('user:id,name')->get(),
         ]);
     }
 

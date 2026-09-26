@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\WelcomeController;
@@ -21,4 +22,6 @@ Route::middleware('auth')->group(function (): void {
     Route::patch('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
     Route::patch('/tasks/{task}/assign', [TaskController::class, 'assign'])->name('tasks.assign');
     Route::patch('/tasks/{task}/status', [TaskController::class, 'status'])->name('tasks.status');
+    Route::get('/tasks/{task}/comments', [CommentController::class, 'index'])->name('comments.index');
+    Route::post('/tasks/{task}/comments', [CommentController::class, 'store'])->name('comments.store');
 });
