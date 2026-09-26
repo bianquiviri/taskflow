@@ -32,7 +32,7 @@ function submit() {
     />
 
     <div class="flex items-center justify-between gap-4">
-      <p class="text-xs text-gray-500 dark:text-gray-400">
+      <p class="text-xs text-content-subtle">
         Mention a teammate with @handle to notify them.
       </p>
       <Button

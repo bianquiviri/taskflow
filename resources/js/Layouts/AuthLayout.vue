@@ -8,14 +8,14 @@ defineProps({
 </script>
 
 <template>
-  <div class="flex min-h-dvh items-center justify-center bg-gray-100 px-4 py-10 sm:px-6 lg:bg-gray-950">
+  <div class="flex min-h-dvh items-center justify-center bg-sunken px-4 py-10 sm:px-6 lg:bg-canvas">
     <main class="w-full max-w-md">
       <Link
         href="/"
-        class="mx-auto flex w-fit items-center gap-3 text-gray-900 dark:text-white"
+        class="mx-auto flex w-fit items-center gap-3 text-content"
         aria-label="TaskFlow home"
       >
-        <span class="flex size-11 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
+        <span class="flex size-11 items-center justify-center rounded-shell bg-brand-600 text-content-inverted shadow-sm">
           <Icon
             name="logo"
             class="size-7"
@@ -24,11 +24,11 @@ defineProps({
         <span class="text-2xl font-bold tracking-tight">{{ appName }}</span>
       </Link>
 
-      <div class="mt-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8 dark:border-gray-800 dark:bg-gray-900">
+      <div class="mt-8 rounded-shell border border-line bg-raised p-6 shadow-sm sm:p-8">
         <slot />
       </div>
 
-      <p class="mt-6 text-center text-xs text-gray-500 dark:text-gray-400">
+      <p class="mt-6 text-center text-xs text-content-subtle">
         Project management, organized.
       </p>
     </main>

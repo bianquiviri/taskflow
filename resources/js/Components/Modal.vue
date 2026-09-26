@@ -115,7 +115,7 @@ onBeforeUnmount(deactivateFocusTrap);
     <div
       v-if="modelValue"
       data-test="modal-overlay"
-      class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gray-900/60 p-4 backdrop-blur-sm"
+      class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-overlay p-4 backdrop-blur-sm"
       @click.self="requestClose"
     >
       <div
@@ -125,13 +125,13 @@ onBeforeUnmount(deactivateFocusTrap);
         :aria-labelledby="titleId"
         :aria-describedby="description ? descriptionId : undefined"
         tabindex="-1"
-        class="my-auto w-full max-w-lg rounded-xl border border-gray-200 bg-white shadow-xl outline-none dark:border-gray-700 dark:bg-gray-900"
+        class="my-auto w-full max-w-lg rounded-panel border border-line bg-raised shadow-xl outline-none"
       >
-        <div class="flex items-start justify-between gap-4 border-b border-gray-200 px-6 py-4 dark:border-gray-700">
+        <div class="flex items-start justify-between gap-4 border-b border-line px-6 py-4">
           <div class="min-w-0 flex-1">
             <h2
               :id="titleId"
-              class="text-lg font-semibold text-gray-900 dark:text-white"
+              class="text-lg font-semibold text-content"
             >
               {{ title }}
             </h2>
@@ -139,7 +139,7 @@ onBeforeUnmount(deactivateFocusTrap);
               v-if="description"
               :id="descriptionId"
               data-test="modal-description"
-              class="mt-1 text-sm text-gray-500 dark:text-gray-400"
+              class="mt-1 text-sm text-content-subtle"
             >
               {{ description }}
             </p>
@@ -147,7 +147,7 @@ onBeforeUnmount(deactivateFocusTrap);
           <button
             type="button"
             :aria-label="closeLabel"
-            class="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+            class="rounded-md p-1.5 text-content-faint hover:bg-sunken hover:text-content"
             @click="requestClose"
           >
             <Icon
@@ -163,7 +163,7 @@ onBeforeUnmount(deactivateFocusTrap);
 
         <div
           v-if="$slots.footer"
-          class="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4 dark:border-gray-700"
+          class="flex items-center justify-end gap-3 border-t border-line px-6 py-4"
         >
           <slot name="footer" />
         </div>

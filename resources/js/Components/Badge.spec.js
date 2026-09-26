@@ -4,12 +4,12 @@ import Badge from './Badge.vue';
 
 describe('Badge.vue', () => {
     it.each([
-        ['indigo', 'bg-indigo-100'],
-        ['sky', 'bg-sky-100'],
-        ['gray', 'bg-gray-100'],
-        ['green', 'bg-green-100'],
-        ['amber', 'bg-amber-100'],
-        ['red', 'bg-red-100'],
+        ['indigo', 'bg-brand-soft'],
+        ['sky', 'bg-info-soft'],
+        ['gray', 'bg-sunken'],
+        ['green', 'bg-success-soft'],
+        ['amber', 'bg-warning-soft'],
+        ['red', 'bg-danger-soft'],
     ])('renders the %s tone', (tone, expectedClass) => {
         const wrapper = mount(Badge, {
             props: { tone },

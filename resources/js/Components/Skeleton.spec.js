@@ -9,7 +9,7 @@ describe('Skeleton.vue', () => {
         expect(wrapper.attributes('aria-hidden')).toBe('true');
         expect(wrapper.classes()).toEqual(expect.arrayContaining([
             'animate-pulse',
-            'bg-gray-200',
+            'bg-sunken',
         ]));
     });
 

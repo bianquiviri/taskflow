@@ -4,7 +4,7 @@ defineOptions({ name: 'Skeleton' });
 
 <template>
   <div
-    class="animate-pulse rounded-md bg-gray-200 dark:bg-gray-700"
+    class="animate-pulse rounded-md bg-sunken"
     aria-hidden="true"
   />
 </template>

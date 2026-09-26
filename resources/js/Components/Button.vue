@@ -17,10 +17,10 @@ const props = defineProps({
 });
 
 const variantClasses = {
-    primary: 'bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 focus-visible:ring-indigo-500',
-    secondary: 'border border-gray-300 bg-white text-gray-700 shadow-sm hover:bg-gray-50 focus-visible:ring-indigo-500 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:hover:bg-gray-800',
-    danger: 'bg-rose-600 text-white shadow-sm hover:bg-rose-700 focus-visible:ring-rose-500',
-    ghost: 'text-gray-700 hover:bg-gray-100 focus-visible:ring-indigo-500 dark:text-gray-200 dark:hover:bg-gray-800',
+    primary: 'bg-brand-600 text-content-inverted shadow-sm hover:bg-brand-700 focus-visible:ring-focus',
+    secondary: 'border border-line-strong bg-raised text-content-muted shadow-sm hover:bg-sunken focus-visible:ring-focus',
+    danger: 'bg-danger text-content-inverted shadow-sm hover:brightness-95 focus-visible:ring-danger',
+    ghost: 'text-content-muted hover:bg-sunken focus-visible:ring-focus',
 };
 
 const isDisabled = computed(() => props.disabled || props.loading);
@@ -31,7 +31,7 @@ const isDisabled = computed(() => props.disabled || props.loading);
     :type="type"
     :disabled="isDisabled"
     :aria-busy="loading || undefined"
-    class="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:focus-visible:ring-offset-gray-900"
+    class="inline-flex min-h-10 items-center justify-center gap-2 rounded-control px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-60"
     :class="variantClasses[variant]"
   >
     <span
