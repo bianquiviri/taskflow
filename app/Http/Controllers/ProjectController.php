@@ -10,6 +10,7 @@ use App\Actions\UpdateProjectAction;
 use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\UpdateProjectRequest;
 use App\Models\Project;
+use App\Services\ActivityLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,6 +22,7 @@ class ProjectController extends Controller
         private readonly CreateProjectAction $createProject,
         private readonly UpdateProjectAction $updateProject,
         private readonly ArchiveProjectAction $archiveProject,
+        private readonly ActivityLogService $activityLog,
     ) {
     }
 
@@ -45,6 +47,7 @@ class ProjectController extends Controller
 
         return Inertia::render('Projects/Show', [
             'project' => $project,
+            'activity' => $this->activityLog->forSubject($project),
         ]);
     }
 

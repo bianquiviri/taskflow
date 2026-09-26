@@ -3,12 +3,20 @@
 declare(strict_types=1);
 
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Models\Project;
+use App\Models\Task;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\EnsureEmailIsVerified;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+
+Relation::morphMap([
+    'project' => Project::class,
+    'task' => Task::class,
+]);
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
