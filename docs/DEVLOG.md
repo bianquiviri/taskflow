@@ -30,6 +30,80 @@ truth for the project's evolution.
 
 ---
 
+## 2026-09-26 — Parallel rounds 3-4: comments, audit trail, invitations, dark mode
+
+**Context:** Two more parallel rounds were integrated into `develop` (PRs
+#52–#55). A "seed" template optimisation removed per-agent installs.
+
+**Changes:**
+
+- **Speed optimisation (applied):** a seed clone at
+  `/var/folders/.../opencode/taskflow-seed` (develop + vendor + node_modules +
+  .env + assets) is copied with `cp -c` (APFS reflink) by each new agent, so
+  composer/npm installs disappear from agent runs entirely. Each round now
+  works: seed fetch → agent pairs → PRs in parallel → single CI watch →
+  squash in series.
+- **#13 — Comments & mentions** (`feature/13-comments`, PR #52):
+  `Comment` model + migration + factory, `CommentPolicy` (author can
+  update/delete own; project members view/create), `AddCommentAction` +
+  `App\Support\MentionParser` (`@handle` = slug of display name, project-scoped
+  candidates), `YouWereMentioned` (ShouldQueue, database+mail), `CommentController`
+  + `/tasks/{task}/comments` routes, `comments` prop on `TaskController@show`,
+  `CommentList`/`CommentForm` in `Pages/Tasks/Show.vue`. Added the standard
+  `notifications` table (was missing). 25 new Pest · 11 new Vitest.
+- **#15 — ActivityLog audit trail** (`feature/15-audit-trail`, PR #53):
+  `ActivityLog` (actor nullable, event enum, morph subject, meta json) +
+  migration, `TaskObserver`/`ProjectObserver` registered in AppServiceProvider,
+  `LogActivityAction` (single writer), `ActivityLogService` (paginated),
+  `activity` prop on `ProjectController@show`, activity section in
+  `Pages/Projects/Show.vue`; `Relation::morphMap(['project','task'])` in
+  `bootstrap/app.php`. 12 new Pest · 5 new Vitest. Migrations coordinated
+  between parallel agents (`000000/000001` comments/notifications, `000002`
+  activity_logs) — agents were told each other's timestamp prefixes.
+- **#8 — Team invitations flow** (`feature/8-team-invitations`, PR #54):
+  `InviteTeamMemberAction`/`AcceptInvitationAction`/`RevokeInvitationAction`/
+  `RemoveTeamMemberAction`, `YouWereInvited` queued mail with accept link,
+  one-time token self-consuming on accept (valid/expired/revoked/email-mismatch
+  handled; NO auto-accounts — accept requires signed-in verified user with
+  matching email), audit events `team.member_*` via ActivityLog, `role` added
+  to `team_invitations` (invitable set member/admin, owner seat protected),
+  `TeamPolicy` +`view`/`removeMember`, `scopeBindings` for cross-team 404,
+  `Pages/Teams/Show.vue` + `Invitation.vue`. 43 new Pest · 18 new Vitest.
+- **#18 — Design tokens + dark mode** (`feature/18-dark-mode`, PR #55):
+  `@theme inline` token system in `app.css` (brand/surfaces/lines/content/
+  status/shape-spacing, oklch, all theme-flipping) + class-strategy dark
+  variant (`:where(.dark,.dark *)` verified in compiled CSS); user-persisted
+  theme (`Theme` enum, `users.theme` migration `000010`, `PATCH /theme`,
+  `UpdateUserThemeAction`), `theme` shared prop + server-side `dark` class in
+  `app.blade.php` (no FOUC), `ThemeToggle` in AppLayout, shared components
+  converted to tokens (no stray hex). 129 Pest · 136 Vitest (94% stmt) ·
+  `npm run build` emits dark rules.
+- **Integration fix:** #54 and #55 both touched `routes/web.php` (auth group)
+  → squash of #55 conflicted; resolved by merging `develop` into the branch and
+  joining the `use` statements (one-line commit `3a970ee`), CI re-ran green.
+
+**Decisions:**
+
+- Seed copy (`cp -c`) over Docker cache volumes: simpler, no per-agent install
+  at all; trade-off is the seed must be re-fetched to `origin/develop` before
+  each round (cheap).
+- Two agents per round (three aborted mid-run earlier due to tool limits);
+  runner count: domain+domain, then auth+frontend.
+- Non-registered emails are NOT auto-created on invitation accept (security +
+  KISS); acceptance only matches a signed-in verified account's email.
+- Theme persisted server-side (users.theme) so the boot value is the truth and
+  first paint has no flash; localStorage was rejected as the single source.
+
+**Verification run (develop `74ebc37`):** CI green on all four PRs — Pint,
+Pest (163), Vitest+ESLint (136, 94% stmt), Playwright — plus local agent runs
+with `--order-by=random` stability checks on #15.
+
+**Status:** `develop` green at `74ebc37` with #13/#15/#8/#18. Next: #9 profile
+and settings, then #14/#15-adjacent domain work, #20 pages, #26 parallel
+testing, close/review #10 (ProjectMember largely covered by #11).
+
+---
+
 ## 2026-09-25 — Release v0.1.0 + parallel agents (#11/#16/#27)
 
 **Context:** The Dockerized stack was released to `main`; three P0 issues were
