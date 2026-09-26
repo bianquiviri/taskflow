@@ -28,7 +28,7 @@ export function applyTheme(theme) {
  * @param {() => string} source
  */
 export function useTheme(source) {
-    const theme = computed(() => resolveTheme(typeof source === 'function' ? source() : source));
+    const theme = computed(() => resolveTheme(source()));
 
     watchEffect(() => applyTheme(theme.value));
 
