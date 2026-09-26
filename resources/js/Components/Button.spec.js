@@ -4,10 +4,10 @@ import Button from './Button.vue';
 
 describe('Button.vue', () => {
     it.each([
-        ['primary', 'bg-indigo-600'],
-        ['secondary', 'border-gray-300'],
-        ['danger', 'bg-rose-600'],
-        ['ghost', 'text-gray-700'],
+        ['primary', 'bg-brand-600'],
+        ['secondary', 'border-line-strong'],
+        ['danger', 'bg-danger'],
+        ['ghost', 'text-content-muted'],
     ])('renders the %s variant', (variant, expectedClass) => {
         const wrapper = mount(Button, {
             props: { variant },

@@ -14,26 +14,26 @@ const AUTO_DISMISS_MS = 5000;
 const toneConfig = {
     success: {
         icon: 'check',
-        text: 'text-gray-900 dark:text-white',
-        iconColor: 'text-emerald-500',
+        text: 'text-content',
+        iconColor: 'text-success',
         label: 'Success',
     },
     error: {
         icon: 'warning',
-        text: 'text-gray-900 dark:text-white',
-        iconColor: 'text-rose-500',
+        text: 'text-content',
+        iconColor: 'text-danger',
         label: 'Error',
     },
     warning: {
         icon: 'warning',
-        text: 'text-gray-900 dark:text-white',
-        iconColor: 'text-amber-500',
+        text: 'text-content',
+        iconColor: 'text-warning',
         label: 'Warning',
     },
     info: {
         icon: 'info',
-        text: 'text-gray-900 dark:text-white',
-        iconColor: 'text-sky-500',
+        text: 'text-content',
+        iconColor: 'text-info',
         label: 'Information',
     },
 };
@@ -97,14 +97,14 @@ onBeforeUnmount(() => {
       v-for="toast in toasts"
       :key="toast.id"
       role="status"
-      class="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-lg dark:border-gray-700 dark:bg-gray-900"
+      class="flex items-start gap-3 rounded-panel border border-line bg-raised p-4 shadow-lg"
     >
       <Icon
         :name="toneConfig[toast.tone].icon"
         :class="['mt-0.5 size-5 shrink-0', toneConfig[toast.tone].iconColor]"
       />
       <div class="min-w-0 flex-1">
-        <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+        <p class="text-xs font-semibold uppercase tracking-wide text-content-faint">
           {{ toneConfig[toast.tone].label }}
         </p>
         <p
@@ -116,7 +116,7 @@ onBeforeUnmount(() => {
       </div>
       <button
         type="button"
-        class="rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+        class="rounded-md p-1 text-content-faint hover:bg-sunken hover:text-content"
         :aria-label="`Dismiss ${toneConfig[toast.tone].label} message`"
         @click="dismiss(toast.id)"
       >

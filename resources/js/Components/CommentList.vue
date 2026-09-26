@@ -33,7 +33,7 @@ function createdAt(comment) {
       v-for="comment in comments"
       :key="comment.id"
       data-test="comment"
-      class="flex gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+      class="flex gap-3 rounded-panel border border-line bg-raised p-4 shadow-sm"
     >
       <Avatar
         :name="authorName(comment)"
@@ -41,17 +41,17 @@ function createdAt(comment) {
       />
       <div class="min-w-0 flex-1">
         <p
-          class="text-sm text-gray-900 dark:text-white"
+          class="text-sm text-content"
         >
           <span class="font-semibold">{{ authorName(comment) }}</span>
           <span
             v-if="createdAt(comment)"
-            class="ml-2 text-xs text-gray-500 dark:text-gray-400"
+            class="ml-2 text-xs text-content-subtle"
           >
             {{ createdAt(comment) }}
           </span>
         </p>
-        <p class="mt-1 whitespace-pre-line text-sm text-gray-700 dark:text-gray-200">
+        <p class="mt-1 whitespace-pre-line text-sm text-content-muted">
           {{ comment.body }}
         </p>
       </div>

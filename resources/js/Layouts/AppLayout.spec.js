@@ -39,16 +39,24 @@ const AvatarStub = {
     template: '<span data-test="avatar" />',
 };
 
+const ThemeToggleStub = {
+    props: ['theme'],
+    template: '<button type="button" data-test="theme-toggle">{{ theme }}</button>',
+};
+
 const global = {
     stubs: {
         FlashMessages: FlashMessagesStub,
         Icon: IconStub,
         Avatar: AvatarStub,
+        ThemeToggle: ThemeToggleStub,
     },
 };
 
 describe('AppLayout.vue', () => {
     beforeEach(() => {
+        document.documentElement.classList.remove('dark');
+
         if (holder.page) {
             holder.page.url = '/';
             holder.page.props = { flash: {} };
@@ -171,6 +179,42 @@ describe('AppLayout.vue', () => {
         expect(wrapper.text()).toContain('Jane Doe');
         expect(wrapper.text()).toContain('jane@example.com');
         expect(wrapper.findAll('[data-test="avatar"]').length).toBe(2);
+    });
+
+    it('renders the theme toggle in the header with the shared theme', () => {
+        pageState.props = { flash: {}, theme: 'dark' };
+
+        const wrapper = mount(AppLayout, { global });
+
+        expect(wrapper.find('header [data-test="theme-toggle"]').text()).toBe('dark');
+    });
+
+    it('applies the dark class on boot from the shared theme', () => {
+        pageState.props = { flash: {}, theme: 'dark' };
+
+        mount(AppLayout, { global });
+
+        expect(document.documentElement.classList.contains('dark')).toBe(true);
+    });
+
+    it('drops the dark class when the shared theme is light', () => {
+        document.documentElement.classList.add('dark');
+        pageState.props = { flash: {}, theme: 'light' };
+
+        mount(AppLayout, { global });
+
+        expect(document.documentElement.classList.contains('dark')).toBe(false);
+    });
+
+    it('re-applies the dark class when the shared theme changes', async () => {
+        pageState.props = { flash: {}, theme: 'light' };
+        mount(AppLayout, { global });
+        expect(document.documentElement.classList.contains('dark')).toBe(false);
+
+        holder.page.props = { flash: {}, theme: 'dark' };
+        await nextTick();
+
+        expect(document.documentElement.classList.contains('dark')).toBe(true);
     });
 
     it('renders slot content inside the main area', () => {

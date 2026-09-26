@@ -9,12 +9,14 @@ use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamInvitationAcceptController;
 use App\Http\Controllers\TeamInvitationController;
 use App\Http\Controllers\TeamMemberController;
+use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', WelcomeController::class)->name('home');
 
 Route::middleware('auth')->group(function (): void {
+    Route::patch('/theme', [ThemeController::class, 'update'])->name('theme.update');
     Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
     Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');

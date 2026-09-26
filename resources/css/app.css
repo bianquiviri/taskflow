@@ -1,7 +1,144 @@
 @import 'tailwindcss';
 
-@theme {
+/* Dark mode is driven by a class on <html> so the stored user preference wins. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+| Design tokens
+|--------------------------------------------------------------------------
+| The UI only ever consumes the semantic names below. Brand shades mirror the
+| indigo palette the app already shipped with, the surface/content/status
+| names are the values that flip between light and dark.
+*/
+:root {
+    color-scheme: light;
+
+    --brand-50: oklch(96.2% 0.018 272.314);
+    --brand-100: oklch(93% 0.034 272.788);
+    --brand-200: oklch(87% 0.065 274.039);
+    --brand-300: oklch(78.5% 0.115 274.713);
+    --brand-400: oklch(67.3% 0.182 276.935);
+    --brand-500: oklch(58.5% 0.233 277.117);
+    --brand-600: oklch(51.1% 0.262 276.966);
+    --brand-700: oklch(45.7% 0.24 277.023);
+    --brand-800: oklch(39.8% 0.195 277.366);
+    --brand-900: oklch(35.9% 0.144 278.697);
+
+    --surface-canvas: oklch(98.5% 0.002 247.839);
+    --surface-raised: oklch(100% 0 0);
+    --surface-sunken: oklch(96.7% 0.003 264.542);
+    --surface-overlay: oklch(21% 0.034 264.665 / 0.5);
+    --line: oklch(92.8% 0.006 264.531);
+    --line-strong: oklch(87.2% 0.01 258.338);
+
+    --content: oklch(21% 0.034 264.665);
+    --content-muted: oklch(44.6% 0.03 256.802);
+    --content-subtle: oklch(55.1% 0.027 264.364);
+    --content-faint: oklch(70.7% 0.022 261.325);
+    --content-inverted: oklch(100% 0 0);
+
+    --brand-soft: var(--brand-50);
+    --brand-text: var(--brand-700);
+    --focus-ring: var(--brand-500);
+
+    --success: oklch(59.6% 0.145 163.225);
+    --success-soft: oklch(95% 0.052 163.051);
+    --success-text: oklch(50.8% 0.118 165.612);
+    --warning: oklch(66.6% 0.179 58.318);
+    --warning-soft: oklch(96.2% 0.059 95.617);
+    --warning-text: oklch(47.3% 0.137 46.201);
+    --danger: oklch(58.6% 0.253 17.585);
+    --danger-soft: oklch(94.1% 0.03 12.58);
+    --danger-text: oklch(51.4% 0.222 16.935);
+    --info: oklch(58.8% 0.158 241.966);
+    --info-soft: oklch(95.1% 0.026 236.824);
+    --info-text: oklch(50% 0.134 242.749);
+}
+
+.dark {
+    color-scheme: dark;
+
+    --surface-canvas: oklch(13% 0.028 261.692);
+    --surface-raised: oklch(21% 0.034 264.665);
+    --surface-sunken: oklch(27.8% 0.033 256.848);
+    --surface-overlay: oklch(13% 0.028 261.692 / 0.7);
+    --line: oklch(27.8% 0.033 256.848);
+    --line-strong: oklch(37.3% 0.034 259.733);
+
+    --content: oklch(100% 0 0);
+    --content-muted: oklch(87.2% 0.01 258.338);
+    --content-subtle: oklch(70.7% 0.022 261.325);
+    --content-faint: oklch(55.1% 0.027 264.364);
+    --content-inverted: oklch(21% 0.034 264.665);
+
+    --brand-soft: oklch(58.5% 0.233 277.117 / 0.12);
+    --brand-text: oklch(78.5% 0.115 274.713);
+    --focus-ring: oklch(67.3% 0.182 276.935);
+
+    --success: oklch(69.6% 0.17 162.48);
+    --success-soft: oklch(69.6% 0.17 162.48 / 0.12);
+    --success-text: oklch(84.5% 0.143 164.978);
+    --warning: oklch(76.9% 0.188 70.08);
+    --warning-soft: oklch(76.9% 0.188 70.08 / 0.12);
+    --warning-text: oklch(87.9% 0.169 91.605);
+    --danger: oklch(64.5% 0.246 16.439);
+    --danger-soft: oklch(64.5% 0.246 16.439 / 0.12);
+    --danger-text: oklch(81% 0.117 11.638);
+    --info: oklch(68.5% 0.169 237.323);
+    --info-soft: oklch(68.5% 0.169 237.323 / 0.12);
+    --info-text: oklch(82.8% 0.111 230.318);
+}
+
+@theme inline {
     --font-sans:
         'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-brand-50: var(--brand-50);
+    --color-brand-100: var(--brand-100);
+    --color-brand-200: var(--brand-200);
+    --color-brand-300: var(--brand-300);
+    --color-brand-400: var(--brand-400);
+    --color-brand-500: var(--brand-500);
+    --color-brand-600: var(--brand-600);
+    --color-brand-700: var(--brand-700);
+    --color-brand-800: var(--brand-800);
+    --color-brand-900: var(--brand-900);
+    --color-brand-soft: var(--brand-soft);
+    --color-brand-text: var(--brand-text);
+    --color-focus: var(--focus-ring);
+
+    --color-canvas: var(--surface-canvas);
+    --color-raised: var(--surface-raised);
+    --color-sunken: var(--surface-sunken);
+    --color-overlay: var(--surface-overlay);
+    --color-line: var(--line);
+    --color-line-strong: var(--line-strong);
+
+    --color-content: var(--content);
+    --color-content-muted: var(--content-muted);
+    --color-content-subtle: var(--content-subtle);
+    --color-content-faint: var(--content-faint);
+    --color-content-inverted: var(--content-inverted);
+
+    --color-success: var(--success);
+    --color-success-soft: var(--success-soft);
+    --color-success-text: var(--success-text);
+    --color-warning: var(--warning);
+    --color-warning-soft: var(--warning-soft);
+    --color-warning-text: var(--warning-text);
+    --color-danger: var(--danger);
+    --color-danger-soft: var(--danger-soft);
+    --color-danger-text: var(--danger-text);
+    --color-info: var(--info);
+    --color-info-soft: var(--info-soft);
+    --color-info-text: var(--info-text);
+
+    --radius-control: 0.5rem;
+    --radius-panel: 0.75rem;
+    --radius-shell: 1rem;
+
+    --spacing-gutter: 1.5rem;
+
+    --size-control: 2.5rem;
 }

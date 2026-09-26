@@ -29,7 +29,7 @@ function updateValue(event) {
     <label
       v-if="label"
       :for="inputId"
-      class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200"
+      class="mb-1.5 block text-sm font-medium text-content-muted"
     >
       {{ label }}
     </label>
@@ -41,16 +41,16 @@ function updateValue(event) {
       :disabled="disabled"
       :aria-invalid="error ? 'true' : undefined"
       :aria-describedby="error ? `${inputId}-error` : undefined"
-      class="block w-full rounded-lg border px-3 py-2 text-sm text-gray-900 shadow-sm transition-colors placeholder:text-gray-400 focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-gray-100 dark:border-gray-700 dark:bg-gray-900 dark:text-white dark:disabled:bg-gray-800"
+      class="block w-full rounded-control border px-3 py-2 text-sm text-content shadow-sm transition-colors placeholder:text-content-faint focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-sunken"
       :class="error
-        ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500'
-        : 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500'"
+        ? 'border-danger focus:border-danger focus:ring-danger'
+        : 'border-line-strong focus:border-focus focus:ring-focus'"
       @input="updateValue"
     >
     <p
       v-if="error"
       :id="`${inputId}-error`"
-      class="mt-1.5 text-sm text-rose-600 dark:text-rose-400"
+      class="mt-1.5 text-sm text-danger-text"
       role="alert"
     >
       {{ error }}

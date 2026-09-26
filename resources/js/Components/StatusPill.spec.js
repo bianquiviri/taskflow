@@ -4,15 +4,15 @@ import StatusPill from './StatusPill.vue';
 
 describe('StatusPill.vue', () => {
     it.each([
-        ['todo', 'Todo', 'bg-gray-100'],
-        ['in_progress', 'In progress', 'bg-sky-100'],
-        ['in_review', 'In review', 'bg-amber-100'],
-        ['done', 'Done', 'bg-green-100'],
-        ['cancelled', 'Cancelled', 'bg-red-100'],
-        ['low', 'Low', 'bg-gray-100'],
-        ['medium', 'Medium', 'bg-indigo-100'],
-        ['high', 'High', 'bg-amber-100'],
-        ['urgent', 'Urgent', 'bg-red-100'],
+        ['todo', 'Todo', 'bg-sunken'],
+        ['in_progress', 'In progress', 'bg-info-soft'],
+        ['in_review', 'In review', 'bg-warning-soft'],
+        ['done', 'Done', 'bg-success-soft'],
+        ['cancelled', 'Cancelled', 'bg-danger-soft'],
+        ['low', 'Low', 'bg-sunken'],
+        ['medium', 'Medium', 'bg-brand-soft'],
+        ['high', 'High', 'bg-warning-soft'],
+        ['urgent', 'Urgent', 'bg-danger-soft'],
     ])('maps %s to its label and tone', (value, label, toneClass) => {
         const wrapper = mount(StatusPill, {
             props: { value },
@@ -36,6 +36,6 @@ describe('StatusPill.vue', () => {
         });
 
         expect(wrapper.text()).toBe('Blocked');
-        expect(wrapper.classes()).toContain('bg-gray-100');
+        expect(wrapper.classes()).toContain('bg-sunken');
     });
 });
