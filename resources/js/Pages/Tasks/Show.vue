@@ -1,8 +1,11 @@
 <script setup>
 import { Head } from '@inertiajs/vue3';
+import CommentForm from '../../Components/CommentForm.vue';
+import CommentList from '../../Components/CommentList.vue';
 
 defineProps({
   task: { type: Object, required: true },
+  comments: { type: Array, required: true },
 });
 </script>
 
@@ -45,5 +48,19 @@ defineProps({
         </dd>
       </div>
     </dl>
+
+    <section class="mt-10">
+      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
+        Comments
+      </h2>
+
+      <div class="mt-4">
+        <CommentList :comments="comments" />
+      </div>
+
+      <div class="mt-6">
+        <CommentForm :url="`/tasks/${task.id}/comments`" />
+      </div>
+    </section>
   </div>
 </template>
