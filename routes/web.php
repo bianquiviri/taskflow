@@ -5,6 +5,10 @@ declare(strict_types=1);
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TeamController;
+use App\Http\Controllers\TeamInvitationAcceptController;
+use App\Http\Controllers\TeamInvitationController;
+use App\Http\Controllers\TeamMemberController;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
@@ -26,4 +30,14 @@ Route::middleware('auth')->group(function (): void {
     Route::patch('/tasks/{task}/status', [TaskController::class, 'status'])->name('tasks.status');
     Route::get('/tasks/{task}/comments', [CommentController::class, 'index'])->name('comments.index');
     Route::post('/tasks/{task}/comments', [CommentController::class, 'store'])->name('comments.store');
+    Route::get('/team-invitations/{token}', [TeamInvitationAcceptController::class, 'show'])->name('team-invitations.accept');
+    Route::post('/team-invitations/{token}', [TeamInvitationAcceptController::class, 'store'])->name('team-invitations.accept.store');
+
+    Route::get('/teams/{team}', [TeamController::class, 'show'])->name('teams.show');
+
+    Route::scopeBindings()->group(function (): void {
+        Route::post('/teams/{team}/invitations', [TeamInvitationController::class, 'store'])->name('teams.invitations.store');
+        Route::delete('/teams/{team}/invitations/{invitation}', [TeamInvitationController::class, 'destroy'])->name('teams.invitations.destroy');
+        Route::delete('/teams/{team}/members/{membership}', [TeamMemberController::class, 'destroy'])->name('teams.members.destroy');
+    });
 });
