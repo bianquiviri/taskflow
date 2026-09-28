@@ -59,8 +59,8 @@ jobs:
       - name: Cache config
         run: php artisan config:clear
 
-      - name: Run tests
-        run: php artisan test --ci
+      - name: Run tests (enforce ≥80% coverage)
+        run: php artisan test --ci --coverage --min=80 --coverage-clover build/logs/clover.xml
 
       - name: Upload coverage
         uses: codacy/codacy-coverage-reporter-action@v1
