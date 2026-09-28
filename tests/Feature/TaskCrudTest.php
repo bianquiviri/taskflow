@@ -175,3 +175,85 @@ it('rejects incomplete duplicated or cross-project task orders', function () {
         ->toThrow(ValidationException::class)
         ->and($task->refresh()->position)->toBe(0);
 });
+
+it('sends the priorities and the abilities of a task to its page', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $project = Project::factory()->for($owner, 'owner')->create();
+    $project->members()->create(['user_id' => $member->id, 'role' => 'member']);
+    $assigned = Task::factory()->for($project, 'project')->for($member, 'assignee')->create();
+    $other = Task::factory()->for($project, 'project')->create();
+
+    $this->actingAs($owner)
+        ->get(route('tasks.show', $assigned))
+        ->assertOk()
+        ->assertInertia(
+            fn ($page) => $page
+            ->component('Tasks/Show')
+            ->where('priorities', [
+                ['value' => 'low', 'label' => 'Low'],
+                ['value' => 'medium', 'label' => 'Medium'],
+                ['value' => 'high', 'label' => 'High'],
+                ['value' => 'urgent', 'label' => 'Urgent'],
+            ])
+            ->where('permissions', ['tasks.update', 'tasks.changeStatus']),
+        );
+
+    $this->actingAs($member)
+        ->get(route('tasks.show', $assigned))
+        ->assertInertia(fn ($page) => $page->where('permissions', ['tasks.update', 'tasks.changeStatus']));
+
+    $this->actingAs($member)
+        ->get(route('tasks.show', $other))
+        ->assertInertia(fn ($page) => $page->where('permissions', []));
+});
+
+it('keeps a task mutation started from Inertia on the page it came from', function () {
+    $owner = User::factory()->create();
+    $member = User::factory()->create();
+    $project = Project::factory()->for($owner, 'owner')->create();
+    $project->members()->create(['user_id' => $member->id, 'role' => 'member']);
+    $task = Task::factory()->for($project, 'project')->create();
+    $board = route('projects.show', $project);
+
+    $this->actingAs($owner);
+
+    $this->withHeader('X-Inertia', 'true')
+        ->from($board)
+        ->post(route('projects.tasks.store', $project), ['title' => 'Write the notes'])
+        ->assertRedirect($board);
+
+    $this->withHeader('X-Inertia', 'true')
+        ->from($board)
+        ->patch(route('tasks.update', $task), ['title' => 'Renamed task'])
+        ->assertRedirect($board);
+
+    $this->withHeader('X-Inertia', 'true')
+        ->from($board)
+        ->patch(route('tasks.status', $task), ['status' => TaskStatus::InProgress->value])
+        ->assertRedirect($board);
+
+    $this->withHeader('X-Inertia', 'true')
+        ->from($board)
+        ->patch(route('tasks.assign', $task), ['assignee_id' => $member->id])
+        ->assertRedirect($board);
+
+    expect($task->refresh()->title)->toBe('Renamed task')
+        ->and($task->status)->toBe(TaskStatus::InProgress)
+        ->and($task->assignee_id)->toBe($member->id);
+});
+
+it('still reports a rejected status change sent from Inertia', function () {
+    $owner = User::factory()->create();
+    $project = Project::factory()->for($owner, 'owner')->create();
+    $task = Task::factory()->for($project, 'project')->create();
+
+    $this->actingAs($owner)
+        ->withHeader('X-Inertia', 'true')
+        ->from(route('projects.show', $project))
+        ->patch(route('tasks.status', $task), ['status' => 'done'])
+        ->assertRedirect(route('projects.show', $project))
+        ->assertSessionHasErrors('status');
+
+    expect($task->refresh()->status)->toBe(TaskStatus::Todo);
+});

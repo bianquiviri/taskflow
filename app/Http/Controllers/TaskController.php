@@ -19,6 +19,8 @@ use App\Models\Task;
 use App\Models\User;
 use App\Services\TaskQueryService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -54,6 +56,11 @@ class TaskController extends Controller
         return Inertia::render('Tasks/Show', [
             'task' => $task->load(['project', 'assignee']),
             'comments' => $task->comments()->with('user:id,name')->get(),
+            'priorities' => $this->taskQuery->filterOptions()['priorities'],
+            'permissions' => array_keys(array_filter([
+                'tasks.update' => Gate::allows('update', $task),
+                'tasks.changeStatus' => Gate::allows('changeStatus', $task),
+            ])),
         ]);
     }
 
@@ -63,7 +70,7 @@ class TaskController extends Controller
 
         $task = ($this->createTask)($project, $request->validated());
 
-        return redirect()->route('tasks.show', $task)->with('success', 'Task created.');
+        return $this->respond($request, $task, 'Task created.');
     }
 
     public function update(UpdateTaskRequest $request, Task $task): RedirectResponse
@@ -72,7 +79,7 @@ class TaskController extends Controller
 
         ($this->updateTask)($task, $request->validated());
 
-        return redirect()->route('tasks.show', $task)->with('success', 'Task updated.');
+        return $this->respond($request, $task, 'Task updated.');
     }
 
     public function assign(AssignTaskRequest $request, Task $task): RedirectResponse
@@ -83,7 +90,7 @@ class TaskController extends Controller
         $assignee = $assigneeId === null ? null : User::findOrFail($assigneeId);
         ($this->assignTask)($task, $assignee);
 
-        return redirect()->route('tasks.show', $task)->with('success', 'Task assignment updated.');
+        return $this->respond($request, $task, 'Task assignment updated.');
     }
 
     public function status(ChangeTaskStatusRequest $request, Task $task): RedirectResponse
@@ -92,6 +99,21 @@ class TaskController extends Controller
 
         ($this->changeTaskStatus)($task, TaskStatus::from($request->validated('status')));
 
-        return redirect()->route('tasks.show', $task)->with('success', 'Task status updated.');
+        return $this->respond($request, $task, 'Task status updated.');
+    }
+
+    /**
+     * A mutation started from a modal or a board drop must keep the user where
+     * they are, so it sends the Inertia client back to the page it came from,
+     * which it follows in place. A plain form post still lands on the task
+     * page, where the flash confirms the change.
+     */
+    private function respond(Request $request, Task $task, string $message): RedirectResponse
+    {
+        if ($request->header('X-Inertia') !== null) {
+            return back();
+        }
+
+        return redirect()->route('tasks.show', $task)->with('success', $message);
     }
 }
