@@ -18,7 +18,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 #[Fillable(['name', 'email', 'password', 'theme'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'avatar_path'])]
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
@@ -47,6 +47,14 @@ class User extends Authenticatable implements MustVerifyEmail
     public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
     {
         $this->notify(new QueuedResetPassword($token));
+    }
+
+    /**
+     * The url serving the stored avatar, or null when none was uploaded.
+     */
+    public function avatarUrl(): ?string
+    {
+        return $this->avatar_path === null ? null : route('profile.avatar');
     }
 
     /**

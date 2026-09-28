@@ -25,6 +25,7 @@ it('shares a lightweight authenticated user with every page', function () {
                 'id' => $user->id,
                 'name' => 'Ada Lovelace',
                 'email' => 'ada@example.com',
+                'avatar' => null,
             ]),
         );
 });
@@ -37,7 +38,7 @@ it('never leaks sensitive user fields to the frontend', function () {
         ->assertInertia(function ($page): void {
             $shared = $page->toArray()['props']['auth']['user'];
 
-            expect(array_keys($shared))->toBe(['id', 'name', 'email']);
+            expect(array_keys($shared))->toBe(['id', 'name', 'email', 'avatar']);
         });
 });
 
@@ -143,7 +144,7 @@ it('shares the same auth context on every authenticated page', function () {
     $project = Project::factory()->create(['owner_id' => $user->id]);
 
     $expected = [
-        'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email],
+        'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'avatar' => null],
         'team' => ['id' => $team->id, 'name' => $team->name, 'slug' => $team->slug, 'role' => 'owner'],
         'can' => ['projects.viewAny', 'projects.create', 'teams.view', 'teams.manageMembers'],
     ];

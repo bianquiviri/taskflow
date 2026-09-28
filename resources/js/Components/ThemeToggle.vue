@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue';
-import { router } from '@inertiajs/vue3';
-import { applyTheme, oppositeTheme, resolveTheme } from '../Composables/useTheme';
+import { oppositeTheme, resolveTheme } from '../Composables/useTheme';
+import { persistTheme } from '../Composables/useThemePreference';
 import Icon from './Icon.vue';
 
 const props = defineProps({
@@ -16,11 +16,7 @@ const isDark = computed(() => resolveTheme(props.theme) === 'dark');
 const label = computed(() => (isDark.value ? 'Switch to light mode' : 'Switch to dark mode'));
 
 function toggle() {
-    const theme = oppositeTheme(props.theme);
-
-    applyTheme(theme);
-
-    router.patch('/theme', { theme }, { preserveScroll: true, preserveState: true });
+    persistTheme(oppositeTheme(props.theme));
 }
 </script>
 
