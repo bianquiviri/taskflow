@@ -62,7 +62,7 @@ test.describe('authentication pages', () => {
 
         await expect(page).toHaveTitle(/Reset password/);
         await expect(page.getByText('ada@example.com', { exact: true })).toBeVisible();
-        await expect(page.getByLabel('New password')).toBeVisible();
-        await expect(page.getByLabel('Confirm new password')).toBeVisible();
+        await expect(page.getByLabel('New password', { exact: true })).toBeVisible();
+        await expect(page.getByLabel('Confirm new password', { exact: true })).toBeVisible();
     });
 });
