@@ -28,6 +28,22 @@ jobs:
       - name: Run Pint (style check)
         run: ./vendor/bin/pint --test
 
+  phpstan:
+    name: Static Analysis (PHPStan)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run PHPStan
+        run: vendor/bin/phpstan analyse --memory-limit=1G --no-progress
+
   backend:
     name: Backend Tests (Pest)
     runs-on: ubuntu-latest
