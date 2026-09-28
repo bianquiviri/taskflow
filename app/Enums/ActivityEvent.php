@@ -15,4 +15,6 @@ enum ActivityEvent: string
     case MemberInvited = 'team.member_invited';
     case MemberAccepted = 'team.member_accepted';
     case MemberRevoked = 'team.member_revoked';
+    case MemberRoleChanged = 'team.member_role_changed';
+    case InvitationResent = 'team.invitation_resent';
 }

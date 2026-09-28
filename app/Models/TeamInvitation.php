@@ -58,6 +58,18 @@ class TeamInvitation extends Model
     }
 
     /**
+     * The lifecycle state of the invitation, ready for the UI.
+     */
+    public function status(): string
+    {
+        return match (true) {
+            $this->isRevoked() => 'cancelled',
+            $this->isExpired() => 'expired',
+            default => 'pending',
+        };
+    }
+
+    /**
      * An invitation without an address can be accepted by any account.
      */
     public function isAddressedTo(string $email): bool

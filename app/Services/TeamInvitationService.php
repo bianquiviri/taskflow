@@ -40,6 +40,22 @@ class TeamInvitationService
         return new IssuedTeamInvitation($invitation, $token);
     }
 
+    /**
+     * Give an existing invitation a new token and a new lifetime, so it can be
+     * sent again without piling up invitations for the same address.
+     */
+    public function rotate(TeamInvitation $invitation, ?Carbon $expiresAt = null): IssuedTeamInvitation
+    {
+        $token = Str::random(40);
+
+        $invitation->update([
+            'token_hash' => Hash::make($token),
+            'expires_at' => $expiresAt ?? now()->addDays(7),
+        ]);
+
+        return new IssuedTeamInvitation($invitation->refresh(), $token);
+    }
+
     public function findValid(string $token): ?TeamInvitation
     {
         $invitation = $this->find($token);

@@ -49,6 +49,24 @@ parameters:
 			path: app/Actions/ChangeTaskStatusAction.php
 
 		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Actions/ChangeTeamMemberRoleAction.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Actions/ChangeTeamMemberRoleAction.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\TeamRole\:\:Owner will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Actions/ChangeTeamMemberRoleAction.php
+
+		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:pending\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -70,18 +88,24 @@ parameters:
 			message: '#^Cannot access property \$value on string\.$#'
 			identifier: property.nonObject
 			count: 1
+			path: app/Actions/ResendInvitationAction.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
 			path: app/Actions/RevokeInvitationAction.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
 			identifier: property.notFound
-			count: 1
+			count: 2
 			path: app/Http/Controllers/TeamController.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
 			identifier: property.notFound
-			count: 1
+			count: 2
 			path: app/Http/Controllers/TeamController.php
 
 		-
@@ -93,18 +117,30 @@ parameters:
 		-
 			message: '#^Cannot access property \$value on string\.$#'
 			identifier: property.nonObject
-			count: 2
+			count: 4
 			path: app/Http/Controllers/TeamController.php
 
 		-
 			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
 			identifier: method.nonObject
-			count: 1
+			count: 2
 			path: app/Http/Controllers/TeamController.php
 
 		-
 			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
 			identifier: argument.unresolvableType
+			count: 3
+			path: app/Http/Controllers/TeamController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: mixed, email\: string\|null, role\: mixed, status\: string, expiresAt\: mixed, canBeResent\: bool, canBeCancelled\: bool\}, Closure\(App\\Models\\TeamInvitation\)\: array\{id\: mixed, email\: string\|null, role\: mixed, status\: string, expiresAt\: mixed, canBeResent\: bool, canBeCancelled\: bool\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/TeamController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: mixed, name\: mixed, email\: mixed, role\: mixed, canBeRemoved\: bool, canBeReassigned\: bool\}, Closure\(App\\Models\\TeamMember\)\: array\{id\: mixed, name\: mixed, email\: mixed, role\: mixed, canBeRemoved\: bool, canBeReassigned\: bool\} given\.$#'
+			identifier: argument.type
 			count: 1
 			path: app/Http/Controllers/TeamController.php
 
