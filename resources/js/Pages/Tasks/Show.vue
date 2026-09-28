@@ -9,11 +9,18 @@ import CommentList from '../../Components/CommentList.vue';
 import FormSelect from '../../Components/FormSelect.vue';
 import Icon from '../../Components/Icon.vue';
 import StatusPill from '../../Components/StatusPill.vue';
+import TaskAttachmentForm from '../../Components/TaskAttachmentForm.vue';
+import TaskAttachmentList from '../../Components/TaskAttachmentList.vue';
 import TaskFormModal from '../../Components/TaskFormModal.vue';
 
 const props = defineProps({
     task: { type: Object, required: true },
     comments: { type: Array, required: true },
+    attachments: { type: Array, default: () => [] },
+    attachmentRules: {
+        type: Object,
+        default: () => ({ max_size: '', extensions: [] }),
+    },
     priorities: { type: Array, default: () => [] },
     statuses: { type: Array, default: () => [] },
     permissions: { type: Array, default: () => [] },
@@ -126,6 +133,24 @@ const reachable = computed(() => {
         </dd>
       </div>
     </dl>
+
+    <section class="mt-10">
+      <h2 class="text-lg font-semibold text-content">
+        Attachments
+      </h2>
+
+      <div class="mt-4">
+        <TaskAttachmentList :attachments="attachments" />
+      </div>
+
+      <div class="mt-6">
+        <TaskAttachmentForm
+          :url="`/tasks/${task.id}/files`"
+          :accept="attachmentRules.extensions"
+          :max-size="attachmentRules.max_size"
+        />
+      </div>
+    </section>
 
     <section class="mt-10">
       <h2 class="text-lg font-semibold text-content">

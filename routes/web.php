@@ -7,6 +7,7 @@ use App\Http\Controllers\MyTaskController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TaskFileController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TeamInvitationAcceptController;
 use App\Http\Controllers\TeamInvitationController;
@@ -33,6 +34,11 @@ Route::middleware('auth')->group(function (): void {
     Route::patch('/tasks/{task}/status', [TaskController::class, 'status'])->name('tasks.status');
     Route::get('/tasks/{task}/comments', [CommentController::class, 'index'])->name('comments.index');
     Route::post('/tasks/{task}/comments', [CommentController::class, 'store'])->name('comments.store');
+    Route::post('/tasks/{task}/files', [TaskFileController::class, 'store'])->name('tasks.files.store');
+    Route::scopeBindings()->group(function (): void {
+        Route::get('/tasks/{task}/files/{file}/download', [TaskFileController::class, 'download'])->name('tasks.files.download');
+        Route::delete('/tasks/{task}/files/{file}', [TaskFileController::class, 'destroy'])->name('tasks.files.destroy');
+    });
     Route::get('/team-invitations/{token}', [TeamInvitationAcceptController::class, 'show'])->name('team-invitations.accept');
     Route::post('/team-invitations/{token}', [TeamInvitationAcceptController::class, 'store'])->name('team-invitations.accept.store');
 

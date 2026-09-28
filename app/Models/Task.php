@@ -56,6 +56,14 @@ class Task extends Model
         return $this->hasMany(Comment::class)->oldest();
     }
 
+    /**
+     * @return HasMany<TaskFile, $this>
+     */
+    public function files(): HasMany
+    {
+        return $this->hasMany(TaskFile::class)->oldest();
+    }
+
     public function scopeForProject(Builder $query, Project|int $project): Builder
     {
         return $query->where('project_id', $project instanceof Project ? $project->getKey() : $project);
