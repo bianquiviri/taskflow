@@ -56,6 +56,20 @@ Open **https://taskflow.josebianco.local** and your work is live over HTTPS.
 > Both are run **once**; `make certs` keeps reusing the same CA afterwards, so
 > you will not be asked again.
 
+### Running only changed tests
+
+Pest runs parallel by default (`--parallel`, ~5 s for the full suite). To run
+just the tests touching your change:
+
+```sh
+docker compose exec app php artisan test --filter=TaskCrudTest --parallel --no-coverage
+```
+
+`--filter` accepts a substring, a comma list (`TaskCrudTest,TeamPolicyTest`)
+or a class method (`TaskCrudTest::it_updates_a_task`). Architecture
+layering rules live in `tests/Architecture/ArchitectureTest.php` and run with
+the suite.
+
 ### Useful commands
 
 ```sh
