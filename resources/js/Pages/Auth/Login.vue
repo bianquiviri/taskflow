@@ -1,6 +1,10 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import Button from '../../Components/Button.vue';
+import FormInput from '../../Components/FormInput.vue';
 import AuthLayout from '../../Layouts/AuthLayout.vue';
+import AuthStatusMessage from './AuthStatusMessage.vue';
+import PasswordField from './PasswordField.vue';
 
 defineProps({
     status: { type: String, default: null },
@@ -21,102 +25,77 @@ function submit() {
   <Head title="Sign in" />
 
   <AuthLayout>
-    <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+    <h1 class="text-2xl font-bold tracking-tight text-content">
       Welcome back
     </h1>
-    <p class="mt-2 text-sm text-gray-600 dark:text-gray-300">
+    <p class="mt-2 text-sm text-content-muted">
       Sign in to continue to your projects.
     </p>
 
-    <div
-      v-if="status"
-      class="mt-6 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-      role="status"
-    >
-      {{ status }}
-    </div>
+    <AuthStatusMessage
+      class="mt-6"
+      :status="status"
+    />
 
     <form
-      class="mt-8 space-y-5"
+      class="mt-6 space-y-4"
       @submit.prevent="submit"
     >
-      <div>
-        <label
-          for="email"
-          class="block text-sm font-medium text-gray-700 dark:text-gray-200"
-        >Email</label>
-        <input
-          id="email"
-          v-model="form.email"
-          name="email"
-          type="email"
-          autocomplete="email"
-          autofocus
-          required
-          class="mt-2 block w-full rounded-lg border-gray-300 px-3 py-2.5 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-        >
-        <p
-          v-if="form.errors.email"
-          class="mt-1.5 text-sm text-rose-600 dark:text-rose-400"
-        >
-          {{ form.errors.email }}
-        </p>
-      </div>
-
-      <div>
-        <div class="flex items-center justify-between gap-4">
-          <label
-            for="password"
-            class="block text-sm font-medium text-gray-700 dark:text-gray-200"
-          >Password</label>
-          <Link
-            href="/forgot-password"
-            class="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
-          >
-            Forgot password?
-          </Link>
-        </div>
-        <input
-          id="password"
-          v-model="form.password"
-          name="password"
-          type="password"
-          autocomplete="current-password"
-          required
-          class="mt-2 block w-full rounded-lg border-gray-300 px-3 py-2.5 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-        >
-        <p
-          v-if="form.errors.password"
-          class="mt-1.5 text-sm text-rose-600 dark:text-rose-400"
-        >
-          {{ form.errors.password }}
-        </p>
-      </div>
-
-      <label class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-        <input
-          v-model="form.remember"
-          name="remember"
-          type="checkbox"
-          class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950"
-        >
-        Remember me
-      </label>
-
-      <button
-        type="submit"
+      <FormInput
+        v-model="form.email"
+        name="email"
+        type="email"
+        label="Email"
+        autocomplete="email"
+        autofocus
+        required
+        :error="form.errors.email"
         :disabled="form.processing"
-        class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+      />
+
+      <PasswordField
+        v-model="form.password"
+        name="password"
+        label="Password"
+        autocomplete="current-password"
+        :error="form.errors.password"
+        :disabled="form.processing"
+      />
+
+      <div class="flex items-center justify-between gap-4">
+        <label class="flex items-center gap-2 text-sm text-content-muted">
+          <input
+            v-model="form.remember"
+            name="remember"
+            type="checkbox"
+            :disabled="form.processing"
+            class="size-4 rounded border-line-strong text-brand-600 focus:ring-focus"
+          >
+          Remember me
+        </label>
+
+        <Link
+          href="/forgot-password"
+          class="text-sm font-medium text-brand-text hover:underline"
+        >
+          Forgot password?
+        </Link>
+      </div>
+
+      <Button
+        type="submit"
+        class="mt-2 w-full"
+        :loading="form.processing"
       >
-        {{ form.processing ? 'Signing in…' : 'Sign in' }}
-      </button>
+        Sign in
+      </Button>
     </form>
 
-    <p class="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
+    <p class="mt-6 text-center text-sm text-content-muted">
       New to TaskFlow?
       <Link
         href="/register"
-        class="font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+        class="font-semibold text-brand-text hover:underline"
       >
         Create an account
       </Link>

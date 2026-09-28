@@ -1,6 +1,9 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import Button from '../../Components/Button.vue';
+import FormInput from '../../Components/FormInput.vue';
 import AuthLayout from '../../Layouts/AuthLayout.vue';
+import AuthStatusMessage from './AuthStatusMessage.vue';
 
 defineProps({
     status: { type: String, default: null },
@@ -19,61 +22,47 @@ function submit() {
   <Head title="Forgot password" />
 
   <AuthLayout>
-    <h1 class="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+    <h1 class="text-2xl font-bold tracking-tight text-content">
       Reset your password
     </h1>
-    <p class="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
+    <p class="mt-2 text-sm leading-6 text-content-muted">
       Enter your email address and we’ll send you a secure reset link.
     </p>
 
-    <div
-      v-if="status"
-      class="mt-6 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
-      role="status"
-    >
-      {{ status }}
-    </div>
+    <AuthStatusMessage
+      class="mt-6"
+      :status="status"
+    />
 
     <form
-      class="mt-8 space-y-5"
+      class="mt-6 space-y-4"
       @submit.prevent="submit"
     >
-      <div>
-        <label
-          for="email"
-          class="block text-sm font-medium text-gray-700 dark:text-gray-200"
-        >Email</label>
-        <input
-          id="email"
-          v-model="form.email"
-          name="email"
-          type="email"
-          autocomplete="email"
-          autofocus
-          required
-          class="mt-2 block w-full rounded-lg border-gray-300 px-3 py-2.5 text-gray-900 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-        >
-        <p
-          v-if="form.errors.email"
-          class="mt-1.5 text-sm text-rose-600 dark:text-rose-400"
-        >
-          {{ form.errors.email }}
-        </p>
-      </div>
-
-      <button
-        type="submit"
+      <FormInput
+        v-model="form.email"
+        name="email"
+        type="email"
+        label="Email address"
+        autocomplete="email"
+        autofocus
+        required
+        :error="form.errors.email"
         :disabled="form.processing"
-        class="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+      />
+
+      <Button
+        type="submit"
+        class="w-full"
+        :loading="form.processing"
       >
-        {{ form.processing ? 'Sending link…' : 'Email password reset link' }}
-      </button>
+        Email password reset link
+      </Button>
     </form>
 
-    <p class="mt-6 text-center text-sm text-gray-600 dark:text-gray-300">
+    <p class="mt-6 text-center text-sm text-content-muted">
       <Link
         href="/login"
-        class="font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+        class="font-semibold text-brand-text hover:underline"
       >
         Return to sign in
       </Link>
