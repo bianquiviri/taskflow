@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\MyTaskController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TeamController;
@@ -24,6 +25,7 @@ Route::middleware('auth')->group(function (): void {
     Route::patch('/projects/{project}/archive', [ProjectController::class, 'archive'])->name('projects.archive');
     Route::get('/projects/{project}/tasks', [TaskController::class, 'index'])->name('projects.tasks.index');
     Route::post('/projects/{project}/tasks', [TaskController::class, 'store'])->name('projects.tasks.store');
+    Route::get('/tasks/mine', [MyTaskController::class, 'index'])->name('tasks.mine.index');
     Route::get('/tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
     Route::patch('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
     Route::patch('/tasks/{task}/assign', [TaskController::class, 'assign'])->name('tasks.assign');
