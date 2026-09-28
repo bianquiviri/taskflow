@@ -186,3 +186,18 @@ it('still shares the global auth context next to the page permissions', function
             ->where('auth.user.id', $owner->id),
         );
 });
+
+it('sends the board the status columns with the moves the domain allows', function () {
+    $owner = User::factory()->create();
+    $project = Project::factory()->for($owner, 'owner')->create();
+
+    $this->actingAs($owner)
+        ->get(route('projects.show', $project))
+        ->assertInertia(fn ($page) => $page->where('statuses', [
+            ['value' => 'todo', 'label' => 'To Do', 'allows' => ['todo', 'in_progress', 'cancelled']],
+            ['value' => 'in_progress', 'label' => 'In Progress', 'allows' => ['todo', 'in_progress', 'in_review', 'cancelled']],
+            ['value' => 'in_review', 'label' => 'In Review', 'allows' => ['in_progress', 'in_review', 'done', 'cancelled']],
+            ['value' => 'done', 'label' => 'Done', 'allows' => ['in_progress', 'done']],
+            ['value' => 'cancelled', 'label' => 'Cancelled', 'allows' => ['todo', 'cancelled']],
+        ]));
+});

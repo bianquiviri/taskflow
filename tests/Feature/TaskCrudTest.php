@@ -176,7 +176,7 @@ it('rejects incomplete duplicated or cross-project task orders', function () {
         ->and($task->refresh()->position)->toBe(0);
 });
 
-it('sends the priorities and the abilities of a task to its page', function () {
+it('sends the priorities, the status columns and the abilities of a task to its page', function () {
     $owner = User::factory()->create();
     $member = User::factory()->create();
     $project = Project::factory()->for($owner, 'owner')->create();
@@ -195,6 +195,13 @@ it('sends the priorities and the abilities of a task to its page', function () {
                 ['value' => 'medium', 'label' => 'Medium'],
                 ['value' => 'high', 'label' => 'High'],
                 ['value' => 'urgent', 'label' => 'Urgent'],
+            ])
+            ->where('statuses', [
+                ['value' => 'todo', 'label' => 'To Do', 'allows' => ['todo', 'in_progress', 'cancelled']],
+                ['value' => 'in_progress', 'label' => 'In Progress', 'allows' => ['todo', 'in_progress', 'in_review', 'cancelled']],
+                ['value' => 'in_review', 'label' => 'In Review', 'allows' => ['in_progress', 'in_review', 'done', 'cancelled']],
+                ['value' => 'done', 'label' => 'Done', 'allows' => ['in_progress', 'done']],
+                ['value' => 'cancelled', 'label' => 'Cancelled', 'allows' => ['todo', 'cancelled']],
             ])
             ->where('permissions', ['tasks.update', 'tasks.changeStatus']),
         );

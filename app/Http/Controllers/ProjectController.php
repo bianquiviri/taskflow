@@ -14,6 +14,7 @@ use App\Models\Project;
 use App\Services\ActivityLogService;
 use App\Services\ProjectOverviewService;
 use App\Services\TaskQueryService;
+use App\Support\TaskStatuses;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,6 +29,7 @@ class ProjectController extends Controller
         private readonly ActivityLogService $activityLog,
         private readonly ProjectOverviewService $overview,
         private readonly TaskQueryService $taskQuery,
+        private readonly TaskStatuses $taskStatuses,
     ) {
     }
 
@@ -64,6 +66,7 @@ class ProjectController extends Controller
             'tasks' => $tasks,
             'filters' => $filters,
             'filterOptions' => $this->taskQuery->filterOptions($project),
+            'statuses' => $this->taskStatuses->columns(),
             'members' => $this->overview->people($project),
             'progress' => $this->overview->progress($project),
             'permissions' => $this->overview->permissions($project, $request->user(), $tasks->items()),

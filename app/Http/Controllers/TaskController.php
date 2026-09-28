@@ -18,6 +18,7 @@ use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
 use App\Services\TaskQueryService;
+use App\Support\TaskStatuses;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -32,6 +33,7 @@ class TaskController extends Controller
         private readonly AssignTaskAction $assignTask,
         private readonly ChangeTaskStatusAction $changeTaskStatus,
         private readonly TaskQueryService $taskQuery,
+        private readonly TaskStatuses $taskStatuses,
     ) {
     }
 
@@ -57,6 +59,7 @@ class TaskController extends Controller
             'task' => $task->load(['project', 'assignee']),
             'comments' => $task->comments()->with('user:id,name')->get(),
             'priorities' => $this->taskQuery->filterOptions()['priorities'],
+            'statuses' => $this->taskStatuses->columns(),
             'permissions' => array_keys(array_filter([
                 'tasks.update' => Gate::allows('update', $task),
                 'tasks.changeStatus' => Gate::allows('changeStatus', $task),
