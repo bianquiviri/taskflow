@@ -8,8 +8,13 @@ defineProps({
 </script>
 
 <template>
-  <div class="flex min-h-dvh items-center justify-center bg-sunken px-4 py-10 sm:px-6 lg:bg-canvas">
-    <main class="w-full max-w-md">
+  <div class="relative flex min-h-dvh items-center justify-center bg-sunken px-4 py-10 sm:px-6 lg:bg-canvas">
+    <div
+      aria-hidden="true"
+      class="pointer-events-none absolute inset-x-0 top-0 h-72 bg-gradient-to-b from-brand-soft to-transparent"
+    />
+
+    <main class="relative w-full max-w-md">
       <Link
         href="/"
         class="mx-auto flex w-fit items-center gap-3 text-content"
