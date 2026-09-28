@@ -12,11 +12,12 @@ use App\Enums\TaskStatus;
 use App\Http\Requests\AssignTaskRequest;
 use App\Http\Requests\ChangeTaskStatusRequest;
 use App\Http\Requests\StoreTaskRequest;
-use App\Http\Requests\TaskIndexRequest;
+use App\Http\Requests\TaskFilterRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\TaskQueryService;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -28,36 +29,21 @@ class TaskController extends Controller
         private readonly UpdateTaskAction $updateTask,
         private readonly AssignTaskAction $assignTask,
         private readonly ChangeTaskStatusAction $changeTaskStatus,
+        private readonly TaskQueryService $taskQuery,
     ) {
     }
 
-    public function index(TaskIndexRequest $request, Project $project): Response
+    public function index(TaskFilterRequest $request, Project $project): Response
     {
         $this->authorize('viewAny', [Task::class, $project]);
 
-        $filters = $request->validated();
-        $tasks = Task::query()->forProject($project)->with('assignee');
-
-        if (($filters['assignee_id'] ?? null) !== null) {
-            $tasks->assignedTo($filters['assignee_id']);
-        }
-
-        if (($filters['status'] ?? null) !== null) {
-            $tasks->withStatus($filters['status']);
-        }
-
-        if (($filters['priority'] ?? null) !== null) {
-            $tasks->withPriority($filters['priority']);
-        }
-
-        if (array_key_exists('due_from', $filters) || array_key_exists('due_to', $filters)) {
-            $tasks->dueBetween($filters['due_from'] ?? null, $filters['due_to'] ?? null);
-        }
+        $filters = $request->filters();
 
         return Inertia::render('Tasks/Index', [
             'project' => $project,
-            'tasks' => $tasks->orderBy('position')->orderBy('id')->get(),
+            'tasks' => $this->taskQuery->forProject($project, $filters),
             'filters' => $filters,
+            'filterOptions' => $this->taskQuery->filterOptions($project),
         ]);
     }
 

@@ -65,8 +65,8 @@ it('lists only tasks matching all filters in position order', function () {
             fn ($page) => $page
             ->component('Tasks/Index')
             ->where('project.id', $project->id)
-            ->where('tasks.0.id', $matching->id)
-            ->has('tasks', 1),
+            ->where('tasks.data.0.id', $matching->id)
+            ->has('tasks.data', 1),
         );
 });
 

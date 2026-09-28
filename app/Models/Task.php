@@ -76,6 +76,16 @@ class Task extends Model
         return $query->where('priority', $priority instanceof TaskPriority ? $priority->value : $priority);
     }
 
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        $needle = '%'.trim($term).'%';
+
+        return $query->where(function (Builder $query) use ($needle): Builder {
+            return $query->where('title', 'like', $needle)
+                ->orWhere('description', 'like', $needle);
+        });
+    }
+
     public function scopeDueBetween(
         Builder $query,
         DateTimeInterface|string|null $from = null,
