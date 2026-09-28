@@ -2,9 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\ActivityLog;
-use App\Models\Task;
-
 arch('all enums are native PHP enums')
     ->expect('App\Enums')
     ->toBeEnums();
