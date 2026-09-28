@@ -30,6 +30,87 @@ truth for the project's evolution.
 
 ---
 
+## 2026-09-28 — Parallel rounds 6-7 + parallel testing (#30/#20/#9/#14/#26)
+
+**Context:** Two more agent rounds and a scaffolder round landed on `develop`
+(PRs #63–#68). Every merged feature now carries personality: team management,
+an optimistic task board, profile settings, and file attachments.
+
+**Changes:**
+
+- **#30 — Team settings page** (`feature/30-team-settings`, merged via agent's
+  own PR #63; scrapped duplicate #64): `Pages/Teams/Settings.vue` (members with
+  inline role select, invitations with resend/cancel, status badges),
+  `ChangeTeamMemberRoleAction` (audits `team.member_role_changed`) +
+  `PATCH /teams/{team}/members/{membership}`, `ResendInvitationAction` (token
+  rotation, keeps one-pending-per-address) + `POST …/resend` (audits
+  `team.invitation_resent`), `TeamPolicy` additive (`updateMemberRole`,
+  `resendInvitation`; owner seat unreachable from policy AND request),
+  `TeamRedirector` (referer exact-match, no open redirect),
+  `GET /teams/{team}/settings`, per-row `can*` flags server-side.
+  **Lesson:** instruct agents again that a PR may already exist for their
+  branch before creating one (the agent opened #63, scaffolder's #64 was a
+  duplicate).
+- **#20 — Project/task pages with optimistic UI** (`feature/20-project-pages`,
+  PR #65): `ProjectOverviewService` (progress, people, per-task can flags),
+  task board (columns per `TaskStatus`, one `view=board|list` param, both share
+  `TaskQueryService` filters + paginator), native HTML5 drag&drop with select
+  fallback, optimistic status changes via Inertia `optimistic` callback,
+  `TaskFormModal` create/edit, `TaskStatuses` sharing `{value,label,allows}`
+  from `TaskStatus::canTransitionTo` (done can reopen). 56 Vitest · 29 Pest.
+- **#26 — Parallel testing + architecture tests** (`feature/26-parallel-testing`,
+  PR #66, scaffolder): `make test` → `--ci --no-coverage --parallel` (Pest 4
+  native, 12 processes; full suite 266 tests in ~4 s, was ~60 s serial);
+  `tests/Architecture/ArchitectureTest.php` — 6 layering rules (enums native,
+  strict types, Actions/Services/Models out of HTTP layer, Observers/Policies
+  never touch controllers); README documents `--filter` for changed files.
+  CI backend keeps serial + `--coverage --min=80` (clover aggregation with
+  parallel would complicate the Codacy upload).
+- **#9 — User profile and account settings** (`feature/9-profile-settings`,
+  PR #67): `Pages/Profile/{Edit,Password}.vue`, avatar on a private local disk
+  served via `GET /profile/avatar` (no GD resize: extension absent — validate
+  mime/size), email change = Laravel re-verification pattern (applied
+  immediately, `email_verified_at` nulled, queued `VerifyEmail`; routes in an
+  `auth.unverified` group so a mistyped address stays correctable),
+  `persistTheme()` shared by `ThemeToggle` + profile `ThemeChoice`,
+  `UpdateUserProfile/PasswordAction`, avatar added to shared `auth.user`
+  (additive in `AuthContext`). 27 Pest · 37 Vitest. Migrations coordinated
+  between the parallel agents (`2026_09_28_0000xx` prefix split).
+- **#14 — File attachments on tasks** (`feature/14-task-attachments`, PR #68):
+  `TaskFile` + private `attachments` disk (`serve => false`, never symlinked),
+  `StoreTaskFileRequest` with content-based mime allow-list + 5MB cap,
+  `AttachmentRules` single source of truth, `Store/DeleteTaskFileAction`,
+  `TaskFilePolicy` (members view/download/create; uploader or owner/admin
+  delete; `scopeBindings` → cross-task file 404), streamed downloads that never
+  leak storage paths, `TaskAttachmentList/Form` in `Tasks/Show.vue`. 2 Pest
+  files · 29 Vitest.
+
+**Verification (develop `ad1e764`):** CI green on every PR — Pint, PHPStan
+(level 5), Pest (295 · 1695 assertions), Vitest+ESLint (41 files · 319, 95%
+stmt), Playwright; local suites green with `--order-by=random` and parallel.
+
+**Decisions:**
+
+- Two agent rounds per session is the sustainable throughput (3 aborted
+  earlier); rounds are now domain pairing: teams+pages, then profile+
+  attachments. Each round: seed fetch → 2 agents → PRs in parallel → single CI
+  watch → squash in series (routes/web.php conflicts resolved with one-line
+  use-join commits when they occur).
+- Role/status UI derives options from enums (single source of truth) instead
+  of bespoke frontend lists; policy answers per-row `can*` flags so pages hold
+  no authorization rules (consistent with #28).
+- Optimistic updates rely on Inertia's own `optimistic` callback (baseline
+  restored on refusal) rather than a hand-rolled rollback.
+
+**Status (end of session):** `develop` `ad1e764` — #30/#20/#26/#9/#14 in (this
+session: #13/#15/#8/#18/#28/#31/#5/#3/#4/#30/#20/#26/#9/#14, #10 closed).
+CI gates: Pint, PHPStan (level 5), Pest (≥80%, parallel local), Vitest+ESLint,
+Playwright. `main` still v0.2.0 — the next release carries all of these. Next:
+#29 auth pages UI, #19 dashboard KPIs, #2 production Dockerfile, #25 release
+v1.0.0 QA.
+
+---
+
 ## 2026-09-26 — Parallel rounds 3-4: comments, audit trail, invitations, dark mode
 
 **Context:** Two more parallel rounds were integrated into `develop` (PRs
