@@ -18,6 +18,10 @@ vi.mock('@inertiajs/vue3', () => ({
         props: ['title'],
         template: '<div />',
     },
+    Link: {
+        props: ['href'],
+        template: '<a :href="href"><slot /></a>',
+    },
     useForm: (initial) => {
         Object.assign(formState, initial);
         return formState;
@@ -79,6 +83,12 @@ describe('Teams/Show.vue', () => {
         expect(wrapper.text()).toContain('ada@example.com');
         expect(wrapper.text()).toContain('Grace Hopper');
         expect(wrapper.text()).toContain('Admin');
+    });
+
+    it('links to the team settings page', () => {
+        const wrapper = mountPage();
+
+        expect(wrapper.get('[data-test="team-settings-link"]').attributes('href')).toBe('/teams/7/settings');
     });
 
     it('lists the pending invitations with their expiry', () => {
