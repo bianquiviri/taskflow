@@ -49,6 +49,28 @@ return [
             'report' => false,
         ],
 
+        /*
+        |--------------------------------------------------------------------------
+        | Task Attachment Disk
+        |--------------------------------------------------------------------------
+        |
+        | Attachments are private: they live outside of the publicly served
+        | storage, on a disk that is never registered as a serving route, so a
+        | stored file is only reachable through the authorised download
+        | endpoint of the task it belongs to. Its name is generated on upload
+        | and never leaves the server.
+        |
+        */
+
+        'attachments' => [
+            'driver' => 'local',
+            'root' => storage_path('app/attachments'),
+            'visibility' => 'private',
+            'serve' => false,
+            'throw' => true,
+            'report' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

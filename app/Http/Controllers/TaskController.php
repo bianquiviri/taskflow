@@ -17,6 +17,7 @@ use App\Http\Requests\UpdateTaskRequest;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
+use App\Services\TaskAttachmentService;
 use App\Services\TaskQueryService;
 use App\Support\TaskStatuses;
 use Illuminate\Http\RedirectResponse;
@@ -34,6 +35,7 @@ class TaskController extends Controller
         private readonly ChangeTaskStatusAction $changeTaskStatus,
         private readonly TaskQueryService $taskQuery,
         private readonly TaskStatuses $taskStatuses,
+        private readonly TaskAttachmentService $attachments,
     ) {
     }
 
@@ -51,13 +53,15 @@ class TaskController extends Controller
         ]);
     }
 
-    public function show(Task $task): Response
+    public function show(Request $request, Task $task): Response
     {
         $this->authorize('view', $task);
 
         return Inertia::render('Tasks/Show', [
             'task' => $task->load(['project', 'assignee']),
             'comments' => $task->comments()->with('user:id,name')->get(),
+            'attachments' => $this->attachments->forTask($task, $request->user()),
+            'attachmentRules' => $this->attachments->formOptions(),
             'priorities' => $this->taskQuery->filterOptions()['priorities'],
             'statuses' => $this->taskStatuses->columns(),
             'permissions' => array_keys(array_filter([
