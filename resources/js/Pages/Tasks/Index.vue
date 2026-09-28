@@ -1,10 +1,13 @@
 <script setup>
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
+import TaskFilterForm from '../../Components/TaskFilterForm.vue';
+import TaskList from '../../Components/TaskList.vue';
 
 defineProps({
-  project: { type: Object, required: true },
-  tasks: { type: Array, required: true },
-  filters: { type: Object, required: true },
+    project: { type: Object, required: true },
+    tasks: { type: Object, required: true },
+    filters: { type: Object, required: true },
+    filterOptions: { type: Object, required: true },
 });
 </script>
 
@@ -12,30 +15,29 @@ defineProps({
   <Head :title="`${project.name} tasks`" />
 
   <div class="mx-auto w-full max-w-4xl px-6 py-10">
-    <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-      {{ project.name }} Tasks
-    </h1>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h1 class="text-3xl font-bold tracking-tight text-content">
+        {{ project.name }} Tasks
+      </h1>
 
-    <p
-      v-if="tasks.length === 0"
-      class="mt-6 text-gray-600 dark:text-gray-300"
-    >
-      No tasks match these filters.
-    </p>
-
-    <ul class="mt-6 space-y-4">
-      <li
-        v-for="task in tasks"
-        :key="task.id"
-        class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+      <Link
+        href="/tasks/mine"
+        class="text-sm font-medium text-brand-text hover:underline"
       >
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">
-          {{ task.title }}
-        </h2>
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-          {{ task.status }} · {{ task.priority }}
-        </p>
-      </li>
-    </ul>
+        My tasks
+      </Link>
+    </div>
+
+    <div class="mt-6">
+      <TaskFilterForm
+        :url="`/projects/${project.id}/tasks`"
+        :filters="filters"
+        :statuses="filterOptions.statuses"
+        :priorities="filterOptions.priorities"
+        :assignees="filterOptions.assignees"
+      />
+    </div>
+
+    <TaskList :tasks="tasks" />
   </div>
 </template>
