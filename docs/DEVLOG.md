@@ -102,6 +102,46 @@ with `--order-by=random` stability checks on #15.
 and settings, then #14/#15-adjacent domain work, #20 pages, #26 parallel
 testing, close/review #10 (ProjectMember largely covered by #11).
 
+**Follow-up (round 5 + scaffolder, same session; PRs #57–#61):**
+
+- **#28 — Shared auth props** (`feature/28-shared-auth-props`, PR #57):
+  `App\Support\AuthContext` (memoized per user) shares `auth.user`
+  (id/name/email) + `auth.team` (earliest membership) + a `can` allow-list
+  resolved via `Gate::forUser`; guests get zero queries. `useCan` composable
+  (list/map/ref) + AppLayout team nav gated on `teams.view`. 12 Pest · 14
+  Vitest.
+- **#31 — Task filtering/search/pagination** (`feature/31-task-filters`,
+  PR #58): `TaskQuery` (chainable, immutable) + `TaskQueryService`
+  (forProject/forAssignee, 15/page, `withQueryString` → shareable URLs),
+  filters status/priority/assignee/due/search (+combos, 51 Pest),
+  `TaskFilterRequest` replacing `TaskIndexRequest`, `MyTaskController`
+  `GET /tasks/mine` (before `{task}` binding), `TaskFilterForm`/`TaskList`/
+  `TaskPagination` + `Pages/Tasks/{Mine,Index}.vue`. Note: board prop shape
+  changed to paginator (`tasks.data.*`).
+- **#5 — README** (PR #59): CI/release/license badges, feature overview.
+- **#3 — PHPStan tooling** (PR #60): dev deps larastan ^3.12 + ide-helper
+  ^3.7, `phpstan.neon` level 5 + baseline (59 findings), new `phpstan` CI job
+  (5th check).
+- **#4 — Coverage gate** (PR #61): backend job now runs
+  `--coverage --min=80 --coverage-clover` (CI fails below 80%; clover.xml
+  finally feeds the existing Codacy upload). Local `make test` stays
+  `--no-coverage`.
+- **#10 — closed** as covered by #11 (ProjectMember/ProjectRole/ProjectPolicy
+  + matrices in ProjectAuthorizationTest/TaskPolicyTest/CommentPolicyTest; #28
+  derives frontend permissions from policies). The "invite via MemberService"
+  AC never existed as a service — project membership is created with the
+  project; member invitations to existing projects would be a new issue.
+- **Seed flow now:** `cp -c` seed → agents (zero composer/npm installs) →
+  PRs in parallel → single CI watch → squash in series; conflicts so far only
+  in `routes/web.php` and the workflow file, both resolved with one-commit
+  joins.
+
+**Status (end of session):** `develop` `699a04a` — #13/#15/#8/#18/#28/#31/
+#5/#3/#4 in, #10 closed; CI gates: Pint, PHPStan (level 5+baseline), Pest
+(≥80% coverage), Vitest+ESLint, Playwright. `main` still v0.2.0; next release
+will carry this batch. Next: #9 profile/settings, #14 attachments, #20 pages,
+#29 auth pages UI, #30 team settings page, #26 parallel testing.
+
 ---
 
 ## 2026-09-25 — Release v0.1.0 + parallel agents (#11/#16/#27)
