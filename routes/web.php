@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\MyTaskController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TeamController;
@@ -45,4 +46,16 @@ Route::middleware('auth')->group(function (): void {
         Route::patch('/teams/{team}/members/{membership}', [TeamMemberController::class, 'update'])->name('teams.members.update');
         Route::delete('/teams/{team}/members/{membership}', [TeamMemberController::class, 'destroy'])->name('teams.members.destroy');
     });
+});
+
+// The profile stays reachable while the address is unverified, so a mistyped
+// email can still be corrected before the account is used again.
+Route::middleware('auth.unverified')->group(function (): void {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/profile/avatar', [ProfileController::class, 'avatar'])->name('profile.avatar');
+    Route::post('/profile/avatar', [ProfileController::class, 'storeAvatar'])->name('profile.avatar.store');
+    Route::delete('/profile/avatar', [ProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
+    Route::get('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
 });
