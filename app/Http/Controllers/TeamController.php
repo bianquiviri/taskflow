@@ -52,4 +52,46 @@ class TeamController extends Controller
             'canManageMembers' => $request->user()->can('manageMembers', $team),
         ]);
     }
+
+    public function settings(Request $request, Team $team): Response
+    {
+        $this->authorize('view', $team);
+
+        return Inertia::render('Teams/Settings', [
+            'team' => [
+                'id' => $team->getKey(),
+                'name' => $team->name,
+                'slug' => $team->slug,
+            ],
+            'members' => $team->memberships()
+                ->with('user:id,name,email')
+                ->orderBy('id')
+                ->get()
+                ->map(fn (TeamMember $membership): array => [
+                    'id' => $membership->getKey(),
+                    'name' => $membership->user->name,
+                    'email' => $membership->user->email,
+                    'role' => $membership->role->value,
+                    'canBeRemoved' => $request->user()->can('removeMember', [$team, $membership]),
+                    'canBeReassigned' => $request->user()->can('updateMemberRole', [$team, $membership]),
+                ])
+                ->all(),
+            'invitations' => $team->invitations()
+                ->orderBy('id')
+                ->get()
+                ->map(fn (TeamInvitation $invitation): array => [
+                    'id' => $invitation->getKey(),
+                    'email' => $invitation->email,
+                    'role' => $invitation->role->value,
+                    'status' => $invitation->status(),
+                    'expiresAt' => $invitation->expires_at->toIso8601String(),
+                    'canBeResent' => $request->user()->can('resendInvitation', [$team, $invitation]),
+                    'canBeCancelled' => $request->user()->can('manageMembers', $team),
+                ])
+                ->all(),
+            'roles' => TeamRole::options(),
+            'assignableRoles' => TeamRole::invitable(),
+            'canManageMembers' => $request->user()->can('manageMembers', $team),
+        ]);
+    }
 }

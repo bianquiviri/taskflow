@@ -36,10 +36,13 @@ Route::middleware('auth')->group(function (): void {
     Route::post('/team-invitations/{token}', [TeamInvitationAcceptController::class, 'store'])->name('team-invitations.accept.store');
 
     Route::get('/teams/{team}', [TeamController::class, 'show'])->name('teams.show');
+    Route::get('/teams/{team}/settings', [TeamController::class, 'settings'])->name('teams.settings');
 
     Route::scopeBindings()->group(function (): void {
         Route::post('/teams/{team}/invitations', [TeamInvitationController::class, 'store'])->name('teams.invitations.store');
+        Route::post('/teams/{team}/invitations/{invitation}/resend', [TeamInvitationController::class, 'resend'])->name('teams.invitations.resend');
         Route::delete('/teams/{team}/invitations/{invitation}', [TeamInvitationController::class, 'destroy'])->name('teams.invitations.destroy');
+        Route::patch('/teams/{team}/members/{membership}', [TeamMemberController::class, 'update'])->name('teams.members.update');
         Route::delete('/teams/{team}/members/{membership}', [TeamMemberController::class, 'destroy'])->name('teams.members.destroy');
     });
 });

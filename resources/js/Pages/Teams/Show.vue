@@ -1,5 +1,5 @@
 <script setup>
-import { Head, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import Avatar from '../../Components/Avatar.vue';
 import Badge from '../../Components/Badge.vue';
 import Button from '../../Components/Button.vue';
@@ -47,9 +47,18 @@ function removeMember(member) {
   <Head :title="team.name" />
 
   <div class="mx-auto w-full max-w-4xl px-6 py-10">
-    <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-      {{ team.name }}
-    </h1>
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+        {{ team.name }}
+      </h1>
+      <Link
+        data-test="team-settings-link"
+        :href="`/teams/${team.id}/settings`"
+        class="text-sm font-medium text-brand-text hover:underline"
+      >
+        Team settings
+      </Link>
+    </div>
 
     <section
       v-if="canManageMembers"

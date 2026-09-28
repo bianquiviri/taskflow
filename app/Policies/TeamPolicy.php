@@ -6,6 +6,7 @@ namespace App\Policies;
 
 use App\Enums\TeamRole;
 use App\Models\Team;
+use App\Models\TeamInvitation;
 use App\Models\TeamMember;
 use App\Models\User;
 use Illuminate\Auth\Access\HandlesAuthorization;
@@ -33,5 +34,15 @@ final class TeamPolicy
     {
         return $this->manageMembers($user, $team)
             && $membership->role !== TeamRole::Owner;
+    }
+
+    public function updateMemberRole(User $user, Team $team, TeamMember $membership): bool
+    {
+        return $this->removeMember($user, $team, $membership);
+    }
+
+    public function resendInvitation(User $user, Team $team, TeamInvitation $invitation): bool
+    {
+        return $this->manageMembers($user, $team) && $invitation->isPending();
     }
 }
