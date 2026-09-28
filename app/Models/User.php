@@ -70,6 +70,19 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * The membership that defines the current team: the first team the user
+     * joined, until a team switcher stores an explicit choice.
+     */
+    public function currentMembership(): ?TeamMember
+    {
+        return $this->memberships()
+            ->with('team')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->first();
+    }
+
+    /**
      * Teams this user belongs to (pivot carries the role).
      *
      * @return BelongsToMany<Team, $this>

@@ -5,9 +5,10 @@ import Avatar from '../Components/Avatar.vue';
 import FlashMessages from '../Components/FlashMessages.vue';
 import Icon from '../Components/Icon.vue';
 import ThemeToggle from '../Components/ThemeToggle.vue';
+import { useCan } from '../Composables/useCan';
 import { useTheme } from '../Composables/useTheme';
 
-defineProps({
+const props = defineProps({
     appName: { type: String, default: 'TaskFlow' },
     user: {
         type: Object,
@@ -29,6 +30,19 @@ const drawerOpen = ref(false);
 
 const flash = computed(() => page.props.flash ?? {});
 const { theme } = useTheme(() => page.props.theme);
+const { can } = useCan();
+
+const currentUser = computed(() => props.user ?? page.props.auth?.user ?? null);
+const team = computed(() => page.props.auth?.team ?? null);
+const navigation = computed(() => {
+    const current = team.value;
+
+    if (current === null || !can('teams.view')) {
+        return props.navItems;
+    }
+
+    return [...props.navItems, { label: current.name, href: `/teams/${current.id}`, icon: 'projects' }];
+});
 
 function isActive(href) {
     return page.url === href;
@@ -84,7 +98,7 @@ watch(
 
       <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         <Link
-          v-for="item in navItems"
+          v-for="item in navigation"
           :key="item.href"
           :href="item.href"
           class="flex items-center gap-3 rounded-control px-3 py-2 text-sm font-medium transition-colors"
@@ -104,23 +118,23 @@ watch(
 
       <div class="border-t border-line p-4">
         <div
-          v-if="user"
+          v-if="currentUser"
           class="flex items-center gap-3"
         >
           <Avatar
-            :name="user.name"
-            :src="user.avatar"
+            :name="currentUser.name"
+            :src="currentUser.avatar"
             size="sm"
           />
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-medium text-content">
-              {{ user.name }}
+              {{ currentUser.name }}
             </p>
             <p
-              v-if="user.email"
+              v-if="currentUser.email"
               class="truncate text-xs text-content-subtle"
             >
-              {{ user.email }}
+              {{ currentUser.email }}
             </p>
           </div>
         </div>
@@ -164,9 +178,9 @@ watch(
             />
           </button>
           <Avatar
-            v-if="user"
-            :name="user.name"
-            :src="user.avatar"
+            v-if="currentUser"
+            :name="currentUser.name"
+            :src="currentUser.avatar"
             size="sm"
           />
         </div>

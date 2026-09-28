@@ -181,6 +181,49 @@ describe('AppLayout.vue', () => {
         expect(wrapper.findAll('[data-test="avatar"]').length).toBe(2);
     });
 
+    it('falls back to the shared auth user when no user prop is given', () => {
+        pageState.props = {
+            flash: {},
+            can: [],
+            auth: { user: { id: 7, name: 'Grace Hopper', email: 'grace@example.com' } },
+        };
+
+        const wrapper = mount(AppLayout, { global });
+
+        expect(wrapper.text()).toContain('Grace Hopper');
+        expect(wrapper.text()).toContain('grace@example.com');
+    });
+
+    it('links the current team in the navigation only with the teams.view permission', () => {
+        pageState.props = {
+            flash: {},
+            can: [],
+            auth: { team: { id: 3, name: 'Analytical Engines', role: 'owner' } },
+        };
+
+        const denied = mount(AppLayout, { global });
+        expect(denied.text()).not.toContain('Analytical Engines');
+
+        holder.page.props = {
+            flash: {},
+            can: ['teams.view'],
+            auth: { team: { id: 3, name: 'Analytical Engines', role: 'member' } },
+        };
+
+        const granted = mount(AppLayout, { global });
+        const team = granted.findAll('nav a').find((anchor) => anchor.attributes('href') === '/teams/3');
+
+        expect(team.text()).toContain('Analytical Engines');
+    });
+
+    it('hides the team navigation link when there is no team', () => {
+        pageState.props = { flash: {}, can: ['teams.view'], auth: { team: null } };
+
+        const wrapper = mount(AppLayout, { global });
+
+        expect(wrapper.findAll('nav a').map((anchor) => anchor.attributes('href'))).not.toContain('/teams/undefined');
+    });
+
     it('renders the theme toggle in the header with the shared theme', () => {
         pageState.props = { flash: {}, theme: 'dark' };
 
