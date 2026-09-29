@@ -17,7 +17,7 @@ const props = defineProps({
     navItems: {
         type: Array,
         default: () => [
-            { label: 'Dashboard', href: '/', icon: 'home' },
+            { label: 'Dashboard', href: '/dashboard', icon: 'home' },
             { label: 'Projects', href: '/projects', icon: 'projects' },
             { label: 'Tasks', href: '/tasks', icon: 'tasks' },
             { label: 'Settings', href: '/settings', icon: 'settings' },

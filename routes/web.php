@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MyTaskController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
@@ -20,6 +21,7 @@ Route::get('/', WelcomeController::class)->name('home');
 
 Route::middleware('auth')->group(function (): void {
     Route::patch('/theme', [ThemeController::class, 'update'])->name('theme.update');
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/projects', [ProjectController::class, 'index'])->name('projects.index');
     Route::get('/projects/{project}', [ProjectController::class, 'show'])->name('projects.show');
     Route::post('/projects', [ProjectController::class, 'store'])->name('projects.store');

@@ -78,13 +78,21 @@ describe('AppLayout.vue', () => {
         }
     });
 
+    it('points the dashboard navigation item at the dashboard', () => {
+        const wrapper = mount(AppLayout, { global });
+
+        const dashboard = wrapper.findAll('nav a').find((anchor) => anchor.text() === 'Dashboard');
+
+        expect(dashboard.attributes('href')).toBe('/dashboard');
+    });
+
     it('marks the nav item matching the current url as active', () => {
         pageState.url = '/tasks';
         const wrapper = mount(AppLayout, { global });
 
         const anchors = wrapper.findAll('nav a');
         const tasks = anchors.find((anchor) => anchor.attributes('href') === '/tasks');
-        const dashboard = anchors.find((anchor) => anchor.attributes('href') === '/');
+        const dashboard = anchors.find((anchor) => anchor.attributes('href') === '/dashboard');
 
         expect(tasks.attributes('aria-current')).toBe('page');
         expect(dashboard.attributes('aria-current')).toBeUndefined();
