@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+
 arch('all enums are native PHP enums')
     ->expect('App\Enums')
     ->toBeEnums();
