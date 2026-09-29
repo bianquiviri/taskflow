@@ -39,6 +39,7 @@ vi.mock('@inertiajs/vue3', () => ({
 }));
 
 import Show from './Show.vue';
+import ActivityTimeline from '../../Components/Project/ActivityTimeline.vue';
 import TaskBoard from '../../Components/TaskBoard.vue';
 import TaskFormModal from '../../Components/TaskFormModal.vue';
 import TaskList from '../../Components/TaskList.vue';
@@ -83,6 +84,18 @@ const emptyFilters = {
     due_from: null,
     due_to: null,
 };
+
+const activityEntry = (overrides = {}) => ({
+    id: 12,
+    event: 'task.status_changed',
+    actor: { id: 3, name: 'Ada Lovelace' },
+    label: 'moved the task to In Progress',
+    target: { type: 'task', id: 7, title: 'Ship the release', url: '/tasks/7' },
+    icon: 'check',
+    at: '2026-03-12T10:15:00+00:00',
+    day: '2026-03-12',
+    ...overrides,
+});
 
 function mountPage(props = {}) {
     return mount(Show, {
@@ -272,20 +285,13 @@ describe('Projects/Show.vue', () => {
         expect(stopFinish).toHaveBeenCalled();
     });
 
-    it('renders the audit trail of the project', () => {
-        const wrapper = mountPage({
-            activity: paginator([
-                {
-                    id: 12,
-                    event: 'task.created',
-                    actor: { id: 3, name: 'Ada Lovelace' },
-                    created_at: '2026-03-12T10:15:00.000000Z',
-                },
-            ]),
-        });
+    it('hands the history of the project to the timeline', () => {
+        const activity = paginator([activityEntry()]);
+        const wrapper = mountPage({ activity });
 
+        expect(wrapper.getComponent(ActivityTimeline).props('activity')).toStrictEqual(activity);
         expect(wrapper.get('[data-test="activity-entry"]').text()).toContain('Ada Lovelace');
-        expect(wrapper.get('[data-test="activity-entry"]').text()).toContain('2026');
+        expect(wrapper.get('[data-test="activity-entry"]').text()).toContain('moved the task to In Progress');
     });
 
     it('falls back to a placeholder without activity or description', () => {
