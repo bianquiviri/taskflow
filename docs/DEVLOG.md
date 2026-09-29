@@ -30,6 +30,78 @@ truth for the project's evolution.
 
 ---
 
+## 2026-09-28 — Round 8: auth pages UI + KPI dashboard (+ Pint hotfix)
+
+**Context:** One more agent round landed on `develop` (PRs #70–#72). Auth flow
+got a real UI, the signed-in home became a metrics dashboard, and a pre-existing
+Pint failure was fixed so every subsequent PR's lint gate is green again.
+
+**Changes:**
+
+- **#29 — Auth pages UI** (`feature/29-auth-pages`, agent's PR #71): all five
+  `Pages/Auth/*` rebuilt on #18 tokens + #17 components (`FormInput`, `Button`,
+  `Icon`, `AuthLayout`); flows/routes untouched. New `AuthStatusMessage`
+  (maps the server flash *keys* — e.g. `password-reset-link-sent` — to copy;
+  previously the raw key was rendered to the visitor) + `PasswordField`
+  (show/hide toggle `aria-pressed` under the field to keep `FormInput`
+  untouched; reveal on confirm fields too; inputs disabled while processing).
+  `AuthLayout.spec.js` added; `AuthPages.spec.js` 6 → 20 tests (reactive mock
+  makes pending state testable). `tests/e2e/auth.spec.js`: 5 guest journeys
+  (render/validation/reveal — submits stay in Pest because CI e2e runs on an
+  unmigrated DB). 33 Vitest · 322 Pest. **Fix after CI:** `getByLabel` without
+  `{ exact: true }` matched both password fields (substring) → strict mode
+  violation; one-line exact-match fix.
+- **#19 — KPI dashboard** (`feature/19-dashboard`, PR #72): `DashboardMetricsService`
+  (5-query read model: active projects, per-status grouped counts, overdue,
+  recent 5 projects with `withCount`, 8 open tasks via joined raw rows to avoid
+  N+1) + invokable `DashboardController` (authorizes `viewAny`, renders
+  `Pages/Dashboard/Index.vue` with `kpis`/`statusBreakdown`/`recentProjects`/
+  `openTasks`) + `GET /dashboard` in the existing `auth` group. Components
+  `Dashboard/{KpiCards,StatusBreakdownChart,CompletionDonut,RecentProjects,
+  OpenTaskList,QuickActions}` — charts from props with NO charting library
+  (bar width vs busiest status, `stroke-dasharray` ring, both `aria-hidden`
+  — numbers carry meaning); empty states for new users; `Project::tasks()`
+  relation added (was missing); Dashboard link added to `AppLayout` nav.
+  `due today = on time` (tested). 9 Pest · 33 Vitest (dashboard components
+  100% stmt).
+- **#70 — Pint hotfix** (bugfix, merged first — `12cfbff`): `develop` WAS RED on
+  the `lint-php` job since #26 (`ad1e764`): unused imports `ActivityLog`,`Task`
+  + missing EOF newline in `tests/Architecture/ArchitectureTest.php`. Both
+  round-8 agents hit it; fixed via a dedicated branch so every PR's lint gate
+  (which lints the whole tree) is green again. Dashboard's own `style(tests)`
+  commit duplicated the fix → trivial merge conflict during series-squash,
+  resolved taking `develop`'s version.
+- **Integrations:** #71 then #72 squashed in series (after #71, #72 conflicted
+  only on the ArchitectureTest file); post-merge push runs the full CI on
+  `develop`.
+
+**Decisions:**
+
+- Dev workflow confirmed: every agent's PR lints the whole tree with Pint, so a
+  single style issue on `develop` blocks ALL PR lint gates → fix such issues on
+  `develop` immediately (dedicated bugfix PR) rather than letting agents carry
+  the fix and collide.
+- Dashboard quick actions navigate (`/projects`, `/tasks/mine`) instead of
+  POSTing — there is no standalone create route, and the issue forbade role
+  logic; a one-line change if dedicated create pages land later.
+- E2E convenience spec asserts only render/validation; persistence stays in
+  Pest (CI e2e web server uses unmigrated in-memory SQLite).
+
+**Verification:** `develop` `b18e165` — PRs #71/#72 5/5 green (Pint · PHPStan
+· Pest ≥80% · Vitest+ESLint · Playwright); post-merge develop run green.
+Local: Pest 331 · 1968 assertions (12 processes), Vitest 366 (50 files, 96.3%
+stmt, dashboard components + auth pages 100%), Pint 195 files PASS, PHPStan
+level 5 baseline untouched.
+
+**Status (end of session):** `develop` `b18e165` — the session shipped
+#11/#16/#27/#7/#12/#6/#17/#13/#15/#8/#18/#28/#31/#5/#3/#4/#30/#20/#26/#9/#14
+/#29/#19 (+ #10 closed); `main` still v0.2.0 — the next release carries all of
+it. Remaining backlog: #2 (prod Dockerfile, P0), #25 (release v1.0.0 QA, P3),
+#32/#33/#34 (P2s), #21/#22/#23/#24 (deploy, P2). Next session: #2 or deploy
+slice, then #32/#33/#34 polish pass before #25.
+
+---
+
 ## 2026-09-28 — Parallel rounds 6-7 + parallel testing (#30/#20/#9/#14/#26)
 
 **Context:** Two more agent rounds and a scaffolder round landed on `develop`
