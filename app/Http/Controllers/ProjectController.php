@@ -11,7 +11,7 @@ use App\Http\Requests\StoreProjectRequest;
 use App\Http\Requests\TaskFilterRequest;
 use App\Http\Requests\UpdateProjectRequest;
 use App\Models\Project;
-use App\Services\ActivityLogService;
+use App\Services\ActivityFeedService;
 use App\Services\ProjectOverviewService;
 use App\Services\TaskQueryService;
 use App\Support\TaskStatuses;
@@ -26,7 +26,7 @@ class ProjectController extends Controller
         private readonly CreateProjectAction $createProject,
         private readonly UpdateProjectAction $updateProject,
         private readonly ArchiveProjectAction $archiveProject,
-        private readonly ActivityLogService $activityLog,
+        private readonly ActivityFeedService $activityFeed,
         private readonly ProjectOverviewService $overview,
         private readonly TaskQueryService $taskQuery,
         private readonly TaskStatuses $taskStatuses,
@@ -70,7 +70,7 @@ class ProjectController extends Controller
             'members' => $this->overview->people($project),
             'progress' => $this->overview->progress($project),
             'permissions' => $this->overview->permissions($project, $request->user(), $tasks->items()),
-            'activity' => $this->activityLog->forSubject($project),
+            'activity' => $this->activityFeed->forProject($project),
         ]);
     }
 
