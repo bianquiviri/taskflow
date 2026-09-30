@@ -175,4 +175,5 @@ jobs:
           docker rm -f taskflow
 
       - name: Image size
-        run: docker image inspect taskflow:ci --format 'virtual size: {{.Size}} bytes'
+        run: |
+          docker image inspect taskflow:ci --format 'virtual size: {{.Size}} bytes'
