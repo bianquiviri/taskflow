@@ -142,6 +142,51 @@ User ──1:N── TeamMember ──N:1── Team
   subdomain; SSL managed by the platform.
 - This repo is developed **locally only** until the cloud integration phase.
 
+### Production image (Dockerfile.prod)
+
+`Dockerfile.prod` builds the deployable image. It is a **multi-stage** build
+so that nothing but nginx, php-fpm and the application ends up in it:
+
+| Stage           | Base                  | Produces                                       |
+| --------------- | --------------------- | ---------------------------------------------- |
+| `frontend`      | `node:22-alpine`      | `public/build` (Vite: hashed CSS + JS bundle)  |
+| `php-extensions`| `php:8.4-fpm-alpine`  | `pdo_mysql`, `intl`, `zip`, `bcmath`, `opcache`, `redis` (toolchain then dropped) |
+| `vendor`        | `php:8.4-fpm-alpine`  | `vendor/` via `composer install --no-dev`      |
+| `runtime`       | `php:8.4-fpm-alpine`  | the final image: nginx + php-fpm + the app      |
+
+```sh
+docker build -f Dockerfile.prod -t taskflow:latest .
+```
+
+- **Hermetic build**: it runs from a clean checkout — `vendor/` and
+  `node_modules/` are never needed on the host, everything is compiled from
+  the committed `composer.lock` / `package-lock.json`. `.dockerignore` keeps
+  secrets (`.env`, TLS keys), dev-only trees (`tests/`, `docs/`, tooling
+  configs) and host-built artefacts (`public/build/`, `bootstrap/cache/*.php`)
+  out of the context; the hashed assets are rebuilt in-image instead.
+- **Runtime**: nginx serves `public/` and talks to php-fpm over the unix
+  socket `/run/php-fpm.sock` (no port is exposed between the two); only
+  `index.php` is executable. Configuration lives in `docker/prod/`
+  (`nginx.conf`, `php-fpm.conf`, `php.ini`, `entrypoint.sh`) and deliberately
+  diverges from the dev stack: opcache no longer polls timestamps, `.env` never
+  exists in the image, and both services log to stdout/stderr.
+- **No secrets, no state**: all configuration is injected as environment
+  variables at start time. Because of that the entrypoint builds the framework
+  caches (config/routes/views) on every boot rather than at build time, then
+  supervises nginx + php-fpm itself — keeping a Python runtime for a process
+  supervisor out of the image. Either process exiting ends the container so the
+  platform restarts a clean pair; `SIGTERM` drains php-fpm gracefully.
+- **Operations**: `HEALTHCHECK` polls `/up` through nginx and php-fpm. Run
+  migrations as a one-off — `docker run --rm taskflow:latest php artisan
+  migrate --force` — and the queue worker as
+  `docker run --rm taskflow:latest php artisan queue:work --tries=3`.
+- **Port**: the container listens on plain HTTP `:80`; TLS is terminated by the
+  platform's edge proxy. Wiring Cloud Run's `PORT` (8080) is part of the cloud
+  integration phase, not of this image.
+
+CI builds the image on every push and pull request (`docker` job in
+`.github/workflows/ci.yml`).
+
 ## Parallel Development
 
 GitHub issues are grouped by milestone; agents work on disjoint domains:
