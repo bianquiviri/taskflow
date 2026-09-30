@@ -30,6 +30,97 @@ truth for the project's evolution.
 
 ---
 
+## 2026-09-28 — Round 9: activity feed timeline + production image (P0 #2)
+
+**Context:** The two P2/P0 leftovers that touch no shared frontend surface ran
+in parallel: #32 (activity feed on the project page — read-path only) and #2
+(production Dockerfile, P0, the last prerequisite for the cloud deploy slice
+#21–#23 and release QA #25). PRs #74 and #75.
+
+**Changes:**
+
+- **#32 — Activity feed timeline** (`feature/32-activity-feed`, PR #74):
+  `ActivityFeedService` composes the feed (project entries ∪ its tasks' entries
+  via SQL, eager `actor`/`subject`, newest-first, 10/page on its own
+  `activity_page` param so it paginates independently of the task board);
+  `through()` maps each `ActivityLog` to `{id, event, actor{id,name}, label,
+  target{type,id,title,url}, icon, at, day}` — the service owns all phrasing
+  (incl. the status-change destination from `meta.to`), so no event→copy map
+  lives in the frontend. `Components/Project/ActivityTimeline.vue` groups by a
+  **server-computed** `day` key (no browser-timezone drift, no "Today" bug when
+  a project is quiet), links the live target title, has its own pager and an
+  `EmptyState`. Writes untouched (Observers / `LogActivityAction`). Prop name
+  kept as `activity` so #15's tests still pass. 11 Pest (shape, task
+  composition, cross-project scoping, departed actor, deleted task,
+  pagination, authorization guest/outsider/member) · 7 Vitest (342 Pest total).
+  **Known behaviour:** entries of a *deleted* task drop out of the feed (the
+  feed resolves task subjects through the live `tasks` table, the only reliable
+  project link without changing the writers). Documented, covered by a test.
+- **#2 — Production Dockerfile** (`feature/2-prod-dockerfile`, PR #75, P0):
+  `Dockerfile.prod` with 4 stages — `frontend` (node → Vite build),
+  `php-extensions` (pdo_mysql/intl/zip/bcmath/opcache/redis; toolchain
+  dropped), `vendor` (composer `--no-dev --optimize-autoloader`), `runtime`
+  (`php:8.4-fpm-alpine` + nginx). **Hermetic build**: proven from a genuinely
+  clean checkout (`git archive HEAD` → no `vendor`, no `node_modules`, no
+  `.env`, no `public/build`) — image **46.3 MiB content** (208 MB on disk), 10
+  RUN layers. Runtime: nginx serves `public/` and talks to php-fpm over the unix
+  socket `/run/php-fpm.sock` (no port between them, only `:80` exposed); the
+  entrypoint builds the framework caches on boot and supervises both processes
+  (neither exists at build time), so the image carries no secrets and no state —
+  everything is env-injected. Config in `docker/prod/` (`nginx.conf`,
+  `php-fpm.conf`, `php.ini`, `entrypoint.sh`), deliberately diverging from the
+  dev stack. `.dockerignore` added (keeps source, drops vendor/node_modules/
+  tests/docs/certs/.env/artefacts). Documented in ARCHITECTURE.md § Production
+  image. New **6th CI check** (`docker build` + smoke test: `/up` → 200,
+  `/login` → 200, `Zend OPcache` loaded), which is the regression gate for this
+  file. Agent-side defects it fixed: `extension_loaded("opcache")` is always
+  false (it registers as `Zend OPcache`) — the CI assert would have failed on
+  a good image; missing EOF newline in `ci.yml`.
+- **Scaffolder YAML fix (the blocker):** the new CI job shipped a plain
+  `run:` step whose value contained `virtual size: {{.Size}} bytes` — the `: `
+  (colon+space) makes YAML parse it as a mapping, so **the whole workflow file
+  failed to parse**; GitHub then reported `completed/failure` runs with *no log
+  at all* and no check-runs on the PR. Fixed by making that step a block
+  scalar (`run: |`). **Lesson (hard-won):** always YAML-parse a workflow after
+  editing it (`ruby -e 'require "yaml"; YAML.load_file(".github/workflows/ci.yml")'`,
+  or `actionlint`); a parse error in one job silently kills the whole CI for
+  the branch, and `gh pr checks` reporting "no checks" is the tell. The run
+  was not a flake and a re-push did not help; the parse was the only cause.
+
+**Decisions:**
+
+- #32 vs #2 was the chosen parallel pair because they are provably disjoint
+  (PHP/Vue read-path vs Docker+CI+docs). #33/#34 (both frontend) cannot run
+  together — they touch the same pages/components — and #33 collides with #32
+  on `Pages/Projects/Show.vue`, hence one at a time.
+- The activity feed is its own paginator (`activity_page`) instead of sharing
+  the task board's `page` param: independent scrolling, and no prop-shape
+  coupling between the board (paginator from #31/#20) and the timeline.
+- Day labels are absolute (`Mon 28 Sept 2026`), never relative ("Today"): the
+  grouping key is computed server-side, so a relative label would be wrong in
+  every timezone the viewer is not in. Deliberate trade for correctness.
+- The Dockerfile runs as **root** in the container (nginx `:80` + php-fpm
+  master need it) — standard for this layout, noted as a hardening candidate
+  for the Cloud Run phase. Cloud Run's `PORT` is not wired yet; out of scope.
+- No unit tests ship with the Dockerfile (a Dockerfile has no Pest/Vitest
+  target); the `docker build` + smoke CI job is the gate instead.
+
+**Verification:** PRs #74/#75 5–6/6 green; `develop` post-merge CI green
+(`Production Image (Dockerfile.prod)` included). Local: Pint 200 files, PHPStan
+L5 baseline untouched, Pest 342 (2046 assertions), Vitest 54 files / 406
+(96.7% stmt, `ActivityTimeline` 100%), ESLint 0, docker build 46.3 MiB +
+`/up / /login` 200.
+
+**Status (end of session):** `develop` `bef4540` — shipped this round #32
+and #2; session total: #11/#16/#27/#7/#12/#6/#17/#13/#15/#8/#18/#28/#31/#5/#3/
+#4/#30/#20/#26/#9/#14/#29/#19/#32/#2 (+ #10 closed). `main` still v0.2.0 — the
+next release carries all of it. Remaining: #25 (release v1.0.0 QA, P3),
+#33/#34 (frontend polish, P2 — sequential), #21/#22/#23 (Cloud Run, managed
+MySQL/Redis, custom domain — P2, unblocked by #2), #24 (deploy docs, after
+#21–#23). Next session: deploy slice #21–#23, then #33/#34, then #25.
+
+---
+
 ## 2026-09-28 — Round 8: auth pages UI + KPI dashboard (+ Pint hotfix)
 
 **Context:** One more agent round landed on `develop` (PRs #70–#72). Auth flow
