@@ -143,3 +143,37 @@ jobs:
           CI: 'true'
           APP_URL: http://localhost:8000
         run: npx playwright test
+
+  docker:
+    name: Production Image (Dockerfile.prod)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the production image
+        run: docker build -f Dockerfile.prod -t taskflow:ci .
+
+      - name: Smoke test the image
+        run: |
+          docker run -d --name taskflow -p 8080:80 \
+            -e APP_ENV=production \
+            -e APP_DEBUG=false \
+            -e APP_KEY=base64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY= \
+            -e APP_URL=http://localhost:8080 \
+            -e DB_CONNECTION=sqlite -e DB_DATABASE=/tmp/database.sqlite \
+            -e CACHE_STORE=file -e SESSION_DRIVER=file -e QUEUE_CONNECTION=sync \
+            taskflow:ci
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/up >/dev/null; then break; fi
+            sleep 2
+          done
+          # /up proves nginx -> php-fpm -> Laravel boots; / renders the Inertia
+          # welcome page, which also proves the in-image Vite manifest is found.
+          curl -fsS -o /dev/null -w 'GET /up -> %{http_code}\n' http://localhost:8080/up
+          curl -fsS -o /dev/null -w 'GET /   -> %{http_code}\n' http://localhost:8080/
+          docker exec taskflow php -r 'exit(extension_loaded("Zend OPcache") ? 0 : 1);'
+          docker rm -f taskflow
+
+      - name: Image size
+        run: |
+          docker image inspect taskflow:ci --format 'virtual size: {{.Size}} bytes'

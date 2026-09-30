@@ -1,0 +1,70 @@
+# Build context for Dockerfile.prod (and for the dev image in
+# docker-compose.yml, which only copies docker/app/*).
+#
+# The production image compiles vendor/ and public/build from the committed
+# lock files, so every generated artefact, secret and dev-only file is
+# excluded here. Anything the running app needs must stay.
+
+# --- Secrets and per-machine configuration ----------------------------------
+# docker/traefik/ holds the local TLS cert/key, docker/certs/ca/ the mkcert
+# root CA. Both are consumed by other services, never by an image build.
+.env
+.env.*
+*.pem
+*.key
+docker/traefik/
+docker/certs/ca/
+docker/data/
+
+# --- Generated artefacts (rebuilt inside the image) -------------------------
+vendor/
+node_modules/
+/public/build/
+/public/hot
+/public/storage
+/public/fonts-manifest.dev.json
+bootstrap/cache/*.php
+/storage/*.key
+/storage/pail/
+/storage/logs/*.log
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+database/database.sqlite
+/build/
+/coverage/
+clover.xml
+phpunit.xml
+.phpunit.result.cache
+.phpunit.cache
+node_modules/.cache
+
+# --- Version control, CI and agent metadata ---------------------------------
+.git/
+.gitignore
+.gitattributes
+.github/
+.opencode/
+opencode.json
+/AGENTS.md
+
+# --- Tests and dev tooling (not shipped to production) ----------------------
+tests/
+docs/
+Makefile
+docker-compose.yml
+pint.json
+phpstan.neon
+phpstan-baseline.neon
+vitest.config.js
+playwright.config.js
+playwright-report/
+test-results/
+eslint.config.js
+.editorconfig
+LICENSE
+README.md
+
+# --- Noise ------------------------------------------------------------------
+*.log
+.DS_Store
