@@ -1,0 +1,83 @@
+# TaskFlow — Cloud Run web service (Admin API v2 shape).
+#
+# Applied with:
+#   gcloud run services replace <rendered-manifest>
+#
+# Not applied verbatim from the repository: deploy/cloudrun/deploy.sh renders it
+# first, substituting __IMAGE__, __REGION__, __PROJECT_ID__ and the two env
+# fragments (env.plain.inc, env.secrets.inc). Rendering is what keeps the image
+# digest, the service account and the env contract in one atomic, reviewable
+# change — and the committed file can never be applied by accident, because the
+# tokens make it invalid until rendered.
+#
+# Notes on the choices encoded here:
+#
+#   * minScale "0" — scale to zero, so an idle project costs nothing (and stays
+#     inside the free tier's request-based billing). The cost is a cold start on
+#     the first request after an idle period.
+#   * containerConcurrency 80 — Laravel's own request queue lives in Redis, and
+#     php-fpm's pool is ondemand with max_children 10, so the container serves
+#     requests in short bursts; see docker/prod/php-fpm.conf before raising it.
+#   * startupProbe on /up — the platform polls this until the container answers,
+#     which is exactly the readiness signal the entrypoint produces (nginx ->
+#     php-fpm -> Laravel booted). See the startup-cpu-boost note below.
+#   * ingress all — Cloud Run's front door terminates TLS and forwards over
+#     plain HTTP to $PORT (8080), which is what the image listens on.
+apiVersion: run.googleapis.com/v1
+kind: Service
+metadata:
+  name: taskflow
+  labels:
+    cloud.googleapis.com/location: __REGION__
+    managed-by: taskflow-deploy
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "10"
+        run.googleapis.com/startup-cpu-boost: "true"
+    spec:
+      serviceAccountName: taskflow-web@__PROJECT_ID__.iam.gserviceaccount.com
+      containerConcurrency: 80
+      # 60s matches fastcgi_read_timeout in docker/prod/nginx.conf: an
+      # application timeout should surface as a 504 from php-fpm, not as the
+      # platform killing the request one second later.
+      timeoutSeconds: 60
+      containers:
+        - image: __IMAGE__
+          ports:
+            - containerPort: 8080
+          # Rendered from deploy/cloudrun/env.plain.inc and
+          # env.secrets.inc by deploy.sh — see the secret contract at the top
+          # of env.plain.inc.
+          env: __ENV__
+          envValueSources: __ENV_FROM__
+          # The probe is the readiness contract with the platform. /up is the
+          # Laravel health endpoint registered in bootstrap/app.php; it does not
+          # touch the database, so a cold start only pays for booting the
+          # framework, which the entrypoint has already done.
+          startupProbe:
+            httpGet:
+              path: /up
+              port: 8080
+            initialDelaySeconds: 0
+            timeoutSeconds: 5
+            periodSeconds: 5
+            failureThreshold: 24
+          livenessProbe:
+            httpGet:
+              path: /up
+              port: 8080
+            timeoutSeconds: 5
+            periodSeconds: 30
+            failureThreshold: 3
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+  traffic:
+    - percent: 100
+      latestRevision: true

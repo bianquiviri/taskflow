@@ -134,13 +134,15 @@ User ──1:N── TeamMember ──N:1── Team
 - Coverage baseline: **≥ 80%** for backend and frontend (`vitest --coverage`
   enforced in CI; Pest coverage reported, tracked over time).
 
-## Deployment (roadmap, activated later)
+## Deployment
 
-- Container image on Google **Cloud Run** (scale-to-zero).
-- Managed MySQL (Aiven free tier or Cloud SQL) + Redis.
+- Container image on Google **Cloud Run** (scale-to-zero). ✅ #21 — topology
+  below, manifests and runbook in `deploy/cloudrun/` and `deploy/README.md`.
+- Managed MySQL + Redis, Secret Manager, migrations. ⏳ #22 — `deploy/data/`.
 - GitHub Actions builds the image and deploys to a `taskflow.<domain>`
-  subdomain; SSL managed by the platform.
-- This repo is developed **locally only** until the cloud integration phase.
+  subdomain; SSL managed by the platform. ⏳ #23 (domain), pipeline exists (#21).
+- The manifests and pipeline are written and verified **locally**; no GCP project
+  exists behind them yet, so no resource has actually been provisioned.
 
 ### Production image (Dockerfile.prod)
 
@@ -180,12 +182,59 @@ docker build -f Dockerfile.prod -t taskflow:latest .
   migrations as a one-off — `docker run --rm taskflow:latest php artisan
   migrate --force` — and the queue worker as
   `docker run --rm taskflow:latest php artisan queue:work --tries=3`.
-- **Port**: the container listens on plain HTTP `:80`; TLS is terminated by the
-  platform's edge proxy. Wiring Cloud Run's `PORT` (8080) is part of the cloud
-  integration phase, not of this image.
+- **Port**: the container speaks plain HTTP on `$PORT`, defaulting to `80`.
+  nginx's config syntax has no shell-style default expression, so the entrypoint
+  renders the listen port from a template on every boot
+  (`docker/prod/entrypoint.sh`, `docker/prod/nginx.conf`): Cloud Run injects
+  `PORT=8080` and terminates TLS in front of the container, while local runs stay
+  on `:80` — one image, both environments. `EXPOSE 80` remains as documentation
+  only; the platform talks to `$PORT`.
+- **Build metadata**: `COMMIT_SHA` / `GIT_REF` build args become OCI labels, so a
+  running Cloud Run revision can be traced back to the commit it came from.
 
 CI builds the image on every push and pull request (`docker` job in
 `.github/workflows/ci.yml`).
+
+### Cloud Run topology
+
+The cloud target, as implemented by issue #21 (see `deploy/README.md` for the
+full runbook and `deploy/cloudrun/` for the manifests):
+
+```
+Browser ──HTTPS──► Cloud Run front end ──HTTP $PORT:8080──► container (nginx → php-fpm → Laravel)
+                          │                                        │
+                          │  ingress: all (public)                │ writes
+                          ▼                                        ▼
+                   run.app host / custom domain            MySQL 8.4  +  Redis
+                  (TLS terminated here)                   (managed, #22)
+                                                                   ▲
+                                                     Cloud Scheduler │ every 2 min
+                                                                   ▼
+                                              Cloud Run Job (same image)
+                                              `queue:work redis --stop-when-empty`
+```
+
+- **Web service** — `minScale 0` (scale to zero, free tier), `maxScale 10`,
+  `containerConcurrency 80`, `timeoutSeconds 60` (matching nginx's
+  `fastcgi_read_timeout`), `startupProbe` and `livenessProbe` on `/up`. The
+  service is granted `roles/run.invoker` to `allUsers` **on purpose**: TaskFlow
+  authenticates users itself, and mail-borne links (verification, password reset)
+  are opened in browsers with no Google credentials, so Cloud Run IAM in front of
+  the app would break the product's own auth flows.
+- **Queue worker** — a Cloud Run **Job** running the *same image* with only the
+  command changed, started every 2 minutes by Cloud Scheduler. The web process
+  never consumes the queue, so the worker is deployed explicitly; dropping it
+  would silently stop all transactional mail. `--stop-when-empty` keeps an idle
+  queue costing one cold start instead of a billed instance. The Job is never
+  granted `allUsers` — only the scheduler service account may start it.
+- **Secrets** — the image contains no credentials and no `.env`; everything is
+  env-injected, with the Secret Manager ↔ env-var mapping documented in
+  `deploy/cloudrun/env.plain.inc`. A missing secret fails the revision closed.
+- **Deploys** — `.github/workflows/deploy.yml`, triggered by `workflow_dispatch`
+  (a human picks the version) or a `v*` tag, and always inside the `production`
+  GitHub environment so approvals can be required. Never a pull request. The
+  revision is pinned to an image digest, and rollback is a traffic switch to the
+  previous revision.
 
 ## Parallel Development
 

@@ -1,0 +1,55 @@
+# TaskFlow — Cloud Scheduler trigger for the queue worker Job.
+#
+# Cloud Run Jobs do not have a scheduler attached, so the executions of
+# taskflow-worker (deploy/cloudrun/worker-job.yaml) are started by Cloud Scheduler
+# posting to the Job's `run` endpoint on a fixed interval.
+#
+# Applied with:
+#   gcloud scheduler jobs create http taskflow-worker-trigger \
+#     --location=REGION --schedule='*/2 * * * *' \
+#     --uri=https://run.googleapis.com/v2/projects/PROJECT/locations/REGION/jobs/taskflow-worker:run \
+#     --oauth-service-account=taskflow-scheduler@PROJECT.iam.gserviceaccount.com \
+#     --http-method=POST
+#
+# Or applied verbatim (this file carries tokens for the same reason the service
+# manifest does — see deploy/cloudrun/deploy.sh --dry-run):
+#
+#   gcloud scheduler jobs replace deploy/cloudrun/schedule-job.yaml \
+#     --project=PROJECT --location=REGION
+#
+# Auth: the scheduler authenticates as a service account holding
+# roles/run.developer (or roles/run.invoker on the Job) and uses an OIDC token,
+# so no service-account key exists anywhere. The Job must NOT be granted
+# allUsers — unlike the web service, nothing outside GCP should start a worker.
+#
+# Cadence: every 2 minutes. Long enough to keep the free tier small (an execution
+# is billed per container start, so this is the main queue cost), short enough
+# that invitation and password-reset mail feels immediate. If per-message latency
+# matters more than cost, lower it to every minute, or replace this whole file
+# with a min-instances=1 Service running a long-lived queue:work — see
+# deploy/README.md.
+apiVersion: schedulers.googleapis.com/v1beta1
+kind: CloudSchedulerJob
+metadata:
+  name: taskflow-worker-trigger
+  labels:
+    managed-by: taskflow-deploy
+spec:
+  schedule: '*/2 * * * *'
+  timeZone: Etc/UTC
+  # Overlapping runs are pointless: queue:work --stop-when-empty on a single
+  # Redis queue would just contend for the same jobs.
+  maxBackoffDuration: 30s
+  retryConfig:
+    retryCount: 2
+    minBackoffDuration: 5s
+    maxBackoffDuration: 20s
+  httpTarget:
+    httpMethod: POST
+    uri: https://run.googleapis.com/v2/projects/__PROJECT_ID__/locations/__REGION__/jobs/__JOB_NAME__:run
+    oauthToken:
+      serviceAccountEmail: taskflow-scheduler@__PROJECT_ID__.iam.gserviceaccount.com
+      scope: https://www.googleapis.com/auth/cloud-platform
+    body: '{}'
+    headers:
+      Content-Type: application/json

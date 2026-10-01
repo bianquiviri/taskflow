@@ -1,0 +1,60 @@
+# TaskFlow — Cloud Build config: build the production image and push it to
+# Artifact Registry.
+#
+# Two ways to build, same artifact and same Dockerfile:
+#
+#   1. GitHub Actions (default) — .github/workflows/deploy.yml builds with
+#      docker buildx and pushes with GHA cache. Faster on repeat builds, and it
+#      reuses the Docker layer cache from ci.yml.
+#   2. Cloud Build (this file) — Google-managed builders. No local Docker needed
+#      and no image pushed from a developer machine, at the cost of a cold cache
+#      per builder. Enable with the workflow input use_cloudbuild=true.
+#
+# Both push the same tag, so the deploy step is identical either way.
+#
+# Standalone usage:
+#   gcloud builds submit \
+#     --config cloudbuild.yaml \
+#     --project PROJECT --region REGION \
+#     --substitutions=_IMAGE=REGION-docker.pkg.dev/PROJECT/taskflow/app:v1.0.0
+#
+# Cloud Build substitutes $_VARIABLE (single dollar), never ${VARIABLE} — the
+# braces form is shell syntax and would be passed through untouched.
+steps:
+  - id: build
+    name: gcr.io/cloud-builders/docker
+    env:
+      - IMAGE=$_IMAGE
+      - COMMIT_SHA=$_COMMIT_SHA
+      - GIT_SHA=$_GIT_SHA
+      - GIT_REF=$_GIT_REF
+    args:
+      - build
+      - --file=Dockerfile.prod
+      - --tag=$_IMAGE
+      - --build-arg=COMMIT_SHA=$_COMMIT_SHA
+      - --build-arg=GIT_SHA=$_GIT_SHA
+      - --label=GIT_REF=$_GIT_REF
+      # hermetic build: everything compiles from the committed lockfiles, so
+      # vendor/ and node_modules/ are not needed in the build context.
+      - .
+
+# Pushed after a successful build only, and by tag plus the resolved digest: the
+# deploy step pins the revision to the digest, so a moved tag cannot change what
+# is running.
+images:
+  - $_IMAGE
+
+options:
+  # The image build is the slowest step by far; give it real time instead of
+  # letting the default per-build timeout cut it off half-compiled.
+  machineType: E2_HIGHCPU_8
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: 1800s
+
+substitutions:
+  _IMAGE: ''
+  _COMMIT_SHA: ''
+  _GIT_SHA: ''
+  _GIT_REF: ''

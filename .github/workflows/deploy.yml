@@ -1,0 +1,186 @@
+name: Deploy (Cloud Run)
+
+# Deployments are never triggered by a pull request or a push to develop.
+#
+#   * workflow_dispatch  — a human chooses the version to release. This is the
+#     only trigger on the default branch.
+#   * push: tags v*      — a release tag deploys itself. Documented choice: a
+#     tag is an explicit, human-made statement of intent ("this is v1.2.0"), and
+#     the `production` environment gate below still applies, so the tag does not
+#     bypass approval — it only removes the manual "Run workflow" click. Remove
+#     the `push:` block to make tags non-deploying (e.g. while a release process
+#     is being defined in #25).
+#
+# Either way the job runs in the `production` GitHub environment: configure
+# required reviewers there (Settings → Environments → production) so a deploy
+# cannot happen without a second pair of eyes.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy: a tag (v1.2.0), a branch, or a commit SHA. Leave empty to deploy the ref this run started from.'
+        required: false
+        type: string
+      app_url:
+        description: 'Public APP_URL (e.g. https://taskflow.example.com). Empty keeps the current URL.'
+        required: false
+        type: string
+      migrate:
+        description: 'Run php artisan migrate --force as a one-off Job before the new revision takes traffic'
+        required: false
+        default: 'false'
+        type: boolean
+      use_cloudbuild:
+        description: 'Build with Cloud Build (cloudbuild.yaml) instead of docker buildx'
+        required: false
+        default: 'false'
+        type: boolean
+  push:
+    tags:
+      - 'v*'
+
+# One deployment at a time: two overlapping replaces would race on which revision
+# gets 100% of the traffic. Queued, not cancelled — a queued deploy still runs
+# after the one in flight.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  # Required for google-github-actions/auth with Workload Identity Federation:
+  # this mints the OIDC token that becomes a short-lived GCP access token, so no
+  # service-account key is ever stored in the repository.
+  id-token: write
+
+env:
+  REGION: europe-west1
+
+jobs:
+  deploy:
+    # Approval gate. Reviewers configured on the environment must approve before
+    # this job starts.
+    environment:
+      name: production
+      url: ${{ inputs.app_url }}
+
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out ${{ inputs.version || github.ref }}
+        uses: actions/checkout@v4
+        with:
+          # Deploying the tag, not the branch the workflow ran on: a manual run
+          # from main must be able to ship an older release.
+          ref: ${{ inputs.version || github.ref }}
+          # Full history so `git rev-parse HEAD` is the real commit and
+          # artifacts/version files are complete.
+          fetch-depth: 0
+
+      - name: Resolve the commit being deployed
+        id: version
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          # Workload Identity Federation. Configure these repository variables:
+          #   vars.WIF_SERVICE_ACCOUNT = taskflow-deploy@PROJECT.iam.gserviceaccount.com
+          #   vars.WIF_POOL          = taskflow-deploy (or '' to use the default pool)
+          workload_identity_provider: ${{ vars.WIF_PROVIDER_NAME }}
+          service_account: ${{ vars.WIF_SERVICE_ACCOUNT }}
+
+      - name: Install gcloud
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          install_components: gcloud-beta
+
+      - name: Build and push the image
+        id: build
+        env:
+          PROJECT: ${{ vars.GCP_PROJECT_ID }}
+          IMAGE: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/taskflow/app:${{ steps.version.outputs.sha }}
+        run: |
+          gcloud auth configure-docker "${REGION}-docker.pkg.dev" --quiet
+          docker buildx build \
+            --file Dockerfile.prod \
+            --tag "$IMAGE" \
+            --build-arg COMMIT_SHA="${{ steps.version.outputs.sha }}" \
+            --build-arg GIT_REF="${{ github.ref }}" \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            --push \
+            .
+
+      - name: Resolve the pushed image to a digest
+        id: digest
+        env:
+          IMAGE: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/taskflow/app:${{ steps.version.outputs.sha }}
+        run: |
+          digest="$(gcloud artifacts docker describe "$IMAGE" --format='value(image_summary.digest)')"
+          echo "Pinned to ${IMAGE}@${digest}"
+          echo "image=${IMAGE}@${digest}" >> "$GITHUB_OUTPUT"
+
+      - name: Build with Cloud Build (optional alternative)
+        if: ${{ inputs.use_cloudbuild == 'true' }}
+        env:
+          IMAGE: ${{ env.REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/taskflow/app:${{ steps.version.outputs.sha }}
+        run: |
+          gcloud builds submit \
+            --config cloudbuild.yaml \
+            --project "${{ vars.GCP_PROJECT_ID }}" \
+            --region "$REGION" \
+            --substitutions=_IMAGE="$IMAGE",_COMMIT_SHA="${{ steps.version.outputs.sha }}",_GIT_SHA="${{ steps.version.outputs.sha }}",_GIT_REF="${{ github.ref }}"
+
+      # The manifest is rendered and printed before anything is replaced, so a
+      # reviewer reading the run log can see the exact env contract and image
+      # that the deploy will use. It fails the job on a bad template.
+      - name: Preview the Cloud Run manifests
+        run: |
+          deploy/cloudrun/deploy.sh \
+            --project "${{ vars.GCP_PROJECT_ID }}" \
+            --region "$REGION" \
+            --image "${{ steps.digest.outputs.image }}" \
+            --app-url "${{ inputs.app_url }}" \
+            --dry-run
+
+      - name: Deploy to Cloud Run
+        env:
+          IMAGE: ${{ steps.digest.outputs.image }}
+          APP_URL: ${{ inputs.app_url }}
+        run: |
+          deploy/cloudrun/deploy.sh \
+            --project "${{ vars.GCP_PROJECT_ID }}" \
+            --region "$REGION" \
+            --image "$IMAGE" \
+            --app-url "$APP_URL" \
+            ${{ inputs.migrate == 'true' && '--migrate' || '' }}
+
+      # deploy.sh only proves the service answers. The worker and its trigger are
+      # separate resources: if the scheduler job went missing, queued mail stops
+      # silently, so it is asserted here rather than discovered by a user who
+      # never received an invitation.
+      - name: Verify the queue worker and its trigger exist
+        run: |
+          gcloud run jobs describe taskflow-worker \
+            --project "${{ vars.GCP_PROJECT_ID }}" --region "$REGION" --format='value(metadata.name)'
+          gcloud scheduler jobs describe taskflow-worker-trigger \
+            --project "${{ vars.GCP_PROJECT_ID }}" --location "$REGION" --format='value(state)'
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "### Cloud Run deployment"
+            echo
+            echo "| | |"
+            echo "|---|---|"
+            echo "| project | \`${{ vars.GCP_PROJECT_ID }}\` |"
+            echo "| region | $REGION |"
+            echo "| version | ${{ inputs.version || github.ref }} |"
+            echo "| commit | \`${{ steps.version.outputs.sha }}\` |"
+            echo "| image | \`${{ steps.digest.outputs.image }}\` |"
+            echo "| url | ${{ inputs.app_url }} |"
+            echo "| result | ${{ job.status }} |"
+          } >> "$GITHUB_STEP_SUMMARY"

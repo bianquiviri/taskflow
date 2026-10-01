@@ -54,6 +54,18 @@ bootstrap() {
     fi
 }
 
+# nginx has no shell-style default expansion for variables in its config, so the
+# listen port is rendered from a template on every boot. $PORT is injected by
+# Cloud Run (8080) and defaults to 80 everywhere else. Rendering from the
+# template each time keeps the result idempotent across restarts of the same
+# container filesystem.
+render_nginx_config() {
+    port="${PORT:-80}"
+    sed "s/__TASKFLOW_PORT__/${port}/g" \
+        /etc/nginx/http.d/default.conf.tpl > /etc/nginx/http.d/default.conf
+    log "nginx listen port ${port} (from PORT=${PORT:-<unset>})"
+}
+
 serve() {
     php_fpm_pid=''
     nginx_pid=''
@@ -67,6 +79,8 @@ serve() {
     }
     trap stop TERM INT
 
+    render_nginx_config
+
     # Both processes inherit this shell's stdout/stderr, so their output is
     # already on the container log. Either one exiting ends the container:
     # the platform restarts a clean pair instead of a half-working one, and
@@ -77,7 +91,7 @@ serve() {
     nginx -g 'daemon off;' &
     nginx_pid=$!
 
-    log "nginx (pid $nginx_pid) + php-fpm (pid $php_fpm_pid) up, socket /run/php-fpm.sock"
+    log "nginx (pid $nginx_pid) + php-fpm (pid $php_fpm_pid) up, socket /run/php-fpm.sock, port ${PORT:-80}"
 
     # Returns as soon as either process exits; the trap tears down the other.
     wait -n

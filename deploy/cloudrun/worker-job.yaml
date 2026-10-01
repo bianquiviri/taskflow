@@ -1,0 +1,65 @@
+# TaskFlow — Cloud Run queue worker as a Cloud Run Job (Admin API v2 shape).
+#
+# Queued work (invitation + mention + verification mail, password resets, any
+# future export/digest job) must keep running: the web service scales to zero and
+# is not a queue consumer. Design:
+#
+#   * Cloud Run **Job** with taskCount 1 / parallelism 1 per execution: the
+#     container runs `php artisan queue:work --stop-when-empty`, drains Redis and
+#     exits 0. Jobs are billed per execution and scale to zero between them, so
+#     this fits the free tier where a min-instances=1 Service would not.
+#   * Triggered by Cloud Scheduler on a fixed interval (deploy/cloudrun/schedule-job.yaml),
+#     which is the cheapest event-like trigger available and is enough for mail
+#     latency that does not need to be real-time.
+#   * --stop-when-empty is what makes a Job the right primitive: a long-running
+#     `queue:work` without it would run until the Job's timeout and be billed
+#     for it. With it, an idle queue costs one cold start and exits.
+#   * If per-message latency ever needs to be seconds rather than the schedule
+#     interval, switch to a second Service with minScale=1 running plain
+#     `queue:work` (documented in deploy/README.md — it leaves the free tier).
+#
+# The image is the same artifact as the web service, so the worker and the app
+# can never drift; only the command differs. Environment and secrets come from
+# the same two fragments as the service (env.plain.inc / env.secrets.inc), which
+# is why the worker reads the same Redis queue the web service writes to.
+apiVersion: run.googleapis.com/v1
+kind: Job
+metadata:
+  name: taskflow-worker
+  labels:
+    cloud.googleapis.com/location: __REGION__
+    managed-by: taskflow-deploy
+spec:
+  # A single execution drains whatever is queued at that moment. Raising
+  # taskCount would start N workers on N-1 mostly idle containers.
+  taskCount: 1
+  parallelism: 1
+  template:
+    spec:
+      serviceAccountName: taskflow-worker@__PROJECT_ID__.iam.gserviceaccount.com
+      # Bounded so a poisoned/looping job cannot hold a container open
+      # indefinitely; --stop-when-empty normally exits in seconds.
+      timeoutSeconds: 900
+      template:
+        spec:
+          containers:
+            - image: __IMAGE__
+              # The image's ENTRYPOINT already bootstraps storage permissions
+              # and, unless TASKFLOW_SKIP_BOOTSTRAP=1, the framework caches.
+              # Overriding the command here does not skip that.
+              command:
+                - php
+                - artisan
+                - queue:work
+                - redis
+                - --stop-when-empty
+                - --tries=3
+                - --timeout=90
+                - --sleep=1
+              # Same fragments as the web service: one env contract, two commands.
+              env: __ENV__
+              envValueSources: __ENV_FROM__
+              resources:
+                limits:
+                  cpu: "1"
+                  memory: 1Gi

@@ -12,6 +12,12 @@
 ARG PHP_VERSION=8.4
 ARG NODE_VERSION=22
 
+# Build metadata: recorded as OCI labels so a running Cloud Run revision can be
+# traced back to the commit it was built from (`gcloud run services describe`).
+# Empty by default so a plain `docker build` still works.
+ARG COMMIT_SHA=''
+ARG GIT_REF=''
+
 # --- 1. Frontend assets -----------------------------------------------------
 FROM node:${NODE_VERSION}-alpine AS frontend
 
@@ -70,9 +76,16 @@ RUN composer install \
 # --- 4. Runtime -------------------------------------------------------------
 FROM php:${PHP_VERSION}-fpm-alpine AS runtime
 
+# A global ARG is not in scope inside a stage: it has to be re-declared here for
+# the LABEL values below to expand (and stay empty when the build passes none).
+ARG COMMIT_SHA=''
+ARG GIT_REF=''
+
 LABEL org.opencontainers.image.title="TaskFlow" \
       org.opencontainers.image.description="TaskFlow — project and task management (Laravel + Inertia)" \
       org.opencontainers.image.source="https://github.com/bianquiviri/taskflow" \
+      org.opencontainers.image.revision="$COMMIT_SHA" \
+      org.opencontainers.image.version="$GIT_REF" \
       org.opencontainers.image.licenses="MIT"
 
 # Runtime-only packages: the shared libraries the copied extensions link
@@ -105,16 +118,26 @@ COPY artisan composer.json composer.lock ./
 COPY --from=vendor /app/vendor/ ./vendor/
 COPY --from=frontend /app/public/build/ ./public/build/
 
-COPY docker/prod/nginx.conf /etc/nginx/http.d/default.conf
+# The server block ships as a template: the entrypoint renders the listen port
+# from $PORT into default.conf on every boot (Cloud Run injects 8080, local
+# runs stay on 80).
+COPY docker/prod/nginx.conf /etc/nginx/http.d/default.conf.tpl
 COPY docker/prod/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
 COPY docker/prod/php.ini /usr/local/etc/php/conf.d/zz-taskflow.ini
 COPY docker/prod/entrypoint.sh /usr/local/bin/entrypoint
 RUN chmod +x /usr/local/bin/entrypoint
 
+# Informational only: Cloud Run ignores EXPOSE and talks to the container on
+# $PORT, which the platform sets to 8080. 80 stays documented for local runs.
 EXPOSE 80
 
+# The port comes from the same $PORT the server binds to, so this probe is valid
+# on :80 and on Cloud Run's 8080. Dockerfile performs no substitution inside CMD,
+# so the expansion is left to the shell that runs this line (on Cloud Run the
+# platform's own startup probe is the authoritative readiness signal; see
+# deploy/cloudrun/service.yaml).
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD wget --quiet --spider http://127.0.0.1/up || exit 1
+    CMD wget --quiet --spider "http://127.0.0.1:${PORT:-80}/up" || exit 1
 
 ENTRYPOINT ["/usr/local/bin/entrypoint"]
 CMD ["serve"]
