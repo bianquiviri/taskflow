@@ -187,6 +187,30 @@ docker build -f Dockerfile.prod -t taskflow:latest .
 CI builds the image on every push and pull request (`docker` job in
 `.github/workflows/ci.yml`).
 
+<!-- infra-agent/#22 · begin managed data services -->
+
+### Managed data services
+
+Production stores its state in **Cloud SQL for MySQL 8.0** and **Memorystore
+for Redis 7**, reached from Cloud Run through the built-in Cloud SQL connector
+(`--add-cloudsql-instances`, a unix socket — no VPC, TLS in transit,
+IAM-scoped) and a Serverless VPC Access connector for Redis. `APP_KEY`,
+`DB_PASSWORD` and `REDIS_PASSWORD` live in **Secret Manager** and are injected
+as environment variables by the platform (`--set-secrets`); nothing is read from
+a dotenv file, because the image ships none. Migrations run as a **Cloud Run Job
+built from the same image**, dispatched by `.github/workflows/db-migrate.yml`
+(manual, dry-run by default). Backups are Cloud SQL automated backups with PITR
+plus a daily verified dump in Cloud Storage.
+
+`deploy/data/env.sh` is the single source of truth for names and values and is
+sourced by both the provisioning scripts and the workflow; `deploy/data/README.md`
+carries the env var ↔ secret table, the Cloud SQL vs Aiven decision, the
+restore runbook and an explicit list of what has and has not been executed.
+MySQL tables take their charset and collation from the **connection**
+(`DB_CHARSET`/`DB_COLLATION`), not from the database default.
+
+<!-- infra-agent/#22 · end managed data services -->
+
 ## Parallel Development
 
 GitHub issues are grouped by milestone; agents work on disjoint domains:

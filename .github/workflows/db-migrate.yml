@@ -1,0 +1,222 @@
+name: DB Migrate
+
+# Runs `php artisan migrate --force` against the managed database, as a Cloud Run
+# Job built from the *same* production image as the service (no second build, no
+# drift between the code that migrates and the code that serves).
+#
+# Deliberately manual (workflow_dispatch) and deliberately dry-run by default:
+# this job owns the production schema, so a human decides when it runs and
+# whether it is allowed to write. deploy.yml may call this workflow once it
+# needs a schema gate between deploys; until then the dispatch URL is:
+#
+#   gh workflow run db-migrate.yml -f environment=production -f dry_run=false \
+#     -f confirm_production=production -f image=europe-west1-docker.pkg.dev/PROJECT/taskflow/app:TAG
+#
+# The managed data services themselves are provisioned by
+# deploy/data/scripts/provision-cloudsql.sh — see deploy/data/README.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'GitHub environment holding the GCP_* variables (gates on approval)'
+        required: true
+        default: production
+        type: choice
+        options: [production, staging]
+      image:
+        description: 'Assert the job runs this image (empty = accept whatever the job points at)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'true = report what is pending, write nothing'
+        required: true
+        default: true
+        type: boolean
+      confirm_production:
+        description: 'Type the environment name to allow a real migration against production'
+        required: false
+        default: ''
+      backup_first:
+        description: 'Export a dump to Cloud Storage before migrating'
+        required: true
+        default: true
+        type: boolean
+
+concurrency:
+  # One migration at a time: two `migrate` runs against the same database race
+  # on the migrations table.
+  group: db-migrate-${{ inputs.environment }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write # required by google-github-actions/auth
+
+jobs:
+  migrate:
+    name: Migrate (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: ${{ inputs.environment }}
+
+    env:
+      # Everything the application needs comes from deploy/data/env.sh, the
+      # single source of truth shared with the provision scripts.
+      GCP_PROJECT: ${{ vars.GCP_PROJECT }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      DB_NAME: ${{ vars.DB_NAME }}
+      DB_USER: ${{ vars.DB_USER }}
+      SQL_INSTANCE: ${{ vars.SQL_INSTANCE }}
+      REDIS_INSTANCE: ${{ vars.REDIS_INSTANCE }}
+      RUN_JOBS_NAME: ${{ vars.RUN_JOBS_NAME }}
+      RUN_MIGRATE_JOB: ${{ vars.RUN_MIGRATE_JOB }}
+      APP_SERVICE: ${{ vars.APP_SERVICE }}
+      BACKUP_BUCKET: ${{ vars.BACKUP_BUCKET }}
+
+    steps:
+      - name: Check required configuration
+        run: |
+          set -eu
+          missing=''
+          for name in GCP_PROJECT GCP_REGION SQL_INSTANCE REDIS_INSTANCE RUN_JOBS_NAME RUN_MIGRATE_JOB APP_SERVICE BACKUP_BUCKET; do
+            if [ -z "$(printenv "$name")" ]; then
+              missing="$missing $name"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::missing GitHub environment variables in '${{ inputs.environment }}':$missing"
+            exit 1
+          fi
+          # The Secret Manager names and the non-secret env vars are derived
+          # from those values, so this is where an unset variable would
+          # otherwise become a wrong contract.
+          . deploy/data/env.sh
+          echo "instance    : $SQL_INSTANCE ($GCP_PROJECT/$GCP_REGION)"
+          echo "database    : $DB_NAME as $DB_USER"
+          echo "redis       : $REDIS_INSTANCE"
+          echo "secrets     : $SECRET_APP_KEY, $SECRET_DB_PASSWORD, $SECRET_REDIS_PASSWORD"
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Authorise the script contract
+        run: chmod +x deploy/data/scripts/*.sh deploy/data/env.sh
+
+      - name: Verify the managed data services are reachable
+        run: |
+          set -eu
+          . deploy/data/env.sh
+          . deploy/data/scripts/lib.sh
+          require_project
+          sql_instance_exists || die "Cloud SQL instance $SQL_INSTANCE not found"
+          redis_instance_exists || die "Memorystore instance $REDIS_INSTANCE not found"
+          for secret in "$SECRET_DB_PASSWORD" "$SECRET_REDIS_PASSWORD"; do
+            secret_exists "$secret" || die "secret $secret not found in $GCP_PROJECT"
+          done
+          echo "connection name: $(sql_instance_connection_name)"
+          echo "redis          : $(redis_instance_host):$(redis_instance_port)"
+          mysql_access_summary
+          redis_access_summary
+
+      - name: Backup (optional)
+        if: inputs.backup_first
+        env:
+          BACKUP_PREFIX: manual/migrate
+        run: ./deploy/data/scripts/backup.sh
+
+      - name: Resolve the job, the command and the image
+        id: plan
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+          CONFIRM: ${{ inputs.confirm_production }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          EXPECTED_IMAGE: ${{ inputs.image }}
+        run: |
+          set -eu
+          # production defaults to the dry run unless the operator typed the
+          # environment name: this is the only thing standing between a typo and
+          # a mutated production schema.
+          if [ "$ENVIRONMENT" = "production" ] && [ "$DRY_RUN" = "false" ]; then
+            if [ "$CONFIRM" != "$ENVIRONMENT" ]; then
+              echo "::error::confirm_production must be exactly '$ENVIRONMENT' to migrate the production database"
+              exit 1
+            fi
+          fi
+
+          args='artisan,migrate,--force'
+          if [ "$DRY_RUN" = "true" ]; then
+            # --pretend reports the pending migrations and touches nothing.
+            args='artisan,migrate,--pretend'
+          fi
+
+          # `gcloud run jobs execute` deliberately accepts only --args,
+          # --update-env-vars, --tasks and --task-timeout as per-execution
+          # overrides; the image and the entrypoint command belong to the job
+          # template. So `image` is an *assertion*, not an override: passing it
+          # turns "is the job still pointing at the image the service runs?"
+          # into a gate instead of a silent `jobs update` on the shared job.
+          image="$(gcloud run jobs describe "$RUN_MIGRATE_JOB" --region "$GCP_REGION" \
+            --format='value(template.template.containers[0].image)')"
+          [ -n "$image" ] || { echo "::error::$RUN_MIGRATE_JOB has no container image"; exit 1; }
+          if [ -n "$EXPECTED_IMAGE" ] && [ "$EXPECTED_IMAGE" != "$image" ]; then
+            echo "::error::$RUN_MIGRATE_JOB points at '$image' but '$EXPECTED_IMAGE' was expected."
+            echo '::error::Point the job at the deployed image first:'
+            echo "::error::gcloud run jobs update $RUN_MIGRATE_JOB --region $GCP_REGION --image $EXPECTED_IMAGE"
+            exit 1
+          fi
+
+          # --command is baked into the job template (see deploy/data/README.md);
+          # read it back so the log states what actually ran instead of assuming.
+          command="$(gcloud run jobs describe "$RUN_MIGRATE_JOB" --region "$GCP_REGION" \
+            --format='value(template.template.containers[0].command)')"
+          [ -n "$command" ] || { echo "::error::$RUN_MIGRATE_JOB has no entrypoint override (see the job creation command in deploy/data/README.md)"; exit 1; }
+
+          {
+            echo 'image='"$image"
+            echo 'command='"$command"
+            echo 'args='"$args"
+          } >>"$GITHUB_OUTPUT"
+          echo "will run: $command $args"
+          echo "image    : $image"
+
+      - name: Dry run
+        if: inputs.dry_run
+        run: |
+          set -eu
+          . deploy/data/env.sh
+          gcloud run jobs execute "$RUN_MIGRATE_JOB" \
+            --region "$GCP_REGION" \
+            --args "${{ steps.plan.outputs.args }}" \
+            --wait
+
+      - name: Migrate
+        if: ${{ !inputs.dry_run }}
+        run: |
+          set -eu
+          . deploy/data/env.sh
+          gcloud run jobs execute "$RUN_MIGRATE_JOB" \
+            --region "$GCP_REGION" \
+            --args "${{ steps.plan.outputs.args }}" \
+            --update-env-vars "DEPLOYED_BY=github-actions:$GITHUB_SHA" \
+            --wait
+
+      - name: Summarise
+        if: always()
+        run: |
+          set -eu
+          . deploy/data/env.sh
+          echo "environment : ${{ inputs.environment }}"
+          echo "dry run     : ${{ inputs.dry_run }}"
+          echo "instance    : $SQL_INSTANCE / $DB_NAME"
+          if [ "${{ inputs.dry_run }}" = "false" ]; then
+            echo ""
+            echo "If this was a real migration, the service can now be redeployed:"
+            echo "  gh workflow run deploy.yml -f environment=${{ inputs.environment }}"
+          fi
