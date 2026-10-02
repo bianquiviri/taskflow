@@ -149,12 +149,13 @@ function formatTime(value) {
           :href="activity.prev_page_url"
           preserve-scroll
           preserve-state
-          class="rounded-control border border-line-strong bg-raised px-3 py-1.5 text-sm font-medium text-content-muted hover:bg-sunken hover:text-content"
+          class="rounded-control border border-line-strong bg-raised px-3 py-1.5 text-sm font-medium text-content-muted hover:bg-sunken hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-raised"
         >
           Newer
         </Link>
         <span
           data-test="activity-page"
+          role="status"
           class="text-xs text-content-subtle"
         >
           Page {{ activity.current_page }} of {{ activity.last_page }}
@@ -165,7 +166,7 @@ function formatTime(value) {
           :href="activity.next_page_url"
           preserve-scroll
           preserve-state
-          class="rounded-control border border-line-strong bg-raised px-3 py-1.5 text-sm font-medium text-content-muted hover:bg-sunken hover:text-content"
+          class="rounded-control border border-line-strong bg-raised px-3 py-1.5 text-sm font-medium text-content-muted hover:bg-sunken hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-raised"
         >
           Older
         </Link>

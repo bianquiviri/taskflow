@@ -147,7 +147,7 @@ onBeforeUnmount(deactivateFocusTrap);
           <button
             type="button"
             :aria-label="closeLabel"
-            class="rounded-md p-1.5 text-content-faint hover:bg-sunken hover:text-content"
+            class="rounded-md p-1.5 text-content-subtle hover:bg-sunken hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             @click="requestClose"
           >
             <Icon

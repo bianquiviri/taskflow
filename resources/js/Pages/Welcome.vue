@@ -11,17 +11,17 @@ defineProps({
   <Head title="Home" />
 
   <div class="flex min-h-dvh flex-col items-center justify-center px-6">
-    <main class="mx-auto w-full max-w-2xl rounded-2xl border border-gray-200 bg-white p-8 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-      <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+    <main class="mx-auto w-full max-w-2xl rounded-shell border border-line bg-raised p-8 shadow-sm">
+      <h1 class="text-3xl font-bold tracking-tight text-content">
         {{ appName }}
       </h1>
-      <p class="mt-4 text-lg leading-relaxed text-gray-600 dark:text-gray-300">
+      <p class="mt-4 text-lg leading-relaxed text-content-muted">
         Professional project management platform built with Laravel 13, Inertia and Vue 3.
       </p>
 
-      <div class="mt-8 rounded-xl bg-gray-50 p-4 text-sm text-gray-500 dark:bg-gray-800 dark:text-gray-400">
-        <p><span class="font-semibold text-gray-700 dark:text-gray-200">Framework:</span> Laravel</p>
-        <p><span class="font-semibold text-gray-700 dark:text-gray-200">Version:</span> {{ version }}</p>
+      <div class="mt-8 rounded-panel bg-sunken p-4 text-sm text-content-subtle">
+        <p><span class="font-semibold text-content-muted">Framework:</span> Laravel</p>
+        <p><span class="font-semibold text-content-muted">Version:</span> {{ version }}</p>
       </div>
     </main>
   </div>

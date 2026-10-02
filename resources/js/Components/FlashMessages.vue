@@ -41,6 +41,7 @@ const toneConfig = {
 const toasts = ref([]);
 const timers = new Map();
 let nextId = 0;
+let paused = false;
 
 function normalize(value) {
     if (!value) {
@@ -63,6 +64,36 @@ function pushToast(tone, text) {
         id,
         setTimeout(() => dismiss(id), AUTO_DISMISS_MS),
     );
+}
+
+/**
+ * A toast that disappears while it is being read is a time limit, so the
+ * countdown is held while a pointer or the keyboard is on the stack.
+ */
+function pauseAll() {
+    if (paused || timers.size === 0) {
+        return;
+    }
+
+    paused = true;
+    timers.forEach((timer) => clearTimeout(timer));
+}
+
+function resumeAll() {
+    if (!paused) {
+        return;
+    }
+
+    paused = false;
+    timers.forEach((timer, id) => {
+        timers.set(id, setTimeout(() => dismiss(id), AUTO_DISMISS_MS));
+    });
+}
+
+function resumeWhenLeaving(event) {
+    if (!event.currentTarget.contains(event.relatedTarget)) {
+        resumeAll();
+    }
 }
 
 watch(
@@ -89,14 +120,17 @@ onBeforeUnmount(() => {
 
 <template>
   <div
-    v-if="toasts.length"
-    aria-live="polite"
+    data-test="toast-region"
     class="fixed right-4 top-4 z-[60] flex w-full max-w-sm flex-col gap-3 sm:right-6 sm:top-6"
+    @mouseenter="pauseAll"
+    @mouseleave="resumeAll"
+    @focusin="pauseAll"
+    @focusout="resumeWhenLeaving"
   >
     <div
       v-for="toast in toasts"
       :key="toast.id"
-      role="status"
+      :role="toast.tone === 'error' ? 'alert' : 'status'"
       class="flex items-start gap-3 rounded-panel border border-line bg-raised p-4 shadow-lg"
     >
       <Icon
@@ -104,7 +138,7 @@ onBeforeUnmount(() => {
         :class="['mt-0.5 size-5 shrink-0', toneConfig[toast.tone].iconColor]"
       />
       <div class="min-w-0 flex-1">
-        <p class="text-xs font-semibold uppercase tracking-wide text-content-faint">
+        <p class="text-xs font-semibold uppercase tracking-wide text-content-subtle">
           {{ toneConfig[toast.tone].label }}
         </p>
         <p
@@ -116,7 +150,7 @@ onBeforeUnmount(() => {
       </div>
       <button
         type="button"
-        class="rounded-md p-1 text-content-faint hover:bg-sunken hover:text-content"
+        class="rounded-md p-1 text-content-subtle hover:bg-sunken hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
         :aria-label="`Dismiss ${toneConfig[toast.tone].label} message`"
         @click="dismiss(toast.id)"
       >

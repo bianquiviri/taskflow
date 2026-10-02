@@ -133,4 +133,43 @@ describe('Project/ActivityTimeline.vue', () => {
 
         expect(single.find('[data-test="activity-pagination"]').exists()).toBe(false);
     });
+
+    describe('pager', () => {
+        const paged = (overrides) => paginator([entry()], {
+            current_page: 2,
+            last_page: 3,
+            prev_page_url: '/projects/1?activity_page=1',
+            next_page_url: '/projects/1?activity_page=3',
+            ...overrides,
+        });
+
+        it('announces the page it lands on', async () => {
+            const wrapper = mount(ActivityTimeline, { props: { activity: paged() } });
+
+            const status = wrapper.get('[data-test="activity-page"]');
+
+            expect(status.attributes('role')).toBe('status');
+
+            await wrapper.setProps({
+                activity: paged({
+                    current_page: 3,
+                    prev_page_url: '/projects/1?activity_page=2',
+                    next_page_url: null,
+                }),
+            });
+
+            expect(wrapper.get('[data-test="activity-page"]').element).toBe(status.element);
+            expect(status.text()).toBe('Page 3 of 3');
+        });
+
+        it('labels both page links', () => {
+            const wrapper = mount(ActivityTimeline, { props: { activity: paged() } });
+
+            const nav = wrapper.get('[data-test="activity-pagination"]');
+
+            expect(nav.attributes('aria-label')).toBe('Activity pages');
+            expect(wrapper.get('[data-test="activity-previous"]').text()).toBe('Newer');
+            expect(wrapper.get('[data-test="activity-next"]').text()).toBe('Older');
+        });
+    });
 });

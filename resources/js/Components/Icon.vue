@@ -44,5 +44,9 @@ const iconComponent = computed(() => icons[props.name]);
 </script>
 
 <template>
-  <component :is="iconComponent" />
+  <component
+    :is="iconComponent"
+    aria-hidden="true"
+    focusable="false"
+  />
 </template>

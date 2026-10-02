@@ -69,4 +69,39 @@ describe('FormSelect.vue', () => {
             required: '',
         });
     });
+
+    describe('hints', () => {
+        it('describes the select with the hint text', () => {
+            const wrapper = mount(FormSelect, {
+                props: { id: 'task-priority', label: 'Label', hint: 'Some guidance.' },
+            });
+
+            const hint = wrapper.get('[data-test="hint"]');
+
+            expect(hint.text()).toBe('Some guidance.');
+            expect(wrapper.get('select').attributes('aria-describedby')).toBe(hint.attributes('id'));
+        });
+
+        it('describes the select with both the hint and the error', () => {
+            const wrapper = mount(FormSelect, {
+                props: { id: 'task-priority', hint: 'Some guidance.', error: 'Required.' },
+                slots,
+            });
+
+            const describedby = wrapper.get('select').attributes('aria-describedby').split(' ');
+
+            expect(describedby).toEqual([
+                wrapper.get('[data-test="hint"]').attributes('id'),
+                wrapper.get('[role="alert"]').attributes('id'),
+            ]);
+        });
+
+        it('omits the description when there is no hint and no error', () => {
+            const wrapper = mount(FormSelect, { props: { label: 'Label' }, slots, });
+
+            expect(wrapper.get('select').attributes('aria-describedby')).toBeUndefined();
+            expect(wrapper.find('[data-test="hint"]').exists()).toBe(false);
+        });
+    });
 });
+

@@ -54,4 +54,39 @@ describe('FormTextarea.vue', () => {
             placeholder: 'Add details',
         });
     });
+
+    describe('hints', () => {
+        it('describes the textarea with the hint text', () => {
+            const wrapper = mount(FormTextarea, {
+                props: { id: 'task-description', label: 'Label', hint: 'Some guidance.' },
+            });
+
+            const hint = wrapper.get('[data-test="hint"]');
+
+            expect(hint.text()).toBe('Some guidance.');
+            expect(wrapper.get('textarea').attributes('aria-describedby')).toBe(hint.attributes('id'));
+        });
+
+        it('describes the textarea with both the hint and the error', () => {
+            const wrapper = mount(FormTextarea, {
+                props: { id: 'task-description', hint: 'Some guidance.', error: 'Required.' },
+                
+            });
+
+            const describedby = wrapper.get('textarea').attributes('aria-describedby').split(' ');
+
+            expect(describedby).toEqual([
+                wrapper.get('[data-test="hint"]').attributes('id'),
+                wrapper.get('[role="alert"]').attributes('id'),
+            ]);
+        });
+
+        it('omits the description when there is no hint and no error', () => {
+            const wrapper = mount(FormTextarea, { props: { label: 'Label' },  });
+
+            expect(wrapper.get('textarea').attributes('aria-describedby')).toBeUndefined();
+            expect(wrapper.find('[data-test="hint"]').exists()).toBe(false);
+        });
+    });
 });
+

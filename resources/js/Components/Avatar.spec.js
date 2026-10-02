@@ -42,4 +42,35 @@ describe('Avatar.vue', () => {
 
         expect(wrapper.classes().some((tone) => tone.startsWith('bg-'))).toBe(true);
     });
+
+    describe('accessibility', () => {
+        it('is decorative by default so it does not repeat adjacent text', () => {
+            const wrapper = mount(Avatar, { props: { name: 'Jane Doe' } });
+
+            expect(wrapper.attributes('aria-hidden')).toBe('true');
+            expect(wrapper.attributes('role')).toBeUndefined();
+        });
+
+        it('exposes the name when it carries meaning on its own', () => {
+            const wrapper = mount(Avatar, { props: { name: 'Jane Doe', decorative: false } });
+
+            expect(wrapper.attributes('aria-hidden')).toBeUndefined();
+            expect(wrapper.attributes('role')).toBe('img');
+            expect(wrapper.attributes('aria-label')).toBe('Jane Doe');
+        });
+
+        it('does not announce the image twice when the avatar carries meaning', () => {
+            const wrapper = mount(Avatar, {
+                props: { name: 'Jane Doe', src: '/avatars/jane.png', decorative: false },
+            });
+
+            expect(wrapper.get('img').attributes('alt')).toBe('');
+        });
+
+        it('keeps initials reachable through the wrapper name only', () => {
+            const wrapper = mount(Avatar, { props: { name: 'Jane Doe', decorative: false } });
+
+            expect(wrapper.get('[role="img"]').attributes('aria-label')).toBe('Jane Doe');
+        });
+    });
 });

@@ -116,4 +116,24 @@ describe('TaskAttachmentForm.vue', () => {
         expect(wrapper.get('input[type="file"]').attributes('disabled')).toBeDefined();
         expect(wrapper.get('button[type="submit"]').attributes('aria-busy')).toBe('true');
     });
+
+    it('describes the picker with the size limit', () => {
+        const wrapper = mountForm();
+
+        const describedby = wrapper.get('input[type="file"]').attributes('aria-describedby').split(' ');
+
+        expect(describedby).toContain(wrapper.get('#task-attachment-hint').attributes('id'));
+    });
+
+    it('describes the picker with the size limit and the refused upload', () => {
+        formState.errors = { file: 'The file may not be larger than 5 MB.' };
+        const wrapper = mountForm();
+
+        const describedby = wrapper.get('input[type="file"]').attributes('aria-describedby').split(' ');
+
+        expect(describedby).toEqual([
+            'task-attachment-hint',
+            wrapper.get('[data-test="attachment-error"]').attributes('id'),
+        ]);
+    });
 });

@@ -51,7 +51,7 @@ function select(theme) {
           : 'border-line bg-raised hover:bg-sunken'"
       >
         <input
-          class="mt-0.5 size-4 shrink-0 border-line-strong text-brand-600 focus:ring-focus"
+          class="mt-0.5 size-4 shrink-0 border-line-strong text-brand-600 dark:text-brand-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-raised"
           type="radio"
           :name="`theme-${name}`"
           :value="theme.value"
