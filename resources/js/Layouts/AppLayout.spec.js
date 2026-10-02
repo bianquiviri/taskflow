@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick, reactive } from 'vue';
 import { mount } from '@vue/test-utils';
 import AppLayout from './AppLayout.vue';
@@ -53,9 +53,34 @@ const global = {
     },
 };
 
+/** happy-dom always reports a wide viewport, so the drawer behaviour is driven from here. */
+function viewport(width) {
+    const matches = width >= 1024;
+    const listeners = new Set();
+
+    window.matchMedia = vi.fn((query) => ({
+        media: query,
+        get matches() {
+            return matches;
+        },
+        addEventListener: (type, listener) => listeners.add(listener),
+        removeEventListener: (type, listener) => listeners.delete(listener),
+        dispatch: () => listeners.forEach((listener) => listener({ matches })),
+    }));
+}
+
+function pressKey(key) {
+    document.dispatchEvent(new window.KeyboardEvent('keydown', {
+        key,
+        bubbles: true,
+        cancelable: true,
+    }));
+}
+
 describe('AppLayout.vue', () => {
     beforeEach(() => {
         document.documentElement.classList.remove('dark');
+        viewport(1280);
 
         if (holder.page) {
             holder.page.url = '/';
@@ -64,6 +89,10 @@ describe('AppLayout.vue', () => {
             pageState.url = '/';
             pageState.props = { flash: {} };
         }
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = '';
     });
 
     it('renders the brand and default navigation items', () => {
@@ -165,7 +194,7 @@ describe('AppLayout.vue', () => {
         await wrapper.find('[aria-label="Open menu"]').trigger('click');
         expect(aside.classes()).toContain('translate-x-0');
 
-        await wrapper.find('[aria-hidden="true"]').trigger('click');
+        await wrapper.find('[data-test="drawer-overlay"]').trigger('click');
         expect(aside.classes()).toContain('-translate-x-full');
     });
 
@@ -275,5 +304,166 @@ describe('AppLayout.vue', () => {
         });
 
         expect(wrapper.find('main').text()).toContain('Page body');
+    });
+
+    describe('landmarks', () => {
+        it('exposes a single main region with a stable id', () => {
+            const wrapper = mount(AppLayout, { global });
+
+            expect(wrapper.findAll('main')).toHaveLength(1);
+            expect(wrapper.get('main').attributes('id')).toBe('main-content');
+        });
+
+        it('offers a skip link as the very first focusable element', () => {
+            const wrapper = mount(AppLayout, { global });
+
+            const skip = wrapper.get('a[href="#main-content"]');
+
+            expect(skip.text()).toBe('Skip to content');
+            expect(wrapper.element.firstElementChild).toBe(skip.element);
+        });
+
+        it('labels the sidebar navigation landmark', () => {
+            const wrapper = mount(AppLayout, { global });
+
+            expect(wrapper.get('nav').attributes('aria-label')).toBe('Main');
+        });
+
+        it('links the header to the main region for assistive technology', () => {
+            const wrapper = mount(AppLayout, { global });
+
+            expect(wrapper.findAll('header')).toHaveLength(1);
+        });
+    });
+
+    describe('current page', () => {
+        it('keeps the parent item current on a nested url', () => {
+            pageState.url = '/tasks/mine';
+            const wrapper = mount(AppLayout, { global });
+
+            const anchors = wrapper.findAll('nav a');
+            const tasks = anchors.find((anchor) => anchor.attributes('href') === '/tasks');
+
+            expect(tasks.attributes('aria-current')).toBe('page');
+        });
+
+        it('ignores the query string when matching the current url', () => {
+            pageState.url = '/tasks?status=todo';
+            const wrapper = mount(AppLayout, { global });
+
+            const anchors = wrapper.findAll('nav a');
+            const tasks = anchors.find((anchor) => anchor.attributes('href') === '/tasks');
+
+            expect(tasks.attributes('aria-current')).toBe('page');
+        });
+
+        it('does not mark a sibling as current', () => {
+            pageState.url = '/tasks/mine';
+            const wrapper = mount(AppLayout, { global });
+
+            const anchors = wrapper.findAll('nav a');
+            const projects = anchors.find((anchor) => anchor.attributes('href') === '/projects');
+
+            expect(projects.attributes('aria-current')).toBeUndefined();
+        });
+    });
+
+    describe('mobile drawer', () => {
+        it('reports its state through the trigger button', async () => {
+            viewport(420);
+            const wrapper = mount(AppLayout, { global });
+
+            const trigger = wrapper.get('[aria-label="Open menu"]');
+
+            expect(trigger.attributes('aria-expanded')).toBe('false');
+            expect(trigger.attributes('aria-controls')).toBe('app-drawer');
+
+            await trigger.trigger('click');
+
+            expect(wrapper.get('[aria-label="Open menu"]').attributes('aria-expanded')).toBe('true');
+        });
+
+        it('takes the closed drawer out of the tab order on a narrow viewport', async () => {
+            viewport(420);
+            const wrapper = mount(AppLayout, { global });
+
+            expect(wrapper.get('aside').attributes('inert')).toBe('');
+
+            await wrapper.find('[aria-label="Open menu"]').trigger('click');
+
+            expect(wrapper.get('aside').attributes('inert')).toBeUndefined();
+        });
+
+        it('keeps the drawer reachable on a wide viewport even when collapsed', async () => {
+            viewport(1280);
+            const wrapper = mount(AppLayout, { global });
+
+            await nextTick();
+
+            expect(wrapper.get('aside').attributes('inert')).toBeUndefined();
+        });
+
+        it('moves focus into the drawer when it is opened', async () => {
+            viewport(420);
+            const wrapper = mount(AppLayout, { global, attachTo: document.body });
+
+            await wrapper.find('[aria-label="Open menu"]').trigger('click');
+            await nextTick();
+            await nextTick();
+
+            expect(document.activeElement).toBe(wrapper.get('nav').element);
+        });
+
+        it('closes the drawer with Escape and hands focus back to the trigger', async () => {
+            viewport(420);
+            const wrapper = mount(AppLayout, { global, attachTo: document.body });
+
+            await wrapper.find('[aria-label="Open menu"]').trigger('click');
+            await nextTick();
+            await nextTick();
+
+            pressKey('Escape');
+            await nextTick();
+            await nextTick();
+
+            expect(wrapper.get('aside').attributes('inert')).toBe('');
+            expect(document.activeElement).toBe(wrapper.get('[aria-label="Open menu"]').element);
+
+            wrapper.unmount();
+        });
+
+        it('leaves Escape alone while the drawer is closed', () => {
+            viewport(420);
+            const wrapper = mount(AppLayout, { global });
+
+            pressKey('Escape');
+
+            expect(wrapper.get('aside').attributes('inert')).toBe('');
+        });
+    });
+
+    it('gives the header avatar an accessible name when there is no adjacent text', () => {
+        pageState.props = {
+            flash: {},
+            can: [],
+            auth: { user: { id: 7, name: 'Grace Hopper', email: null } },
+        };
+
+        const wrapper = mount(AppLayout, { global });
+
+        const AvatarMeaningful = {
+            props: ['name', 'src', 'size', 'decorative'],
+            template: '<span data-test="avatar" :aria-hidden="decorative ? \'true\' : undefined" :aria-label="decorative ? undefined : name" />',
+        };
+
+        const withAvatar = mount(AppLayout, {
+            global: { ...global, stubs: { ...global.stubs, Avatar: AvatarMeaningful } },
+        });
+
+        const headerAvatar = withAvatar.get('header [data-test="avatar"]');
+
+        expect(headerAvatar.attributes('aria-hidden')).toBeUndefined();
+        expect(headerAvatar.attributes('aria-label')).toBe('Grace Hopper');
+        expect(wrapper.findAll('aside [data-test="avatar"]').length).toBeGreaterThan(0);
     });
 });
