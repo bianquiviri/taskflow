@@ -1,14 +1,30 @@
 <script setup>
+import { computed, toRef } from 'vue';
 import { Head, Link } from '@inertiajs/vue3';
+import PageSkeleton from '../../Components/PageSkeleton.vue';
 import TaskFilterForm from '../../Components/TaskFilterForm.vue';
 import TaskList from '../../Components/TaskList.vue';
+import { useActiveFilters } from '../../Composables/useActiveFilters';
+import { usePageLoading } from '../../Composables/usePageLoading';
 
-defineProps({
+const props = defineProps({
     project: { type: Object, required: true },
     tasks: { type: Object, required: true },
     filters: { type: Object, required: true },
     filterOptions: { type: Object, required: true },
 });
+
+const { loading } = usePageLoading();
+
+const hasFilters = useActiveFilters(toRef(props, 'filters'));
+
+const emptyTitle = computed(() => (hasFilters.value
+    ? 'No task matches the filters'
+    : `No tasks in ${props.project.name} yet`));
+
+const emptyDescription = computed(() => (hasFilters.value
+    ? 'Clear the filters to see every task of the project.'
+    : 'The board of the project is where the tasks are created.'));
 </script>
 
 <template>
@@ -38,6 +54,29 @@ defineProps({
       />
     </div>
 
-    <TaskList :tasks="tasks" />
+    <PageSkeleton
+      v-if="loading"
+      :rows="5"
+    />
+
+    <TaskList
+      v-else
+      :tasks="tasks"
+      :empty-title="emptyTitle"
+      :empty-description="emptyDescription"
+    >
+      <template
+        v-if="!hasFilters"
+        #action
+      >
+        <Link
+          data-test="task-list-cta"
+          :href="`/projects/${project.id}`"
+          class="inline-flex min-h-10 items-center rounded-control bg-brand-600 px-4 py-2 text-sm font-semibold text-content-inverted"
+        >
+          Open the board
+        </Link>
+      </template>
+    </TaskList>
   </div>
 </template>

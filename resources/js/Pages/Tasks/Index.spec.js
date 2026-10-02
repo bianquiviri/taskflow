@@ -1,7 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nextTick } from 'vue';
 import { mount } from '@vue/test-utils';
 
-const { router } = vi.hoisted(() => ({ router: { get: vi.fn() } }));
+const { events, router } = vi.hoisted(() => {
+    const events = {};
+    const stop = vi.fn();
+
+    return {
+        events,
+        router: {
+            get: vi.fn(),
+            on: vi.fn((name, handler) => {
+                events[name] = handler;
+
+                return stop;
+            }),
+        },
+    };
+});
 
 vi.mock('@inertiajs/vue3', () => ({
     router,
@@ -44,15 +60,21 @@ const filters = {
     due_to: null,
 };
 
+const emptyTasks = { ...paginatedTasks, data: [], total: 0 };
+
+function mountPage(props = {}) {
+    return mount(Index, {
+        props: { project, tasks: paginatedTasks, filters, filterOptions, ...props },
+    });
+}
+
 beforeEach(() => {
     router.get.mockReset();
 });
 
 describe('Tasks/Index.vue', () => {
     it('renders the board of a project with every filter', () => {
-        const wrapper = mount(Index, {
-            props: { project, tasks: paginatedTasks, filters, filterOptions },
-        });
+        const wrapper = mountPage();
 
         expect(wrapper.text()).toContain('Website Tasks');
         expect(wrapper.get('[data-test="filter-assignee"]').exists()).toBe(true);
@@ -60,17 +82,13 @@ describe('Tasks/Index.vue', () => {
     });
 
     it('hides the project of a single project board', () => {
-        const wrapper = mount(Index, {
-            props: { project, tasks: paginatedTasks, filters, filterOptions },
-        });
+        const wrapper = mountPage();
 
         expect(wrapper.find('[data-test="task-row-project"]').exists()).toBe(false);
     });
 
     it('filters the board through its own url', async () => {
-        const wrapper = mount(Index, {
-            props: { project, tasks: paginatedTasks, filters, filterOptions },
-        });
+        const wrapper = mountPage();
 
         await wrapper.get('[data-test="filter-status"]').setValue('in_progress');
         await wrapper.get('form').trigger('submit');
@@ -83,10 +101,40 @@ describe('Tasks/Index.vue', () => {
     });
 
     it('links to the my tasks listing', () => {
-        const wrapper = mount(Index, {
-            props: { project, tasks: paginatedTasks, filters, filterOptions },
-        });
+        const wrapper = mountPage();
 
         expect(wrapper.get('a[href="/tasks/mine"]').text()).toBe('My tasks');
+    });
+
+    it('paints a skeleton while the listing is on its way', async () => {
+        const wrapper = mountPage();
+
+        expect(wrapper.find('[data-test="page-skeleton"]').exists()).toBe(false);
+
+        events.start({ method: 'get', only: [] });
+        await nextTick();
+
+        expect(wrapper.find('[data-test="page-skeleton"]').exists()).toBe(true);
+        expect(wrapper.find('[data-test="task-row"]').exists()).toBe(false);
+
+        events.finish({ method: 'get', only: [] });
+        await nextTick();
+
+        expect(wrapper.find('[data-test="page-skeleton"]').exists()).toBe(false);
+        expect(wrapper.find('[data-test="task-row"]').exists()).toBe(true);
+    });
+
+    it('points a first run at the project board that creates tasks', () => {
+        const wrapper = mountPage({ tasks: emptyTasks });
+
+        expect(wrapper.get('[data-test="task-list-empty"]').text()).toContain('No tasks in Website yet');
+        expect(wrapper.get('[data-test="task-list-empty"] a').attributes('href')).toBe('/projects/1');
+    });
+
+    it('offers to clear the filters when they hide the tasks', () => {
+        const wrapper = mountPage({ tasks: emptyTasks, filters: { ...filters, status: 'todo' } });
+
+        expect(wrapper.get('[data-test="task-list-empty"]').text()).toContain('No task matches the filters');
+        expect(wrapper.find('[data-test="task-list-empty"] a').exists()).toBe(false);
     });
 });
