@@ -52,13 +52,15 @@ describe('FlashMessages.vue', () => {
         expect(wrapper.text()).not.toContain('Nope.');
     });
 
-    it('does not render when there are no messages', () => {
+    it('renders an empty live region when there are no messages', () => {
         const wrapper = mount(FlashMessages, {
             props: { messages: {} },
             global,
         });
 
-        expect(wrapper.find('[aria-live]').exists()).toBe(false);
+        expect(wrapper.get('[data-test="toast-region"]').exists()).toBe(true);
+        expect(wrapper.find('[role="status"]').exists()).toBe(false);
+        expect(wrapper.find('[role="alert"]').exists()).toBe(false);
     });
 
     it('skips null values for a known tone', () => {
@@ -67,7 +69,131 @@ describe('FlashMessages.vue', () => {
             global,
         });
 
-        expect(wrapper.find('[aria-live]').exists()).toBe(false);
+        expect(wrapper.find('[role="status"]').exists()).toBe(false);
+        expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+    });
+
+    describe('announcements', () => {
+        it('keeps the same region node when a message arrives', async () => {
+            const wrapper = mount(FlashMessages, {
+                props: { messages: {} },
+                global,
+                attachTo: document.body,
+            });
+
+            const region = wrapper.get('[data-test="toast-region"]').element;
+
+            await wrapper.setProps({ messages: { success: 'Arrived.' } });
+
+            expect(wrapper.get('[data-test="toast-region"]').element).toBe(region);
+            expect(region.textContent).toContain('Arrived.');
+
+            wrapper.unmount();
+            document.body.innerHTML = '';
+        });
+
+        it('announces errors assertively and everything else politely', () => {
+            const wrapper = mount(FlashMessages, {
+                props: { messages: { error: 'Nope.', success: 'Done.', info: 'FYI.' } },
+                global,
+            });
+
+            const alerts = wrapper.findAll('[role="alert"]');
+            const statuses = wrapper.findAll('[role="status"]');
+
+            expect(alerts.map((alert) => alert.text())).toEqual([expect.stringContaining('Nope.')]);
+            expect(statuses).toHaveLength(2);
+        });
+
+        it('does not nest the messages in a second live region', () => {
+            const wrapper = mount(FlashMessages, {
+                props: { messages: { success: 'Done.' } },
+                global,
+            });
+
+            expect(wrapper.find('[aria-live]').exists()).toBe(false);
+        });
+
+        it('keeps the dismiss button reachable and named', () => {
+            const wrapper = mount(FlashMessages, {
+                props: { messages: { error: 'Nope.' } },
+                global,
+            });
+
+            expect(wrapper.get('button').attributes('aria-label')).toBe('Dismiss Error message');
+        });
+    });
+
+    describe('dismissal timers', () => {
+        it('holds the message while it is being pointed at', async () => {
+            vi.useFakeTimers();
+            const wrapper = mount(FlashMessages, {
+                props: { messages: { success: 'Hover me.' } },
+                global,
+            });
+
+            await wrapper.get('[data-test="toast-region"]').trigger('mouseenter');
+            vi.advanceTimersByTime(20000);
+            await nextTick();
+
+            expect(wrapper.text()).toContain('Hover me.');
+
+            await wrapper.get('[data-test="toast-region"]').trigger('mouseleave');
+            vi.advanceTimersByTime(5000);
+            await nextTick();
+
+            expect(wrapper.text()).not.toContain('Hover me.');
+            vi.useRealTimers();
+        });
+
+        it('holds the message while it holds the keyboard focus', async () => {
+            vi.useFakeTimers();
+            const wrapper = mount(FlashMessages, {
+                props: { messages: { success: 'Focus me.' } },
+                global,
+                attachTo: document.body,
+            });
+
+            await wrapper.get('button').trigger('focusin');
+            vi.advanceTimersByTime(20000);
+            await nextTick();
+
+            expect(wrapper.text()).toContain('Focus me.');
+
+            await wrapper.get('[data-test="toast-region"]').trigger('focusout', {
+                relatedTarget: document.body,
+            });
+            vi.advanceTimersByTime(5000);
+            await nextTick();
+
+            expect(wrapper.text()).not.toContain('Focus me.');
+
+            wrapper.unmount();
+            document.body.innerHTML = '';
+            vi.useRealTimers();
+        });
+
+        it('keeps holding the message while focus moves inside the region', async () => {
+            vi.useFakeTimers();
+            const wrapper = mount(FlashMessages, {
+                props: { messages: { success: 'One.', warning: 'Two.' } },
+                global,
+                attachTo: document.body,
+            });
+
+            await wrapper.get('button').trigger('focusin');
+            await wrapper.get('[data-test="toast-region"]').trigger('focusout', {
+                relatedTarget: wrapper.get('button').element,
+            });
+            vi.advanceTimersByTime(20000);
+            await nextTick();
+
+            expect(wrapper.text()).toContain('One.');
+
+            wrapper.unmount();
+            document.body.innerHTML = '';
+            vi.useRealTimers();
+        });
     });
 
     it('dismisses a message when its close button is clicked', async () => {

@@ -68,6 +68,7 @@ function accept() {
       <p
         v-if="notice"
         data-test="invitation-notice"
+        role="status"
         class="mt-4 flex items-start gap-2 rounded-control bg-warning-soft px-3 py-2 text-sm text-warning-text"
       >
         <Icon

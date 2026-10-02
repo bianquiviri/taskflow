@@ -37,7 +37,7 @@ function label(value) {
         :href="link.url"
         preserve-scroll
         data-test="pagination-link"
-        class="rounded-control px-3 py-2 text-sm font-medium transition-colors"
+        class="rounded-control px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-raised"
         :class="link.active
           ? 'bg-brand-soft text-brand-text'
           : 'text-content-muted hover:bg-sunken hover:text-content'"

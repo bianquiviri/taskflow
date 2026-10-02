@@ -74,11 +74,18 @@ describe('Teams/Invitation.vue', () => {
         expect(wrapper.get('[data-test="invitation-notice"]').text()).toContain('another email address');
     });
 
+    it('announces the notice politely', () => {
+        const wrapper = mountPage({ status: 'expired' });
+
+        expect(wrapper.get('[data-test="invitation-notice"]').attributes('role')).toBe('status');
+    });
+
     it('shows the rejection returned by the server and blocks a retry', () => {
         pageProps.errors = { token: 'This invitation has expired.' };
         const wrapper = mountPage();
 
         expect(wrapper.get('[data-test="token-error"]').text()).toBe('This invitation has expired.');
+        expect(wrapper.get('[data-test="token-error"]').attributes('role')).toBe('alert');
         expect(wrapper.find('[data-test="accept-button"]').exists()).toBe(false);
     });
 
