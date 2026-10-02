@@ -8,6 +8,8 @@ import TaskPagination from './TaskPagination.vue';
 const props = defineProps({
     tasks: { type: Object, required: true },
     showProject: { type: Boolean, default: false },
+    emptyTitle: { type: String, default: 'No tasks found' },
+    emptyDescription: { type: String, default: 'No task matches the current filters.' },
 });
 
 const dateFormatter = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' });
@@ -37,9 +39,16 @@ function formatDate(value) {
     >
       <EmptyState
         icon="info"
-        title="No tasks found"
-        description="No task matches the current filters."
-      />
+        :title="emptyTitle"
+        :description="emptyDescription"
+      >
+        <template
+          v-if="$slots.action"
+          #action
+        >
+          <slot name="action" />
+        </template>
+      </EmptyState>
     </div>
 
     <ul

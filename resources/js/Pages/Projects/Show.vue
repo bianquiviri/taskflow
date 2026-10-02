@@ -1,7 +1,9 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, toRef } from 'vue';
+import { computed, ref, toRef } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
+import { useActiveFilters } from '../../Composables/useActiveFilters';
 import { useCan } from '../../Composables/useCan';
+import { usePageLoading } from '../../Composables/usePageLoading';
 import { useTaskStatusChange } from '../../Composables/useTaskStatusChange';
 import Avatar from '../../Components/Avatar.vue';
 import Badge from '../../Components/Badge.vue';
@@ -33,10 +35,8 @@ const { changeStatus, error, isPending } = useTaskStatusChange({
     canChange: (task) => can(`tasks.${task.id}.changeStatus`),
 });
 
-const loading = ref(false);
+const { loading } = usePageLoading();
 const formOpen = ref(false);
-let stopStart = null;
-let stopFinish = null;
 
 const views = [
     { value: 'board', label: 'Board' },
@@ -45,37 +45,19 @@ const views = [
 
 const roleTones = { owner: 'indigo', admin: 'sky', member: 'gray' };
 
-const hasFilters = computed(() =>
-    Object.values(props.filters ?? {}).some((value) => value !== null && value !== undefined && value !== ''),
-);
+const hasFilters = useActiveFilters(toRef(props, 'filters'));
 
 const progressLabel = computed(() => (props.progress.total === 0
     ? 'No tasks yet'
     : `${props.progress.done} of ${props.progress.total} tasks done · ${props.progress.percent}%`));
 
-const emptyBoardTitle = computed(() => (hasFilters.value
+const emptyTitle = computed(() => (hasFilters.value
     ? 'No task matches the filters'
-    : 'No tasks on this board yet'));
+    : 'No tasks yet'));
 
-const emptyBoardDescription = computed(() => (hasFilters.value
+const emptyDescription = computed(() => (hasFilters.value
     ? 'Clear the filters to see the rest of the project.'
-    : 'Create the first task to fill the board.'));
-
-onMounted(() => {
-    stopStart = router.on('start', (visit) => {
-        if (visit?.method === 'get' && !(visit.only?.length > 0)) {
-            loading.value = true;
-        }
-    });
-    stopFinish = router.on('finish', () => {
-        loading.value = false;
-    });
-});
-
-onUnmounted(() => {
-    stopStart?.();
-    stopFinish?.();
-});
+    : 'Create the first task of the project to get going.'));
 
 function canChangeTask(task) {
     return can(`tasks.${task.id}.changeStatus`);
@@ -234,14 +216,16 @@ function switchView(view) {
         :statuses="statuses"
         :can-change="canChangeTask"
         :is-pending="isPending"
-        :empty-title="emptyBoardTitle"
-        :empty-description="emptyBoardDescription"
+        :empty-title="emptyTitle"
+        :empty-description="emptyDescription"
         @move="changeStatus"
       />
 
       <TaskList
         v-else
         :tasks="tasks"
+        :empty-title="emptyTitle"
+        :empty-description="emptyDescription"
       />
 
       <TaskPagination :links="tasks.links ?? []" />

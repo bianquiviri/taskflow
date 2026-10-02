@@ -30,9 +30,10 @@ const tasks = {
     links: [],
 };
 
-function mountList(props = {}) {
+function mountList(props = {}, options = {}) {
     return mount(TaskList, {
         props: { tasks, ...props },
+        slots: options.slots,
         global: {
             stubs: {
                 Link: { props: ['href'], template: '<a :href="href"><slot /></a>' },
@@ -82,6 +83,33 @@ describe('TaskList.vue', () => {
         expect(wrapper.findAll('[data-test="task-row"]')).toHaveLength(0);
         expect(wrapper.get('[data-test="task-list-empty"]').text()).toContain('No tasks found');
         expect(wrapper.find('[data-test="task-count"]').exists()).toBe(false);
+    });
+
+    it('takes the empty wording from the page so a first run reads as one', () => {
+        const wrapper = mountList({
+            tasks: { ...tasks, data: [], total: 0 },
+            emptyTitle: 'Nothing is assigned to you',
+            emptyDescription: 'Tasks assigned to you show up here.',
+        });
+
+        expect(wrapper.get('[data-test="task-list-empty"]').text()).toContain('Nothing is assigned to you');
+        expect(wrapper.get('[data-test="task-list-empty"]').text()).toContain('Tasks assigned to you show up here.');
+    });
+
+    it('renders the call to action of an empty listing only when it is given one', () => {
+        const empty = { tasks: { ...tasks, data: [], total: 0 } };
+
+        expect(mountList(empty).find('[data-test="empty-state-action"]').exists()).toBe(false);
+
+        const wrapper = mountList(empty, {
+            slots: {
+                action: '<a data-test="empty-cta" href="/projects">Go to projects</a>',
+            },
+        });
+
+        expect(wrapper.get('[data-test="empty-state-action"] [data-test="empty-cta"]').attributes('href'))
+            .toBe('/projects');
+        expect(mountList().find('[data-test="empty-state-action"]').exists()).toBe(false);
     });
 
     it('renders the paginator links of the listing', () => {
