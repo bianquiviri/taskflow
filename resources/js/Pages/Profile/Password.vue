@@ -86,7 +86,7 @@ function save() {
             v-model="visible"
             data-test="toggle-password"
             type="checkbox"
-            class="size-4 rounded border-line-strong text-brand-600 focus:ring-focus"
+            class="size-4 rounded border-line-strong text-brand-600 dark:text-brand-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-raised"
           >
           Show the new password
         </label>

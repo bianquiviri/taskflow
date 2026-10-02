@@ -104,7 +104,7 @@ onBeforeUnmount(() => {
         :class="['mt-0.5 size-5 shrink-0', toneConfig[toast.tone].iconColor]"
       />
       <div class="min-w-0 flex-1">
-        <p class="text-xs font-semibold uppercase tracking-wide text-content-faint">
+        <p class="text-xs font-semibold uppercase tracking-wide text-content-subtle">
           {{ toneConfig[toast.tone].label }}
         </p>
         <p
@@ -116,7 +116,7 @@ onBeforeUnmount(() => {
       </div>
       <button
         type="button"
-        class="rounded-md p-1 text-content-faint hover:bg-sunken hover:text-content"
+        class="rounded-md p-1 text-content-subtle hover:bg-sunken hover:text-content"
         :aria-label="`Dismiss ${toneConfig[toast.tone].label} message`"
         @click="dismiss(toast.id)"
       >

@@ -48,7 +48,7 @@ function removeMember(member) {
 
   <div class="mx-auto w-full max-w-4xl px-6 py-10">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+      <h1 class="text-3xl font-bold tracking-tight text-content">
         {{ team.name }}
       </h1>
       <Link
@@ -63,9 +63,9 @@ function removeMember(member) {
     <section
       v-if="canManageMembers"
       data-test="invite-form"
-      class="mt-8 rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+      class="mt-8 rounded-panel border border-line bg-raised p-5 shadow-sm"
     >
-      <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-content-subtle">
         Invite somebody
       </h2>
 
@@ -110,7 +110,7 @@ function removeMember(member) {
     </section>
 
     <section class="mt-10">
-      <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-content-subtle">
         Members
       </h2>
 
@@ -131,17 +131,17 @@ function removeMember(member) {
           v-for="member in members"
           :key="member.id"
           data-test="member-row"
-          class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900"
+          class="flex items-center gap-3 rounded-panel border border-line bg-raised px-4 py-3"
         >
           <Avatar
             size="sm"
             :name="member.name"
           />
           <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
+            <p class="truncate text-sm font-medium text-content">
               {{ member.name }}
             </p>
-            <p class="truncate text-xs text-gray-500 dark:text-gray-400">
+            <p class="truncate text-xs text-content-subtle">
               {{ member.email }}
             </p>
           </div>
@@ -163,7 +163,7 @@ function removeMember(member) {
     </section>
 
     <section class="mt-10">
-      <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+      <h2 class="text-sm font-semibold uppercase tracking-wide text-content-subtle">
         Pending invitations
       </h2>
 
@@ -187,19 +187,19 @@ function removeMember(member) {
           v-for="invitation in pendingInvitations"
           :key="invitation.id"
           data-test="invitation-row"
-          class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 dark:border-gray-800 dark:bg-gray-900"
+          class="flex items-center gap-3 rounded-panel border border-line bg-raised px-4 py-3"
         >
-          <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400">
+          <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-warning-soft text-warning-text">
             <Icon
               name="bell"
               class="size-4"
             />
           </span>
           <div class="min-w-0 flex-1">
-            <p class="truncate text-sm text-gray-900 dark:text-white">
+            <p class="truncate text-sm text-content">
               {{ invitation.email }}
             </p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
+            <p class="text-xs text-content-subtle">
               Expires on {{ formattedExpiry(invitation.expiresAt) }}
             </p>
           </div>

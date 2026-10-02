@@ -40,7 +40,7 @@ function updateValue(event) {
       :aria-invalid="error ? 'true' : undefined"
       :aria-describedby="error ? `${textareaId}-error` : undefined"
       rows="4"
-      class="block min-h-24 w-full resize-y rounded-control border px-3 py-2 text-sm text-content shadow-sm transition-colors placeholder:text-content-faint focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-sunken"
+      class="block min-h-24 w-full resize-y rounded-control border px-3 py-2 text-sm text-content shadow-sm transition-colors placeholder:text-content-subtle focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-sunken"
       :class="error
         ? 'border-danger focus:border-danger focus:ring-danger'
         : 'border-line-strong focus:border-focus focus:ring-focus'"

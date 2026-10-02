@@ -42,17 +42,17 @@ function accept() {
   <Head :title="`Join ${team.name}`" />
 
   <div class="mx-auto w-full max-w-2xl px-6 py-10">
-    <h1 class="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+    <h1 class="text-3xl font-bold tracking-tight text-content">
       Join {{ team.name }}
     </h1>
 
     <section
       data-test="invitation-card"
-      class="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+      class="mt-6 rounded-panel border border-line bg-raised p-6 shadow-sm"
     >
-      <p class="text-sm text-gray-600 dark:text-gray-300">
+      <p class="text-sm text-content-muted">
         You have been invited to join
-        <span class="font-semibold text-gray-900 dark:text-white">{{ team.name }}</span>
+        <span class="font-semibold text-content">{{ team.name }}</span>
         as
       </p>
 
@@ -60,7 +60,7 @@ function accept() {
         <Badge :tone="role.tone">
           {{ role.label }}
         </Badge>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
+        <p class="text-sm text-content-subtle">
           {{ email }} · expires on {{ formattedExpiry }}
         </p>
       </div>
@@ -68,7 +68,7 @@ function accept() {
       <p
         v-if="notice"
         data-test="invitation-notice"
-        class="mt-4 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-500/10 dark:text-amber-300"
+        class="mt-4 flex items-start gap-2 rounded-control bg-warning-soft px-3 py-2 text-sm text-warning-text"
       >
         <Icon
           name="warning"
@@ -80,7 +80,7 @@ function accept() {
       <p
         v-if="tokenError"
         data-test="token-error"
-        class="mt-4 text-sm text-rose-600 dark:text-rose-400"
+        class="mt-4 text-sm text-danger-text"
         role="alert"
       >
         {{ tokenError }}
@@ -97,13 +97,13 @@ function accept() {
         </Button>
         <Link
           v-if="status === 'already_member'"
-          class="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+          class="text-sm font-medium text-brand-text hover:underline"
           :href="`/teams/${team.id}`"
         >
           Open the team
         </Link>
         <Link
-          class="text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400"
+          class="text-sm text-content-subtle hover:text-content"
           href="/projects"
         >
           Not now

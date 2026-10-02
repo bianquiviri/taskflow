@@ -130,7 +130,7 @@ function request(task, status) {
 
         <p
           v-if="column.tasks.length === 0"
-          class="px-1 py-4 text-center text-xs text-content-faint"
+          class="px-1 py-4 text-center text-xs text-content-subtle"
         >
           Drop a task here
         </p>
