@@ -82,11 +82,24 @@ describe('PasswordField.vue', () => {
         expect(mountField().get('input[name="password"]').attributes('minlength')).toBeUndefined();
     });
 
-    it('states the password rule only when a hint is given', () => {
-        expect(mountField().find('[data-test="password-hint"]').exists()).toBe(false);
+    it('describes the input with the password rule only when a hint is given', () => {
+        expect(mountField().get('input').attributes('aria-describedby')).toBeUndefined();
 
         const wrapper = mountField({ hint: 'Use at least 8 characters.' });
+        const input = wrapper.get('input');
 
-        expect(wrapper.get('[data-test="password-hint"]').text()).toBe('Use at least 8 characters.');
+        expect(input.attributes('aria-describedby')).toBe(
+            wrapper.get('[data-test="hint"]').attributes('id'),
+        );
+        expect(wrapper.get('[data-test="hint"]').text()).toBe('Use at least 8 characters.');
+    });
+
+    it('describes the input with both the rule and the server error', () => {
+        const wrapper = mountField({ hint: 'Use at least 8 characters.', error: 'Too short.' });
+
+        expect(wrapper.get('input').attributes('aria-describedby').split(' ')).toEqual([
+            wrapper.get('[data-test="hint"]').attributes('id'),
+            wrapper.get('[role="alert"]').attributes('id'),
+        ]);
     });
 });

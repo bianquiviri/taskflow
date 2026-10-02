@@ -14,6 +14,13 @@ const input = ref(null);
 
 const hint = computed(() => `Choose a file up to ${props.maxSize}.`);
 
+const describedBy = computed(() =>
+    [
+        hint.value ? 'task-attachment-hint' : null,
+        form.errors.file ? 'task-attachment-error' : null,
+    ].filter(Boolean).join(' ') || undefined,
+);
+
 function select(event) {
     form.file = event.target.files?.[0] ?? null;
     form.clearErrors('file');
@@ -55,11 +62,13 @@ function submit() {
         :accept="accept.join(',')"
         :disabled="form.processing"
         :aria-invalid="form.errors.file ? 'true' : undefined"
+        :aria-describedby="describedBy"
         class="block w-full rounded-control border border-line-strong bg-raised px-3 py-2 text-sm text-content-muted shadow-sm file:mr-3 file:rounded-control file:border-0 file:bg-sunken file:px-3 file:py-1 file:text-sm file:font-semibold file:text-content-muted hover:file:bg-line focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 focus:ring-offset-canvas disabled:cursor-not-allowed disabled:bg-sunken"
         @change="select"
       >
       <p
         v-if="form.errors.file"
+        id="task-attachment-error"
         data-test="attachment-error"
         class="mt-1.5 text-sm text-danger-text"
         role="alert"
@@ -69,7 +78,10 @@ function submit() {
     </div>
 
     <div class="flex items-center justify-between gap-4">
-      <p class="text-xs text-content-subtle">
+      <p
+        id="task-attachment-hint"
+        class="text-xs text-content-subtle"
+      >
         {{ hint }}
       </p>
       <Button

@@ -59,4 +59,37 @@ describe('FormInput.vue', () => {
             autocomplete: 'email',
         });
     });
+
+    describe('hints', () => {
+        it('describes the input with the hint text', () => {
+            const wrapper = mount(FormInput, {
+                props: { id: 'task-title', label: 'Task title', hint: 'Keep it short.' },
+            });
+
+            const hint = wrapper.get('[data-test="hint"]');
+
+            expect(hint.text()).toBe('Keep it short.');
+            expect(wrapper.get('input').attributes('aria-describedby')).toBe(hint.attributes('id'));
+        });
+
+        it('describes the input with both the hint and the error', () => {
+            const wrapper = mount(FormInput, {
+                props: { id: 'task-title', hint: 'Keep it short.', error: 'A title is required.' },
+            });
+
+            const describedby = wrapper.get('input').attributes('aria-describedby').split(' ');
+
+            expect(describedby).toEqual([
+                wrapper.get('[data-test="hint"]').attributes('id'),
+                wrapper.get('[role="alert"]').attributes('id'),
+            ]);
+        });
+
+        it('omits the description when there is no hint and no error', () => {
+            const wrapper = mount(FormInput, { props: { label: 'Task title' } });
+
+            expect(wrapper.get('input').attributes('aria-describedby')).toBeUndefined();
+            expect(wrapper.find('[data-test="hint"]').exists()).toBe(false);
+        });
+    });
 });

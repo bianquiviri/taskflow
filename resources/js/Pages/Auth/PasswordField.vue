@@ -34,6 +34,7 @@ const toggleLabel = computed(() => (revealed.value ? props.hideLabel : props.rev
       :name="name"
       :type="type"
       :label="label"
+      :hint="hint"
       :minlength="minlength"
       :autocomplete="autocomplete"
       :error="error"
@@ -42,14 +43,6 @@ const toggleLabel = computed(() => (revealed.value ? props.hideLabel : props.rev
       :autofocus="autofocus"
       @update:model-value="emit('update:modelValue', $event)"
     />
-
-    <p
-      v-if="hint"
-      data-test="password-hint"
-      class="mt-1.5 text-xs text-content-subtle"
-    >
-      {{ hint }}
-    </p>
 
     <div class="mt-1.5 flex justify-end">
       <button
