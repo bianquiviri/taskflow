@@ -30,6 +30,100 @@ truth for the project's evolution.
 
 ---
 
+## 2026-09-28 — Round 10: empty states/onboarding (#33) + a11y pass (#34)
+
+**Context:** The v1.0.0 polish pair. #33 (first-run UX) and #34 (accessibility)
+touch the same pages, so #34 was scoped **away** from every file #33 rewrote —
+the pair ran in parallel with provably disjoint file sets and merged clean.
+Before them, a deploy slice (#21 Cloud Run, #22 managed MySQL/Redis) was
+written and deliberately **parked** (see Decisions).
+
+**Changes:**
+
+- **#33 — Empty states, skeletons, onboarding** (`feature/33-empty-states-onboarding`,
+  PR #77): `usePageLoading()` extracts the rule #20 already used in
+  `Projects/Show` — `router.on('start'/'finish')` per page, skeleton only for a
+  full-page GET, never for a mutation (the Inertia progress bar answers that) or
+  a partial reload; `useActiveFilters()` de-duplicates the "filters are hiding
+  things" predicate; `PageSkeleton` + `DashboardSkeleton` compose #17's
+  `Skeleton` with `role="status"` + `aria-busy` + sr-only "Loading…";
+  `Onboarding/Checklist.vue` (create team → invite → create project → first task)
+  shown only while `kpis.projects === 0`; **`ProjectFormModal.vue` closes a real
+  gap — `POST /projects` existed since #11 with no create UI at all** (frontend
+  only, gated by the shared `can('projects.create')`); `EmptyState` now reused
+  consistently (projects index bare line removed, task-list copy page-owned so
+  "first run" and "nothing matches these filters" read differently). CTA→route
+  map verified against `routes/web.php`; the checklist states that team creation
+  is unavailable instead of inventing a link (no `POST /teams` exists).
+  +51 Vitest (61 files / 457), coverage 97.08% stmt, build 186 kB.
+- **#34 — Accessibility pass** (`feature/34-accessibility`, PR #78), scoped to
+  AppLayout/Auth pages/Teams/Profile/Task show + shared components: skip link as
+  first focusable element, focusable `<main>`, labelled `nav`, off-canvas drawer
+  leaves the tab order via `inert` with `aria-expanded`/`aria-controls`, focus
+  taken on open and restored to the trigger on `Escape` (only when focus was
+  inside, so a mouse close is left alone); focus rings where missing (modal
+  close, toast dismiss, both pagers). **Contrast was measured, not eyeballed** —
+  a script composites the OKLCH token values per surface (light *and* dark):
+  `--line-strong` 1.34:1 → **3.06:1** light and 1.42:1 → **3.16:1** dark (control
+  boundaries), `--content-subtle` 4.39:1 → 4.51:1 on sunken surfaces,
+  `--content-inverted` dark 2.20–2.76:1 → **6.44–8.07:1** (primary buttons),
+  `--danger` dark keeps a white label at 4.67:1; placeholders/toast labels moved
+  off `--content-faint` (2.36–2.60:1). ARIA: `FlashMessages` renders its live
+  region *before* content is inserted and pauses auto-dismiss on hover/focus
+  (WCAG 2.2.1), `hint` + `aria-describedby` on all form fields, `Avatar`
+  `decorative` prop (header avatar is now announced), `Icon` `aria-hidden` +
+  `focusable=false` by default, `aria-current` matching on path only so
+  `/tasks/mine?status=todo` still marks Tasks. 448 Vitest · 342 Pest · 5 new
+  Playwright a11y specs (11 e2e total) · 32 files, none from #33's set.
+- **#79 — new issue**: `AppLayout` links to `/tasks` and `/settings`, **neither
+  route exists** (bug from #16, 404 for every signed-in user), and there is no
+  `POST /teams` / team-create UI. Decision taken with the product owner: the
+  routes are **not** created inside #33/#34 (it would have re-created the file
+  overlap); they get wired in a dedicated issue, with an acceptance criterion
+  asserting every nav href resolves to a real route.
+- **#80 — new issue**: second a11y pass for what #34 had to skip — the filtered
+  results count inside `TaskList` has no live region, and the four pages #33
+  rewrote still carry raw palette classes.
+
+**Decisions:**
+
+- **The deploy slice (#21/#22) was parked, not merged.** Both agents finished and
+  pushed (`feature/21-cloud-run` @ `f97a09b`, `feature/22-managed-data` @
+  `9fcdea9`) with no PR. `docs/ARCHITECTURE.md` says the repo is *developed
+  locally only until the cloud integration phase* and #21 itself says *"once
+  milestone code is ready"* — v1.0.0 was not ready, so shipping deployment IaC
+  was premature. Product owner chose to **keep the branches as reference and
+  defer**: both issues closed as `not planned` with the branch + reason recorded,
+  to be reopened in the v1.1.0 cloud phase (#21–#24). Nothing was provisioned:
+  the environment has no `gcloud`, no terraform and no GCP credentials, so the
+  deliverable was IaC + runbooks only — explicitly unverified against the real
+  GCP API (the #22 agent caught 5 real gcloud flag bugs precisely by checking the
+  official references instead of trusting memory, which is the honest signal that
+  this work needs a real project before it can be trusted).
+- Parallelising #33 and #34 required **file-level scope fences**, not just
+  "different components": the prompt listed every file #33 creates/edits as
+  forbidden and the agent had to `git diff --name-only origin/develop...HEAD` and
+  report the list as proof. That check is what made the clean merge possible.
+- Skeletons are **per page**, not a global overlay in `AppLayout`: Inertia v3 has
+  no skeleton slot, and an overlay would also cover auth pages and modal submits.
+- Contrast was fixed by **adjusting existing tokens**, not by adding a colour
+  system; the measured before/after ratios are recorded above so a future
+  re-tokenisation can be checked against a baseline.
+- Dead nav links were left untouched on purpose (issue #79) rather than
+  repointed ad hoc: choosing the destination is a product decision, not a11y
+  work.
+
+**Verification:** PRs #77/#78 green on all 6 checks; `develop` CI green after
+each merge. Local: ESLint 0, Vitest 448 (#34) / 457 (#33, after the other branch
+landed), Pint 200 files, Pest 342 (2046 assertions), Playwright 11, build ok.
+
+**Status (end of session):** `develop` `4539a8f`. Open issues: **#25** (release
+v1.0.0 QA + changelog — the only remaining v1.0.0 task), #79, #80, and the
+deferred cloud slice #23/#24. Next: #25 — release `v1.0.0` (changelog, release
+notes, tag) merging `develop` into `main`.
+
+---
+
 ## 2026-09-28 — Round 9: activity feed timeline + production image (P0 #2)
 
 **Context:** The two P2/P0 leftovers that touch no shared frontend surface ran
