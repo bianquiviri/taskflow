@@ -2,17 +2,16 @@
 import { computed } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import Icon from '../Icon.vue';
+import { useCan } from '../../Composables/useCan';
 
 /**
  * The four steps that take a new account from an empty workspace to tracked
  * work: team, invitation, project, task. Every step carries the call to action
- * of the flow that really exists: there is no route to create a team, so that
- * step is stated plainly instead of linking to an invented destination, and the
- * task step falls back to the project listing while there is no project to
- * open. A step is only ticked on positive evidence the page already has; the
- * invitation is the one signal the dashboard cannot see, which is harmless
- * because the checklist is a first run panel that disappears with the first
- * project.
+ * of the flow that really exists, and the team step only offers creation when
+ * the server granted the `teams.create` permission. A step is only ticked on
+ * positive evidence the page already has; the invitation is the one signal the
+ * dashboard cannot see, which is harmless because the checklist is a first run
+ * panel that disappears with the first project.
  */
 const props = defineProps({
     hasTeam: { type: Boolean, default: false },
@@ -23,14 +22,17 @@ const props = defineProps({
     projectId: { type: [Number, String], default: null },
 });
 
+const { can } = useCan();
+
 const steps = computed(() => [
     {
         key: 'team',
         title: 'Create your team',
         description: 'A team is the workspace shared with everybody you invite.',
         done: props.hasTeam,
-        cta: props.hasTeam && props.teamId ? { href: `/teams/${props.teamId}`, label: 'Open your team' } : null,
-        unavailable: !props.hasTeam,
+        cta: props.hasTeam
+            ? (props.teamId ? { href: `/teams/${props.teamId}`, label: 'Open your team' } : null)
+            : (can('teams.create') ? { href: '/teams/create', label: 'Create a team' } : null),
     },
     {
         key: 'invite',
@@ -38,7 +40,6 @@ const steps = computed(() => [
         description: 'Send an invitation so somebody else can see the work.',
         done: props.invited,
         cta: props.teamId ? { href: `/teams/${props.teamId}`, label: 'Invite somebody' } : null,
-        unavailable: false,
     },
     {
         key: 'project',
@@ -46,7 +47,6 @@ const steps = computed(() => [
         description: 'A project gathers the tasks of one piece of work.',
         done: props.hasProject,
         cta: { href: '/projects', label: 'Go to projects' },
-        unavailable: false,
     },
     {
         key: 'task',
@@ -56,7 +56,6 @@ const steps = computed(() => [
         cta: props.projectId
             ? { href: `/projects/${props.projectId}`, label: 'Open the board' }
             : { href: '/projects', label: 'Go to projects' },
-        unavailable: false,
     },
 ]);
 
@@ -132,13 +131,6 @@ const finished = computed(() => steps.value.filter((step) => step.done).length);
             class="mt-0.5 text-xs text-content-subtle"
           >
             {{ step.description }}
-          </p>
-          <p
-            v-if="step.unavailable"
-            data-test="onboarding-step-unavailable"
-            class="mt-1 text-xs text-content-faint"
-          >
-            Creating a team is not available in the app yet.
           </p>
         </div>
 

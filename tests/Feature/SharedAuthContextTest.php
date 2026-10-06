@@ -102,7 +102,7 @@ it('shares no team for users without a membership', function () {
         ->assertInertia(
             fn ($page) => $page
             ->where('auth.team', null)
-            ->where('can', ['projects.viewAny', 'projects.create']),
+            ->where('can', ['projects.viewAny', 'projects.create', 'teams.create']),
         );
 });
 
@@ -115,6 +115,7 @@ it('derives the permissions of a team manager from the policies', function () {
         ->assertInertia(fn ($page) => $page->where('can', [
             'projects.viewAny',
             'projects.create',
+            'teams.create',
             'teams.view',
             'teams.manageMembers',
         ]));
@@ -134,6 +135,7 @@ it('derives the permissions of a plain team member from the policies', function 
         ->assertInertia(fn ($page) => $page->where('can', [
             'projects.viewAny',
             'projects.create',
+            'teams.create',
             'teams.view',
         ]));
 });
@@ -146,7 +148,7 @@ it('shares the same auth context on every authenticated page', function () {
     $expected = [
         'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'avatar' => null],
         'team' => ['id' => $team->id, 'name' => $team->name, 'slug' => $team->slug, 'role' => 'owner'],
-        'can' => ['projects.viewAny', 'projects.create', 'teams.view', 'teams.manageMembers'],
+        'can' => ['projects.viewAny', 'projects.create', 'teams.create', 'teams.view', 'teams.manageMembers'],
     ];
 
     foreach (['/projects', route('projects.show', $project)] as $url) {

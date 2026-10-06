@@ -96,6 +96,7 @@ final class AuthContext
         $abilities = [
             'projects.viewAny' => $gate->allows('viewAny', Project::class),
             'projects.create' => $gate->allows('create', Project::class),
+            'teams.create' => $gate->allows('create', Team::class),
             'teams.view' => $team !== null,
             'teams.manageMembers' => $team !== null && $gate->allows('manageMembers', $team),
         ];

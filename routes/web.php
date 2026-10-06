@@ -15,9 +15,14 @@ use App\Http\Controllers\TeamInvitationController;
 use App\Http\Controllers\TeamMemberController;
 use App\Http\Controllers\ThemeController;
 use App\Http\Controllers\WelcomeController;
+use App\Models\Team;
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', WelcomeController::class)->name('home');
+
+Gate::define('teams.create', fn (User $user): bool => $user->can('create', Team::class));
 
 Route::middleware('auth')->group(function (): void {
     Route::patch('/theme', [ThemeController::class, 'update'])->name('theme.update');
@@ -44,6 +49,8 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/team-invitations/{token}', [TeamInvitationAcceptController::class, 'show'])->name('team-invitations.accept');
     Route::post('/team-invitations/{token}', [TeamInvitationAcceptController::class, 'store'])->name('team-invitations.accept.store');
 
+    Route::get('/teams/create', [TeamController::class, 'create'])->name('teams.create');
+    Route::post('/teams', [TeamController::class, 'store'])->name('teams.store');
     Route::get('/teams/{team}', [TeamController::class, 'show'])->name('teams.show');
     Route::get('/teams/{team}/settings', [TeamController::class, 'settings'])->name('teams.settings');
 

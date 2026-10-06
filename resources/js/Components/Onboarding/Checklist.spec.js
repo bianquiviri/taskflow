@@ -1,8 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+
+const { pageState } = vi.hoisted(() => ({ pageState: { props: { can: [] } } }));
 
 vi.mock('@inertiajs/vue3', () => ({
     Link: { props: ['href'], template: '<a :href="href"><slot /></a>' },
+    usePage: () => pageState,
 }));
 
 import Checklist from './Checklist.vue';
@@ -14,6 +17,10 @@ const step = (wrapper, key) => wrapper.get(`[data-step="${key}"]`);
 const cta = (wrapper, key) => step(wrapper, key).find('[data-test="onboarding-step-cta"]');
 
 describe('Onboarding/Checklist.vue', () => {
+    beforeEach(() => {
+        pageState.props = { can: [] };
+    });
+
     it('walks through the four steps in order', () => {
         const wrapper = mountChecklist();
 
@@ -62,12 +69,23 @@ describe('Onboarding/Checklist.vue', () => {
         expect(cta(wrapper, 'invite').text()).toBe('Invite somebody');
     });
 
-    it('says the team cannot be created from the app yet', () => {
+    it('sends an account without a team to the team creation page', () => {
+        pageState.props = { can: ['teams.create'] };
+
         const wrapper = mountChecklist();
 
-        expect(step(wrapper, 'team').get('[data-test="onboarding-step-unavailable"]').text())
-            .toContain('not available in the app yet');
+        expect(cta(wrapper, 'team').attributes('href')).toBe('/teams/create');
+        expect(cta(wrapper, 'team').text()).toBe('Create a team');
+        expect(wrapper.find('[data-test="onboarding-step-unavailable"]').exists()).toBe(false);
+    });
+
+    it('stays silent about team creation without the permission', () => {
+        pageState.props = { can: [] };
+
+        const wrapper = mountChecklist();
+
         expect(cta(wrapper, 'team').exists()).toBe(false);
+        expect(wrapper.text()).not.toContain('not available in the app yet');
     });
 
     it('sends the project step to the projects listing, the only create flow there is', () => {

@@ -182,7 +182,7 @@ it('still shares the global auth context next to the page permissions', function
         ->get(route('projects.show', $project))
         ->assertInertia(
             fn ($page) => $page
-            ->where('can', ['projects.viewAny', 'projects.create'])
+            ->where('can', ['projects.viewAny', 'projects.create', 'teams.create'])
             ->where('auth.user.id', $owner->id),
         );
 });
