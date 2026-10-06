@@ -61,8 +61,8 @@ deps: ## Install backend + frontend dependencies inside the containers
 	docker compose exec app composer install --no-interaction --prefer-dist --no-progress --optimize-autoloader
 	docker compose exec node npm install --silent
 
-test: ## Run backend test suite (Pest)
-	docker compose exec app php artisan test --ci --no-coverage
+test: ## Run backend test suite (Pest, parallel)
+	docker compose exec app php artisan test --ci --no-coverage --parallel
 
 test-fe: ## Run frontend unit tests (Vitest)
 	docker compose exec node npm run test

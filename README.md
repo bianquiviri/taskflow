@@ -1,8 +1,28 @@
 # TaskFlow
 
+[![CI](https://github.com/bianquiviri/taskflow/actions/workflows/ci.yml/badge.svg)](https://github.com/bianquiviri/taskflow/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/bianquiviri/taskflow?sort=semver)](https://github.com/bianquiviri/taskflow/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![PHP](https://img.shields.io/badge/PHP-8.4-8892BF?logo=php&logoColor=white)](https://www.php.net/)
+[![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)](https://laravel.com/)
+[![Vue](https://img.shields.io/badge/Vue-3-42b883?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
+
 Professional project and task management SaaS, built with the latest Laravel
 stack to demonstrate senior software engineering practices: **TDD, clean
 layered architecture, GitFlow, and CI/CD from day one.**
+
+## Features
+
+- **Auth & Teams** — register/login, email verification, password reset,
+  teams with owner/admin/member roles, invitations by email (one-time token),
+  member management.
+- **Projects & Tasks** — projects with members and roles, task boards with
+  status/priority, assignment, filtering, search and pagination.
+- **Collaboration** — threaded comments with `@mention` notifications, and an
+  immutable activity-log audit trail for projects and tasks.
+- **UX** — Inertia + Vue 3 shell with dark mode, design-system tokens, form
+  components, empty states and optimistic UI.
+- **Async** — queued transactional mail (Redis → Mailpit locally).
 
 ## Stack
 
@@ -35,6 +55,20 @@ Open **https://taskflow.josebianco.local** and your work is live over HTTPS.
 > new root CA is created — trusting it in the keychain (`make trust-ca`).
 > Both are run **once**; `make certs` keeps reusing the same CA afterwards, so
 > you will not be asked again.
+
+### Running only changed tests
+
+Pest runs parallel by default (`--parallel`, ~5 s for the full suite). To run
+just the tests touching your change:
+
+```sh
+docker compose exec app php artisan test --filter=TaskCrudTest --parallel --no-coverage
+```
+
+`--filter` accepts a substring, a comma list (`TaskCrudTest,TeamPolicyTest`)
+or a class method (`TaskCrudTest::it_updates_a_task`). Architecture
+layering rules live in `tests/Architecture/ArchitectureTest.php` and run with
+the suite.
 
 ### Useful commands
 

@@ -12,9 +12,11 @@ describe('Icon.vue', () => {
         'logo',
         'logout',
         'menu',
+        'moon',
         'plus',
         'projects',
         'settings',
+        'sun',
         'tasks',
         'user',
         'warning',
@@ -35,5 +37,19 @@ describe('Icon.vue', () => {
 
         expect(wrapper.find('svg').classes()).toContain('size-5');
         expect(wrapper.find('svg').classes()).toContain('text-red-500');
+    });
+
+    it('hides every icon from assistive technology', () => {
+        const wrapper = mount(Icon, { props: { name: 'home' } });
+
+        expect(wrapper.get('svg').attributes('aria-hidden')).toBe('true');
+        expect(wrapper.get('svg').attributes('focusable')).toBe('false');
+    });
+
+    it('carries no accessible name of its own', () => {
+        const wrapper = mount(Icon, { props: { name: 'home' } });
+
+        expect(wrapper.get('svg').attributes('role')).toBeUndefined();
+        expect(wrapper.get('svg').attributes('aria-label')).toBeUndefined();
     });
 });

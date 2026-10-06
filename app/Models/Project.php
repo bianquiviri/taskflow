@@ -63,6 +63,14 @@ class Project extends Model
         return $this->hasMany(ProjectMember::class);
     }
 
+    /**
+     * @return HasMany<Task, $this>
+     */
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
+    }
+
     public function scopeForUser(Builder $query, User $user): Builder
     {
         return $query->where(function (Builder $query) use ($user): Builder {

@@ -10,6 +10,11 @@ const props = defineProps({
         default: 'md',
         validator: (value) => ['sm', 'md', 'lg'].includes(value),
     },
+    /**
+     * Decorative avatars repeat a name that is already rendered as text next to
+     * them. Pass false when the avatar is the only carrier of that name.
+     */
+    decorative: { type: Boolean, default: true },
 });
 
 const sizeClasses = {
@@ -19,14 +24,12 @@ const sizeClasses = {
 };
 
 const tones = [
-    'bg-indigo-500',
-    'bg-emerald-500',
-    'bg-rose-500',
-    'bg-amber-500',
-    'bg-sky-500',
-    'bg-violet-500',
-    'bg-teal-500',
-    'bg-fuchsia-500',
+    'bg-brand-500 text-content-inverted',
+    'bg-success-soft text-success-text',
+    'bg-danger-soft text-danger-text',
+    'bg-warning-soft text-warning-text',
+    'bg-info-soft text-info-text',
+    'bg-sunken text-content-muted',
 ];
 
 const initials = computed(() => {
@@ -46,14 +49,16 @@ const tone = computed(() => {
 
 <template>
   <span
-    class="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold text-white ring-1 ring-black/10 dark:ring-white/20"
+    class="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold ring-1 ring-line-strong"
     :class="[sizeClasses[size], src ? '' : tone]"
-    aria-hidden="true"
+    :aria-hidden="decorative ? 'true' : undefined"
+    :role="decorative ? undefined : 'img'"
+    :aria-label="decorative ? undefined : name"
   >
     <img
       v-if="src"
       :src="src"
-      :alt="name"
+      :alt="decorative ? name : ''"
       class="size-full object-cover"
     >
     <span v-else-if="initials">{{ initials }}</span>

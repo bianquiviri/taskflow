@@ -1,5 +1,9 @@
+@php($darkMode = auth()->user()?->theme?->value === 'dark')
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full">
+<html
+    lang="{{ str_replace('_', '-', app()->getLocale()) }}"
+    class="h-full{{ $darkMode ? ' dark' : '' }}"
+>
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,7 +14,7 @@
         @inertiaHead
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="h-full bg-gray-50 text-gray-900 antialiased dark:bg-gray-950 dark:text-gray-100">
+    <body class="h-full bg-canvas text-content antialiased">
         @inertia
     </body>
 </html>

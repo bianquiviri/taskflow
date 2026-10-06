@@ -1,0 +1,343 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:memberships\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Actions/AcceptInvitationAction.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Actions/AcceptInvitationAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$owner\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Actions/AddCommentAction.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:members\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Actions/AddCommentAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$owner_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Actions/AssignTaskAction.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:members\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Actions/AssignTaskAction.php
+
+		-
+			message: '#^Cannot call method canTransitionTo\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Actions/ChangeTaskStatusAction.php
+
+		-
+			message: '#^Cannot call method label\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Actions/ChangeTaskStatusAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Actions/ChangeTeamMemberRoleAction.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Actions/ChangeTeamMemberRoleAction.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\TeamRole\:\:Owner will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Actions/ChangeTeamMemberRoleAction.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:pending\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Actions/InviteTeamMemberAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Actions/RemoveTeamMemberAction.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Actions/RemoveTeamMemberAction.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Actions/ResendInvitationAction.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Actions/RevokeInvitationAction.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/TeamController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/TeamController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:pending\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/TeamController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 4
+			path: app/Http/Controllers/TeamController.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Controllers/TeamController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 3
+			path: app/Http/Controllers/TeamController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: mixed, email\: string\|null, role\: mixed, status\: string, expiresAt\: mixed, canBeResent\: bool, canBeCancelled\: bool\}, Closure\(App\\Models\\TeamInvitation\)\: array\{id\: mixed, email\: string\|null, role\: mixed, status\: string, expiresAt\: mixed, canBeResent\: bool, canBeCancelled\: bool\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/TeamController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: mixed, name\: mixed, email\: mixed, role\: mixed, canBeRemoved\: bool, canBeReassigned\: bool\}, Closure\(App\\Models\\TeamMember\)\: array\{id\: mixed, name\: mixed, email\: mixed, role\: mixed, canBeRemoved\: bool, canBeReassigned\: bool\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/TeamController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: mixed, name\: mixed, email\: mixed, role\: mixed, canBeRemoved\: bool\}, Closure\(App\\Models\\TeamMember\)\: array\{id\: mixed, name\: mixed, email\: mixed, role\: mixed, canBeRemoved\: bool\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Http/Controllers/TeamController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Http/Controllers/TeamInvitationAcceptController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:memberships\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Controllers/TeamInvitationAcceptController.php
+
+		-
+			message: '#^Cannot call method describe\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/TeamInvitationAcceptController.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/TeamInvitationAcceptController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>theme" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Middleware/HandleInertiaRequests.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Models/Project.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Models/TeamInvitation.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Notifications/YouWereInvited.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$owner\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/YouWereInvited.php
+
+		-
+			message: '#^Cannot call method label\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Notifications/YouWereInvited.php
+
+		-
+			message: '#^Cannot call method translatedFormat\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Notifications/YouWereInvited.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Notifications/YouWereMentioned.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$title\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Notifications/YouWereMentioned.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Observers/TaskObserver.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$project\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Policies/CommentPolicy.php
+
+		-
+			message: '#^Parameter \#2 \$project of method App\\Policies\\CommentPolicy\:\:isProjectMember\(\) expects App\\Models\\Project, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Policies/CommentPolicy.php
+
+		-
+			message: '#^Parameter \#2 \$project of method App\\Policies\\TaskPolicy\:\:isProjectManager\(\) expects App\\Models\\Project, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Policies/TaskPolicy.php
+
+		-
+			message: '#^Parameter \#2 \$project of method App\\Policies\\TaskPolicy\:\:isProjectMember\(\) expects App\\Models\\Project, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Policies/TaskPolicy.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$role\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Policies/TeamPolicy.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\TeamRole\:\:Owner will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Policies/TeamPolicy.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:assignedTo\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/TaskQuery.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:dueBetween\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/TaskQuery.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:forProject\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/TaskQuery.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:search\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/TaskQuery.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:withPriority\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/TaskQuery.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Builder\:\:withStatus\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/TaskQuery.php
+
+		-
+			message: '#^Method App\\Services\\TaskQuery\:\:get\(\) should return Illuminate\\Support\\Collection\<int, App\\Models\\Task\> but returns Illuminate\\Database\\Eloquent\\Collection\<int, Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Services/TaskQuery.php
+
+		-
+			message: '#^Parameter \#1 \$invitation of class App\\DTOs\\IssuedTeamInvitation constructor expects App\\Models\\TeamInvitation, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/TeamInvitationService.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Support/AuthContext.php
+
+		-
+			message: '#^Parameter \#1 \$team of method App\\Support\\AuthContext\:\:team\(\) expects App\\Models\\Team\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Support/AuthContext.php
+
+		-
+			message: '#^Parameter \#2 \$team of method App\\Support\\AuthContext\:\:permissions\(\) expects App\\Models\\Team\|null, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Support/AuthContext.php
+
+		-
+			message: '#^Offset 1 on array\{list\<string\>, list\<non\-empty\-string\>\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Support/MentionParser.php

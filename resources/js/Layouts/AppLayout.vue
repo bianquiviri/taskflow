@@ -1,11 +1,16 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import Avatar from '../Components/Avatar.vue';
 import FlashMessages from '../Components/FlashMessages.vue';
 import Icon from '../Components/Icon.vue';
+import ThemeToggle from '../Components/ThemeToggle.vue';
+import { useCan } from '../Composables/useCan';
+import { useTheme } from '../Composables/useTheme';
 
-defineProps({
+const DESKTOP_QUERY = '(min-width: 1024px)';
+
+const props = defineProps({
     appName: { type: String, default: 'TaskFlow' },
     user: {
         type: Object,
@@ -14,7 +19,7 @@ defineProps({
     navItems: {
         type: Array,
         default: () => [
-            { label: 'Dashboard', href: '/', icon: 'home' },
+            { label: 'Dashboard', href: '/dashboard', icon: 'home' },
             { label: 'Projects', href: '/projects', icon: 'projects' },
             { label: 'Tasks', href: '/tasks', icon: 'tasks' },
             { label: 'Settings', href: '/settings', icon: 'settings' },
@@ -24,53 +29,137 @@ defineProps({
 
 const page = usePage();
 const drawerOpen = ref(false);
+const isDesktop = ref(false);
+const drawerNav = ref(null);
+const drawerTrigger = ref(null);
+let mediaQuery = null;
 
 const flash = computed(() => page.props.flash ?? {});
+const { theme } = useTheme(() => page.props.theme);
+const { can } = useCan();
+
+const currentUser = computed(() => props.user ?? page.props.auth?.user ?? null);
+const team = computed(() => page.props.auth?.team ?? null);
+const navigation = computed(() => {
+    const current = team.value;
+
+    if (current === null || !can('teams.view')) {
+        return props.navItems;
+    }
+
+    return [...props.navItems, { label: current.name, href: `/teams/${current.id}`, icon: 'projects' }];
+});
+
+/**
+ * Off-canvas the drawer is translated away, so it must also leave the tab order
+ * and the accessibility tree. On wide screens the sidebar is always in place.
+ */
+const drawerIsAway = computed(() => !isDesktop.value && !drawerOpen.value);
 
 function isActive(href) {
-    return page.url === href;
+    const current = String(page.url).split(/[?#]/)[0];
+
+    if (current === href) {
+        return true;
+    }
+
+    return href !== '/' && current.startsWith(`${href}/`);
+}
+
+function syncViewport(matches) {
+    isDesktop.value = matches ?? mediaQuery?.matches ?? false;
+}
+
+function openDrawer() {
+    drawerOpen.value = true;
+    nextTick(() => drawerNav.value?.focus());
+}
+
+/**
+ * Focus only travels back to the trigger when it was inside the drawer, so a
+ * mouse user closing it over the overlay is left alone.
+ */
+function closeDrawer() {
+    const focusWasInside = drawerNav.value?.closest('aside')?.contains(document.activeElement) ?? false;
+
+    drawerOpen.value = false;
+
+    if (focusWasInside) {
+        nextTick(() => drawerTrigger.value?.focus());
+    }
+}
+
+function handleKeydown(event) {
+    if (event.key !== 'Escape' || !drawerOpen.value) {
+        return;
+    }
+
+    event.preventDefault();
+    closeDrawer();
 }
 
 watch(
     () => page.url,
     () => {
-        drawerOpen.value = false;
+        closeDrawer();
     },
 );
+
+onMounted(() => {
+    mediaQuery = window.matchMedia(DESKTOP_QUERY);
+    syncViewport();
+    mediaQuery.addEventListener('change', syncViewport);
+    document.addEventListener('keydown', handleKeydown);
+});
+
+onBeforeUnmount(() => {
+    mediaQuery?.removeEventListener('change', syncViewport);
+    document.removeEventListener('keydown', handleKeydown);
+});
 </script>
 
 <template>
-  <div class="min-h-dvh bg-gray-100 dark:bg-gray-950">
+  <div class="min-h-dvh bg-canvas">
+    <a
+      href="#main-content"
+      class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-control focus:bg-raised focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-content focus:shadow-lg"
+    >
+      Skip to content
+    </a>
+
     <div
       v-if="drawerOpen"
-      class="fixed inset-0 z-40 bg-gray-900/50 backdrop-blur-sm lg:hidden"
+      data-test="drawer-overlay"
+      class="fixed inset-0 z-40 bg-overlay backdrop-blur-sm lg:hidden"
       aria-hidden="true"
-      @click="drawerOpen = false"
+      @click="closeDrawer()"
     />
 
     <aside
-      class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-gray-200 bg-white transition-transform duration-200 ease-in-out dark:border-gray-800 dark:bg-gray-900 lg:translate-x-0"
+      id="app-drawer"
+      :inert="drawerIsAway ? '' : undefined"
+      class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-line bg-raised transition-transform duration-200 ease-in-out lg:translate-x-0"
       :class="drawerOpen ? 'translate-x-0' : '-translate-x-full'"
     >
-      <div class="flex h-16 items-center justify-between border-b border-gray-200 px-5 dark:border-gray-800">
+      <div class="flex h-16 items-center justify-between border-b border-line px-5">
         <Link
           href="/"
           class="flex items-center gap-2.5"
           @click="drawerOpen = false"
         >
-          <span class="flex size-8 items-center justify-center rounded-lg bg-indigo-600 text-white">
+          <span class="flex size-8 items-center justify-center rounded-control bg-brand-600 text-content-inverted">
             <Icon
               name="logo"
               class="size-5"
             />
           </span>
-          <span class="text-lg font-bold tracking-tight text-gray-900 dark:text-white">{{ appName }}</span>
+          <span class="text-lg font-bold tracking-tight text-content">{{ appName }}</span>
         </Link>
         <button
           type="button"
-          class="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-300 lg:hidden"
+          class="rounded-md p-1.5 text-content-subtle hover:bg-sunken hover:text-content focus-visible:ring-2 focus-visible:ring-focus lg:hidden"
           aria-label="Close menu"
-          @click="drawerOpen = false"
+          @click="closeDrawer()"
         >
           <Icon
             name="close"
@@ -79,17 +168,22 @@ watch(
         </button>
       </div>
 
-      <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+      <nav
+        ref="drawerNav"
+        tabindex="-1"
+        aria-label="Main"
+        class="flex-1 space-y-1 overflow-y-auto px-3 py-4 focus:outline-none"
+      >
         <Link
-          v-for="item in navItems"
+          v-for="item in navigation"
           :key="item.href"
           :href="item.href"
-          class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+          class="flex items-center gap-3 rounded-control px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
           :class="isActive(item.href)
-            ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-300'
-            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white'"
+            ? 'bg-brand-soft text-brand-text'
+            : 'text-content-muted hover:bg-sunken hover:text-content'"
           :aria-current="isActive(item.href) ? 'page' : undefined"
-          @click="drawerOpen = false"
+          @click="closeDrawer()"
         >
           <Icon
             :name="item.icon"
@@ -99,31 +193,31 @@ watch(
         </Link>
       </nav>
 
-      <div class="border-t border-gray-200 p-4 dark:border-gray-800">
+      <div class="border-t border-line p-4">
         <div
-          v-if="user"
+          v-if="currentUser"
           class="flex items-center gap-3"
         >
           <Avatar
-            :name="user.name"
-            :src="user.avatar"
+            :name="currentUser.name"
+            :src="currentUser.avatar"
             size="sm"
           />
           <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-medium text-gray-900 dark:text-white">
-              {{ user.name }}
+            <p class="truncate text-sm font-medium text-content">
+              {{ currentUser.name }}
             </p>
             <p
-              v-if="user.email"
-              class="truncate text-xs text-gray-500 dark:text-gray-400"
+              v-if="currentUser.email"
+              class="truncate text-xs text-content-subtle"
             >
-              {{ user.email }}
+              {{ currentUser.email }}
             </p>
           </div>
         </div>
         <p
           v-else
-          class="text-xs text-gray-400 dark:text-gray-500"
+          class="text-xs text-content-subtle"
         >
           Signed in as guest
         </p>
@@ -132,13 +226,16 @@ watch(
 
     <div class="flex min-w-0 flex-1 flex-col lg:pl-72">
       <header
-        class="sticky top-0 z-30 flex h-16 items-center gap-x-4 border-b border-gray-200 bg-white/80 px-4 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80 sm:px-6 lg:px-8"
+        class="sticky top-0 z-30 flex h-16 items-center gap-x-4 border-b border-line bg-raised/80 px-4 backdrop-blur sm:px-6 lg:px-8"
       >
         <button
+          ref="drawerTrigger"
           type="button"
-          class="rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-300 lg:hidden"
+          class="rounded-md p-2 text-content-subtle hover:bg-sunken hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:hidden"
           aria-label="Open menu"
-          @click="drawerOpen = true"
+          aria-controls="app-drawer"
+          :aria-expanded="drawerOpen"
+          @click="openDrawer()"
         >
           <Icon
             name="menu"
@@ -149,9 +246,10 @@ watch(
         <slot name="header" />
 
         <div class="ml-auto flex items-center gap-x-3">
+          <ThemeToggle :theme="theme" />
           <button
             type="button"
-            class="rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-300"
+            class="rounded-md p-2 text-content-subtle hover:bg-sunken hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
             aria-label="Notifications"
           >
             <Icon
@@ -160,9 +258,10 @@ watch(
             />
           </button>
           <Avatar
-            v-if="user"
-            :name="user.name"
-            :src="user.avatar"
+            v-if="currentUser"
+            :name="currentUser.name"
+            :src="currentUser.avatar"
+            :decorative="false"
             size="sm"
           />
         </div>
@@ -170,7 +269,12 @@ watch(
 
       <FlashMessages :messages="flash" />
 
-      <main class="flex-1 px-4 py-6 sm:px-6 lg:px-8">
+      <!-- The skip link targets this region, so it is focusable without being a tab stop. -->
+      <main
+        id="main-content"
+        tabindex="-1"
+        class="flex-1 px-4 py-gutter focus:outline-none sm:px-6 lg:px-8"
+      >
         <slot />
       </main>
     </div>

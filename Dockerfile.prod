@@ -1,0 +1,120 @@
+# TaskFlow production image.
+#
+# Multi-stage on purpose: Node compiles the Vite bundle, Composer resolves the
+# production PHP dependencies and a throwaway stage compiles the PHP
+# extensions. None of that toolchain (gcc, node, composer) reaches the final
+# image, which ships nginx + php-fpm and the application only.
+#
+#   docker build -f Dockerfile.prod -t taskflow:latest .
+#
+# The build is hermetic: it never needs vendor/ or node_modules/ on the host,
+# everything is compiled from the committed composer.lock / package-lock.json.
+ARG PHP_VERSION=8.4
+ARG NODE_VERSION=22
+
+# --- 1. Frontend assets -----------------------------------------------------
+FROM node:${NODE_VERSION}-alpine AS frontend
+
+WORKDIR /app
+
+# Manifests first: this layer is reused until a dependency actually changes.
+COPY package.json package-lock.json .npmrc ./
+RUN npm ci --no-audit --no-fund
+
+COPY vite.config.js ./
+COPY resources/ ./resources/
+
+# public/ is intentionally empty here so the Vite build cannot copy the
+# front controller or .htaccess into the hashed asset directory.
+RUN mkdir -p public \
+    && npm run build \
+    && test -f public/build/manifest.json
+
+# --- 2. PHP extensions ------------------------------------------------------
+# Compiled in a throwaway stage: the compiler and -dev headers are dropped
+# here, and the runtime stage copies only the resulting .so files.
+FROM php:${PHP_VERSION}-fpm-alpine AS php-extensions
+
+RUN apk add --no-cache --virtual .build-deps \
+        $PHPIZE_DEPS \
+        icu-dev \
+        libzip-dev \
+    && docker-php-ext-install -j"$(nproc)" pdo_mysql intl zip bcmath opcache \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apk del .build-deps
+
+# --- 3. Composer dependencies ----------------------------------------------
+# Built on the same PHP version as the runtime so the platform requirements
+# are resolved against 8.4. No scripts: package discovery needs the full
+# application and is done by the entrypoint on first boot instead.
+FROM php:${PHP_VERSION}-fpm-alpine AS vendor
+
+RUN apk add --no-cache unzip
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+RUN composer install \
+        --no-dev \
+        --no-scripts \
+        --no-interaction \
+        --no-progress \
+        --prefer-dist \
+        --optimize-autoloader
+
+# --- 4. Runtime -------------------------------------------------------------
+FROM php:${PHP_VERSION}-fpm-alpine AS runtime
+
+LABEL org.opencontainers.image.title="TaskFlow" \
+      org.opencontainers.image.description="TaskFlow — project and task management (Laravel + Inertia)" \
+      org.opencontainers.image.source="https://github.com/bianquiviri/taskflow" \
+      org.opencontainers.image.licenses="MIT"
+
+# Runtime-only packages: the shared libraries the copied extensions link
+# against (icu-libs, libzip, oniguruma) plus nginx. Nothing else — the entry
+# script supervises php-fpm and nginx itself, which keeps a whole Python
+# runtime out of the image.
+RUN apk add --no-cache \
+        nginx \
+        icu-libs \
+        libzip \
+        oniguruma
+
+COPY --from=php-extensions /usr/local/lib/php/extensions/ /usr/local/lib/php/extensions/
+COPY --from=php-extensions /usr/local/etc/php/conf.d/docker-php-ext-*.ini /usr/local/etc/php/conf.d/
+
+WORKDIR /var/www/html
+
+# Listed one directory at a time: nothing reaches the image that the running
+# application does not read. A new root directory means a new COPY line here.
+COPY app/ ./app/
+COPY bootstrap/ ./bootstrap/
+COPY config/ ./config/
+COPY database/ ./database/
+COPY public/ ./public/
+COPY resources/ ./resources/
+COPY routes/ ./routes/
+COPY storage/ ./storage/
+COPY artisan composer.json composer.lock ./
+
+COPY --from=vendor /app/vendor/ ./vendor/
+COPY --from=frontend /app/public/build/ ./public/build/
+
+COPY docker/prod/nginx.conf /etc/nginx/http.d/default.conf
+COPY docker/prod/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
+COPY docker/prod/php.ini /usr/local/etc/php/conf.d/zz-taskflow.ini
+COPY docker/prod/entrypoint.sh /usr/local/bin/entrypoint
+RUN chmod +x /usr/local/bin/entrypoint
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD wget --quiet --spider http://127.0.0.1/up || exit 1
+
+ENTRYPOINT ["/usr/local/bin/entrypoint"]
+CMD ["serve"]

@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\Theme;
+use App\Notifications\ResetPassword as QueuedResetPassword;
+use App\Notifications\VerifyEmail as QueuedVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,9 +17,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
-class User extends Authenticatable
+#[Fillable(['name', 'email', 'password', 'theme'])]
+#[Hidden(['password', 'remember_token', 'avatar_path'])]
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory;
@@ -32,7 +35,26 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'theme' => Theme::class,
         ];
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new QueuedVerifyEmail());
+    }
+
+    public function sendPasswordResetNotification(#[\SensitiveParameter] $token): void
+    {
+        $this->notify(new QueuedResetPassword($token));
+    }
+
+    /**
+     * The url serving the stored avatar, or null when none was uploaded.
+     */
+    public function avatarUrl(): ?string
+    {
+        return $this->avatar_path === null ? null : route('profile.avatar');
     }
 
     /**
@@ -56,6 +78,19 @@ class User extends Authenticatable
     }
 
     /**
+     * The membership that defines the current team: the first team the user
+     * joined, until a team switcher stores an explicit choice.
+     */
+    public function currentMembership(): ?TeamMember
+    {
+        return $this->memberships()
+            ->with('team')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->first();
+    }
+
+    /**
      * Teams this user belongs to (pivot carries the role).
      *
      * @return BelongsToMany<Team, $this>
@@ -65,5 +100,15 @@ class User extends Authenticatable
         return $this->belongsToMany(Team::class, 'team_members')
             ->withPivot('role')
             ->withTimestamps();
+    }
+
+    /**
+     * Comments this user wrote on tasks.
+     *
+     * @return HasMany<Comment, $this>
+     */
+    public function comments(): HasMany
+    {
+        return $this->hasMany(Comment::class)->oldest();
     }
 }

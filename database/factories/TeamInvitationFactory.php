@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\TeamRole;
 use App\Models\Team;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
@@ -23,6 +24,7 @@ class TeamInvitationFactory extends Factory
             'team_id' => Team::factory(),
             'email' => fake()->safeEmail(),
             'token_hash' => Hash::make(Str::random(40)),
+            'role' => TeamRole::Member,
             'expires_at' => now()->addDays(7),
             'revoked_at' => null,
         ];

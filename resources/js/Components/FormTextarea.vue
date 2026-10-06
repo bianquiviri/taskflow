@@ -1,0 +1,74 @@
+<script setup>
+import { computed, useId } from 'vue';
+
+defineOptions({ inheritAttrs: false });
+
+const props = defineProps({
+    modelValue: {
+        type: [String, Number, null],
+        default: '',
+    },
+    label: { type: String, default: '' },
+    hint: { type: String, default: '' },
+    error: { type: String, default: '' },
+    disabled: { type: Boolean, default: false },
+    id: { type: String, default: null },
+});
+
+const emit = defineEmits(['update:modelValue']);
+const generatedId = useId();
+const textareaId = props.id || `form-textarea-${generatedId}`;
+
+const describedBy = computed(() =>
+    [
+        props.hint ? `${textareaId}-hint` : null,
+        props.error ? `${textareaId}-error` : null,
+    ].filter(Boolean).join(' ') || undefined,
+);
+
+function updateValue(event) {
+    emit('update:modelValue', event.target.value);
+}
+</script>
+
+<template>
+  <div class="w-full">
+    <label
+      v-if="label"
+      :for="textareaId"
+      class="mb-1.5 block text-sm font-medium text-content-muted"
+    >
+      {{ label }}
+    </label>
+    <textarea
+      v-bind="$attrs"
+      :id="textareaId"
+      :value="modelValue"
+      :disabled="disabled"
+      :aria-invalid="error ? 'true' : undefined"
+      :aria-describedby="describedBy"
+      rows="4"
+      class="block min-h-24 w-full resize-y rounded-control border px-3 py-2 text-sm text-content shadow-sm transition-colors placeholder:text-content-subtle focus:outline-none focus:ring-2 disabled:cursor-not-allowed disabled:bg-sunken"
+      :class="error
+        ? 'border-danger focus:border-danger focus:ring-danger'
+        : 'border-line-strong focus:border-focus focus:ring-focus'"
+      @input="updateValue"
+    />
+    <p
+      v-if="hint"
+      :id="`${textareaId}-hint`"
+      data-test="hint"
+      class="mt-1.5 text-xs text-content-subtle"
+    >
+      {{ hint }}
+    </p>
+    <p
+      v-if="error"
+      :id="`${textareaId}-error`"
+      class="mt-1.5 text-sm text-danger-text"
+      role="alert"
+    >
+      {{ error }}
+    </p>
+  </div>
+</template>

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\DTOs\IssuedTeamInvitation;
+use App\Enums\TeamRole;
 use App\Models\Team;
 use App\Models\TeamInvitation;
 use Illuminate\Support\Carbon;
@@ -14,22 +16,60 @@ class TeamInvitationService
 {
     public function create(Team $team, ?string $email = null, ?Carbon $expiresAt = null): string
     {
+        return $this->issue($team, $email, TeamRole::Member, $expiresAt)->token;
+    }
+
+    /**
+     * Issue an invitation and return it together with its raw token.
+     */
+    public function issue(
+        Team $team,
+        ?string $email = null,
+        TeamRole $role = TeamRole::Member,
+        ?Carbon $expiresAt = null,
+    ): IssuedTeamInvitation {
         $token = Str::random(40);
 
-        $team->invitations()->create([
+        $invitation = $team->invitations()->create([
             'email' => $email,
+            'token_hash' => Hash::make($token),
+            'role' => $role,
+            'expires_at' => $expiresAt ?? now()->addDays(7),
+        ]);
+
+        return new IssuedTeamInvitation($invitation, $token);
+    }
+
+    /**
+     * Give an existing invitation a new token and a new lifetime, so it can be
+     * sent again without piling up invitations for the same address.
+     */
+    public function rotate(TeamInvitation $invitation, ?Carbon $expiresAt = null): IssuedTeamInvitation
+    {
+        $token = Str::random(40);
+
+        $invitation->update([
             'token_hash' => Hash::make($token),
             'expires_at' => $expiresAt ?? now()->addDays(7),
         ]);
 
-        return $token;
+        return new IssuedTeamInvitation($invitation->refresh(), $token);
     }
 
     public function findValid(string $token): ?TeamInvitation
     {
+        $invitation = $this->find($token);
+
+        return $invitation?->isPending() === true ? $invitation : null;
+    }
+
+    /**
+     * Resolve a token whatever the state of the invitation it belongs to.
+     */
+    public function find(string $token): ?TeamInvitation
+    {
         return TeamInvitation::query()
-            ->whereNull('revoked_at')
-            ->where('expires_at', '>', now())
+            ->latest('id')
             ->get()
             ->first(
                 fn (TeamInvitation $invitation) => Hash::check($token, $invitation->token_hash),
