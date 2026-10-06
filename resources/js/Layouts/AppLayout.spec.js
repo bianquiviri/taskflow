@@ -115,12 +115,21 @@ describe('AppLayout.vue', () => {
         expect(dashboard.attributes('href')).toBe('/dashboard');
     });
 
-    it('marks the nav item matching the current url as active', () => {
-        pageState.url = '/tasks';
+    it('points the tasks navigation item at my tasks and settings at the profile', () => {
         const wrapper = mount(AppLayout, { global });
 
         const anchors = wrapper.findAll('nav a');
-        const tasks = anchors.find((anchor) => anchor.attributes('href') === '/tasks');
+
+        expect(anchors.find((anchor) => anchor.text() === 'Tasks').attributes('href')).toBe('/tasks/mine');
+        expect(anchors.find((anchor) => anchor.text() === 'Settings').attributes('href')).toBe('/profile');
+    });
+
+    it('marks the nav item matching the current url as active', () => {
+        pageState.url = '/tasks/mine';
+        const wrapper = mount(AppLayout, { global });
+
+        const anchors = wrapper.findAll('nav a');
+        const tasks = anchors.find((anchor) => anchor.attributes('href') === '/tasks/mine');
         const dashboard = anchors.find((anchor) => anchor.attributes('href') === '/dashboard');
 
         expect(tasks.attributes('aria-current')).toBe('page');
@@ -338,21 +347,21 @@ describe('AppLayout.vue', () => {
 
     describe('current page', () => {
         it('keeps the parent item current on a nested url', () => {
-            pageState.url = '/tasks/mine';
+            pageState.url = '/projects/7';
             const wrapper = mount(AppLayout, { global });
 
             const anchors = wrapper.findAll('nav a');
-            const tasks = anchors.find((anchor) => anchor.attributes('href') === '/tasks');
+            const projects = anchors.find((anchor) => anchor.attributes('href') === '/projects');
 
-            expect(tasks.attributes('aria-current')).toBe('page');
+            expect(projects.attributes('aria-current')).toBe('page');
         });
 
         it('ignores the query string when matching the current url', () => {
-            pageState.url = '/tasks?status=todo';
+            pageState.url = '/tasks/mine?status=todo';
             const wrapper = mount(AppLayout, { global });
 
             const anchors = wrapper.findAll('nav a');
-            const tasks = anchors.find((anchor) => anchor.attributes('href') === '/tasks');
+            const tasks = anchors.find((anchor) => anchor.attributes('href') === '/tasks/mine');
 
             expect(tasks.attributes('aria-current')).toBe('page');
         });

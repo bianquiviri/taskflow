@@ -21,8 +21,8 @@ const props = defineProps({
         default: () => [
             { label: 'Dashboard', href: '/dashboard', icon: 'home' },
             { label: 'Projects', href: '/projects', icon: 'projects' },
-            { label: 'Tasks', href: '/tasks', icon: 'tasks' },
-            { label: 'Settings', href: '/settings', icon: 'settings' },
+            { label: 'Tasks', href: '/tasks/mine', icon: 'tasks' },
+            { label: 'Settings', href: '/profile', icon: 'settings' },
         ],
     },
 });
