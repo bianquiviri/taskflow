@@ -67,3 +67,8 @@ Route::middleware('auth.unverified')->group(function (): void {
     Route::get('/profile/password', [ProfileController::class, 'password'])->name('profile.password');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
 });
+
+Route::middleware(['auth', 'verified'])->group(function (): void {
+    Route::get('/tasks', fn () => redirect()->route('tasks.mine.index'))->name('tasks.index');
+    Route::get('/settings', fn () => redirect()->route('profile.edit'))->name('settings.index');
+});
