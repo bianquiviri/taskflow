@@ -82,7 +82,7 @@ make fix          # auto-fix Pint violations
 make shell        # bash inside the app container
 make mysql        # MySQL client
 make logs         # tail all service logs
-make queue        # run the Redis queue worker (attached; Ctrl+C to stop)
+make queue        # run an extra foreground Redis queue worker (Ctrl+C to stop)
 make deps         # (re)install composer + npm dependencies
 ```
 
@@ -93,14 +93,17 @@ notifications that `implement ShouldQueue` are pushed onto the **Redis** `defaul
 queue and consumed by the queue worker, which then sends them through the SMTP
 mailer to **Mailpit** (the local capture inbox).
 
+The worker runs **automatically inside the `app` container** (supervised by
+`docker/app/supervisord.conf`), so `make up` alone delivers mail — no extra step:
+
 ```sh
-make up       # start the stack
-make queue    # start the queue worker in a terminal
+make up       # start the stack; the queue worker starts with it
+make queue    # optional: a second, foreground worker for debugging
 ```
 
-While `make queue` is running, open **http://localhost:8025** to inspect every
-outgoing email that the app would send in production. If the worker sees no
-jobs, verify the worker terminal is attached and that `.env` keeps
+Open **http://localhost:8025** to inspect every outgoing email that the app would
+send in production. If the Mailpit inbox stays empty, check the app logs
+(`make logs`) for the `queue-worker` program and confirm `.env` keeps
 `QUEUE_CONNECTION=redis` (the default in `.env.example`).
 
 ## GitFlow

@@ -28,6 +28,8 @@ function formatDate(value) {
       v-if="total > 0"
       data-test="task-count"
       class="text-sm text-content-subtle"
+      aria-live="polite"
+      aria-atomic="true"
     >
       {{ total }} {{ total === 1 ? 'task' : 'tasks' }}
     </p>

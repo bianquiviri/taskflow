@@ -74,11 +74,18 @@ Action. If two Actions share logic, extract it into a Service.
 
 Mail is delivered asynchronously. Notifications implementing `ShouldQueue` are
 pushed as `SendQueuedNotifications` jobs onto the **Redis `default` queue**
-(`QUEUE_CONNECTION=redis`). A single attached worker consumes that queue with the
-`queue:work redis --tries=3` command (`make queue`). During local development the
-worker forwards messages to **Mailpit** (`smtp://mailpit:1025`), whose capture
-inbox is browsable at `http://localhost:8025`. There is no long-running detached
-queue service in Compose; the attached worker keeps the local footprint minimal.
+(`QUEUE_CONNECTION=redis`). During local development the worker forwards messages
+to **Mailpit** (`smtp://mailpit:1025`), whose capture inbox is browsable at
+`http://localhost:8025`.
+
+A worker is **always running inside the `app` container**: supervisord starts
+`php artisan queue:work redis --tries=3 --max-time=3600` alongside nginx and
+php-fpm (`docker/app/supervisord.conf`), so `make up` alone delivers mail with no
+extra step. `--max-time` recycles the worker hourly to bound memory and
+supervisor restarts it. This replaced the earlier *attached* `make queue` design
+(Round 5), which silently dropped all mail unless the developer remembered to run
+it (issue #87). `make queue` is still available for running a worker in the
+foreground while debugging.
 
 ## Domain Model (v1)
 

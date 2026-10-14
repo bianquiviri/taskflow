@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing yet.
 
+## [1.0.1] - 2026-10-14
+
+Maintenance release: post-1.0.0 bug fixes.
+
+### Fixed
+
+- **Transactional mail never reached Mailpit** (#87) — the local stack ran no
+  queue worker, so every `ShouldQueue` notification (email verification,
+  password reset, team invitations, mentions) piled up in Redis and was never
+  delivered. A supervised `queue:work redis` programme now runs inside the `app`
+  container, so `make up` alone delivers mail. Covered by new delivery tests
+  (`tests/Feature/MailDeliveryTest.php`).
+- **The local test suite ran against the dev MySQL database** — the container
+  environment shadowed the `phpunit.xml` testing values, so `RefreshDatabase`
+  wiped the local database. The `<env>` entries are now authoritative and the
+  suite is hermetic (sqlite / sync / array), on host and in Docker.
+- **Broken navigation links** (#79, #86) — `/tasks` and `/settings` now redirect
+  to their real destinations instead of returning 404.
+- **Accessibility** (#80, #85) — the filtered task count is announced through a
+  polite live region.
+
 ## [1.0.0] - 2026-09-28
 
 The first feature-complete release: the full project/task management product
@@ -97,5 +118,6 @@ parallel agent rounds on `develop`, all green on 6 CI checks.
   `feature/21-cloud-run` and `feature/22-managed-data` branches, unmerged and
   unverified against a real GCP project.
 
-[Unreleased]: https://github.com/bianquiviri/taskflow/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/bianquiviri/taskflow/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/bianquiviri/taskflow/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/bianquiviri/taskflow/compare/v0.2.0...v1.0.0
