@@ -1,5 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+
+vi.mock('@inertiajs/vue3', () => ({
+    Link: {
+        props: ['href'],
+        template: '<a :href="href"><slot /></a>',
+    },
+}));
+
 import Button from './Button.vue';
 
 describe('Button.vue', () => {
@@ -56,5 +64,28 @@ describe('Button.vue', () => {
         await wrapper.trigger('click');
 
         expect(onClick).not.toHaveBeenCalled();
+    });
+
+    it('renders a link when href is provided', () => {
+        const wrapper = mount(Button, {
+            props: { href: '/register', variant: 'secondary' },
+            slots: { default: 'Get started' },
+        });
+
+        expect(wrapper.element.tagName).toBe('A');
+        expect(wrapper.attributes('href')).toBe('/register');
+        expect(wrapper.attributes('type')).toBeUndefined();
+        expect(wrapper.classes()).toContain('border-line-strong');
+        expect(wrapper.text()).toContain('Get started');
+    });
+
+    it('renders a plain anchor for a same-page target', () => {
+        const wrapper = mount(Button, {
+            props: { href: '#signin' },
+            slots: { default: 'Sign in' },
+        });
+
+        expect(wrapper.element.tagName).toBe('A');
+        expect(wrapper.attributes('href')).toBe('#signin');
     });
 });
