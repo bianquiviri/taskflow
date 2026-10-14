@@ -30,6 +30,150 @@ truth for the project's evolution.
 
 ---
 
+## 2026-10-14 — Round 11b: Mailpit delivery (#87) + test-env precedence bug
+
+**Context:** The product owner reported that transactional emails never show up
+in Mailpit and asked for an issue plus delivery tests. Investigating surfaced a
+second, more serious bug in the test bootstrap.
+
+**Findings:**
+
+- **Mail never arrives because no queue worker runs.** Every notification
+  implements `ShouldQueue`, so Laravel queues a `SendQueuedNotifications` job
+  instead of sending inline; the dev stack only offers the *attached*
+  `make queue` target (Round-5 decision), and nothing tells the developer it is
+  required — so `make up` alone silently drops all mail. Proof: draining the
+  backlog with `php artisan queue:work redis --stop-when-empty --tries=3`
+  delivered the accumulated **4 messages** to Mailpit immediately; the mail
+  config and the notifications themselves are fine.
+- **`make test` was running against the dev MySQL database.** The `app`
+  container exports `DB_CONNECTION`/`MAIL_*`/`QUEUE_CONNECTION` into the process
+  environment (`env_file: .env` + `environment:`), Laravel's env repository reads
+  **`$_SERVER` before `$_ENV`**, and PHPUnit's `<env>` entries only populate
+  `$_ENV` — so the `sqlite`/`sync`/`array` values in `phpunit.xml` were ignored.
+  Consequence: `RefreshDatabase` performed a `migrate:fresh` on the **dev**
+  database, wiping it (the local `taskflow` DB is now fully migrated but empty;
+  the single dev user account was lost — no projects/tasks existed yet).
+
+**Changes (working tree, uncommitted):**
+
+- **Issue [#87]** opened: *transactional emails never reach Mailpit — no queue
+  worker runs in the dev stack* (root cause, evidence, two candidate fixes,
+  acceptance criteria).
+- `tests/Feature/MailDeliveryTest.php` (new): 4 Pest feature tests driving the
+  real mailer (`Mail::mailer()->getSymfonyTransport()`) for password-reset,
+  email-verification, team-invitation and mention notifications, asserting the
+  rendered subject is actually delivered.
+- `phpunit.xml`: every `<env>` gains `force="true"` (+ comment) so the testing
+  values are authoritative over the container environment.
+- `tests/TestCase.php`: `createApplication()` mirrors the PHPUnit-provided
+  `$_ENV` values into `$_SERVER` before the app boots — the piece that makes the
+  suite hermetic in Docker (Laravel resolves `$_SERVER` first).
+- **Queue worker fix (option 1 of #87), implemented:** `docker/app/supervisord.conf`
+  gains a `[program:queue-worker]` running
+  `php artisan queue:work redis --tries=3 --max-time=3600 --sleep=1`
+  (`autorestart=true`), so the worker always runs inside the `app` container and
+  `make up` alone delivers mail. Requires an `app` image rebuild.
+- Docs updated to match: `docs/ARCHITECTURE.md` § *Queued mail & the queue worker*
+  and README § *Queued email & Mailpit* now describe the supervised worker;
+  `make queue` is kept as an optional foreground worker for debugging.
+
+**Incident (reported):** the earlier test runs on the dev MySQL database caused a
+`migrate:fresh`, deleting the local `taskflow` data — notably the single dev user
+account (`bianquiviri@gmail.com`). It has since re-registered (id 1, unverified).
+The DB is now fully migrated. Stale queued jobs that referenced the deleted
+`TeamInvitation`/`Comment` rows failed with `ModelNotFoundException` and were
+flushed (`php artisan queue:flush`).
+
+**Decisions:**
+
+- The queue-worker fix landed as **option 1** (supervised worker in the `app`
+  container), reversing the Round-5 "no long-running worker, minimal footprint"
+  call — a missing worker made every transactional email invisible in dev, which
+  outweighs the small footprint saving. `make queue` survives as a debugging
+  convenience. `docs/ARCHITECTURE.md` and README were updated accordingly.
+- The test-env bug is fixed in the test bootstrap (test-side, no compose
+  change) because the container-level alternative risks regenerating
+  `APP_KEY` on every boot.
+
+**Verification:** `make test` → **346 passed** (2067 assertions, 12 processes;
+342 + the 4 new mail tests), up from the red `326 failed` before the fix.
+`make lint` green (Pint 201 files, ESLint 0). `MailDeliveryTest` 4/4 green.
+**End-to-end after the rebuild:** the 5 backlogged Redis jobs were drained by the
+new worker and 2 verification emails reached Mailpit; dispatching a fresh
+`sendEmailVerificationNotification()` delivered a message to Mailpit within ~4 s
+with no manual `make queue`.
+
+**Status (end of session):** `develop` `a1fc902` plus the uncommitted changes
+above (DEVLOG, `phpunit.xml`, `tests/TestCase.php`, `tests/Feature/MailDeliveryTest.php`,
+`docker/app/supervisord.conf`, `docs/ARCHITECTURE.md`, `README.md`). Open issues
+now #23, #24, **#87**. Next: commit the work on a `bugfix/87-*` branch + PR, and
+(separately) confirm whether to file the test-env/data-loss bug as its own issue.
+
+---
+
+## 2026-10-14 — Round 11: v1.0.0 shipped to `main` + post-release fixes (#85/#86)
+
+**Context:** The v1.0.0 release train left `develop` after Round 10 and two
+post-release follow-ups landed on `develop`. This session caught this DEVLOG up
+(the release itself had never been logged) and fixed a real gap found while
+auditing the repo: the `v1.0.0` tag exists, but **no GitHub Release was ever
+published** — `gh release list` still advertised `v0.2.0` as *Latest*.
+
+**Changes:**
+
+- **Release v1.0.0** (`release/v1.0.0` → PR #82 → PR #83 to `main`, plus the
+  release-housekeeping PR #84): `develop` was released to `main` with the full
+  `[1.0.0]` CHANGELOG entry (#25) and an annotated tag `v1.0.0` (`6ffe87c`).
+  `main` carries one unique commit, `f885782` (`chore(release): v1.0.0`), from
+  the release branch; `develop` is ahead by the post-release fixes below — normal
+  GitFlow drift, no sync-back PR was opened.
+- **#85 — a11y live region** (`feature/80-a11y-followup`, PR #85, *Closes #80*):
+  the filtered-results count in `Components/TaskList.vue` gains
+  `aria-live="polite"` + `aria-atomic="true"` so screen-reader users are told how
+  many tasks matched. The other half of #80 — raw Tailwind palette classes on the
+  four pages #33 rewrote — was verified **already token-based** (a repo-wide
+  search finds no raw `*-[0-9]` palette classes in `resources/js` outside a spec
+  fixture), so the issue could close complete.
+- **#86 — broken nav links** (`bugfix/79-fix-broken-nav-links`, PR #86,
+  *Closes #79*): `routes/web.php` gains `/tasks` and `/settings` redirects to the
+  real destinations, fixing the 404 every signed-in user hit from #16/#79.
+- **v1.0.0 GitHub Release published (this session):** created from the
+  CHANGELOG's `[1.0.0]` section and marked **Latest**, superseding `v0.2.0`.
+- **Repo hygiene:** a stray `package-lock.json` rewrite found in the working tree
+  (root package name `taskflow` → `html`, `libc` fields dropped) was reverted —
+  the fingerprint of an accidental `npm` run outside the project, not a
+  dependency change.
+- **Pruned remotes:** `git fetch --prune` removed ~20 merged/stale remote
+  branches (all feature/docs/release branches already squashed into `develop`);
+  the two deferred cloud branches (`feature/21-cloud-run`,
+  `feature/22-managed-data`) were deliberately kept as reference.
+
+**Decisions:**
+
+- The missing GitHub Release is a **release-process defect**, not cosmetics:
+  consumers rely on the *Latest* marker and the generated tarballs, both of which
+  pointed at `v0.2.0`. `v1.0.0` is now the published latest.
+- **No `main` → `develop` sync-back merge** was performed: `main`'s only unique
+  commit is the release-housekeeping `chore`, and `develop` already carries the
+  CHANGELOG. A merge would add noise for no content. Revisit only if a future
+  release branch needs it.
+- Release notes are kept **single-sourced** in `CHANGELOG.md` and copied into the
+  GitHub Release body, so the two can be diffed against each other.
+
+**Verification:** docs + release-metadata session, no application code touched.
+Local: `make lint` (Pint + ESLint) green, working tree clean, no test suite
+impact. Release verified with `gh release view v1.0.0` and `gh release list`
+(`v1.0.0` → *Latest*).
+
+**Status (end of session):** `develop` `a1fc902`. `main` `f885782`, tag `v1.0.0`
+with a published GitHub Release. Shipped since Round 10: v1.0.0 + #85 + #86.
+Open issues: **#23** and **#24** only (deferred cloud custom domain + deploy
+docs, v1.1.0). Next: pick up the cloud phase (#21–#24) or open the first v1.1.0
+feature round.
+
+---
+
 ## 2026-09-28 — Round 10: empty states/onboarding (#33) + a11y pass (#34)
 
 **Context:** The v1.0.0 polish pair. #33 (first-run UX) and #34 (accessibility)
