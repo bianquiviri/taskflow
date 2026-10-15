@@ -36,11 +36,18 @@ describe('LandingFooter.vue', () => {
         expect(wrapper.find('a[href="/register"]').exists()).toBe(false);
     });
 
-    it('keeps the brand and the credit line when the calls to action are disabled', () => {
+    it('keeps the product line and the credit line when the calls to action are disabled', () => {
         const wrapper = mountFooter({ showCtas: false });
 
         expect(wrapper.text()).toContain('TaskFlow');
         expect(wrapper.text()).toContain('CC BY-NC-ND 4.0');
+    });
+
+    it('does not repeat the brand lockup', () => {
+        const wrapper = mountFooter();
+
+        expect(wrapper.find('a[href="/"]').exists()).toBe(false);
+        expect(wrapper.find('[aria-label="TaskFlow home"]').exists()).toBe(false);
     });
 
     it('shows the running version', () => {
