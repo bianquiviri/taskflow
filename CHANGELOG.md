@@ -9,6 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing yet.
 
+## [1.1.0] - 2026-10-15
+
+A public landing page on `/` and a project relicense.
+
+### Added
+
+- **Public landing page** (#90) — the home view now explains what TaskFlow is
+  and lets a visitor sign in without leaving the page: `Components/Landing/*`
+  (nav, hero, inline sign-in form, features, steps, footer), a `Button` link
+  mode (`href` → Inertia `Link`, `#anchor` → plain `<a>`), and a redirect that
+  sends authenticated visitors on to `/dashboard`.
+- **Author credit and license link** in the landing footer, plus the TaskFlow
+  site icons (`favicon.svg`, 32×32 `favicon.ico`, `apple-touch-icon.png`),
+  declared in `app.blade.php`.
+
+### Changed
+
+- **License** — the project is now released under **CC BY-NC-ND 4.0** (was
+  MIT). `LICENSE`, `composer.json`, `package.json` and the README were updated.
+
 ## [1.0.1] - 2026-10-14
 
 Maintenance release: post-1.0.0 bug fixes.
@@ -118,6 +138,7 @@ parallel agent rounds on `develop`, all green on 6 CI checks.
   `feature/21-cloud-run` and `feature/22-managed-data` branches, unmerged and
   unverified against a real GCP project.
 
-[Unreleased]: https://github.com/bianquiviri/taskflow/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/bianquiviri/taskflow/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/bianquiviri/taskflow/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/bianquiviri/taskflow/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/bianquiviri/taskflow/compare/v0.2.0...v1.0.0
