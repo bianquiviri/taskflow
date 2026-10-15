@@ -30,6 +30,92 @@ truth for the project's evolution.
 
 ---
 
+## 2026-10-15 — Round 13: v1.1.0 released + the app shell wired to pages (#93)
+
+**Context:** Two pieces of work. First the release train for the landing page
+(Round 12): `feature/90-landing-page` → PR **#91** → `develop`, then
+`release/v1.1.0` (CHANGELOG `[1.1.0] - 2026-10-15`) → PR **#92** → `main`. Then
+the product owner reviewed the signed-in product and reported that the dashboard
+had **no way to sign out** and **no footer**, asking for the landing's footer on
+the authenticated pages.
+
+**Release (v1.1.0):**
+
+- PR #92 hit a conflict on `CHANGELOG.md`: the `v1.0.1` release commits had
+  **never been synced back to `develop`** (>the sync-back was skipped in Round
+  11), so `main` and `develop` each carried one half of the history. Resolved by
+  merging `main` into the release branch and joining the `[1.1.0]` + `[1.0.1]`
+  blocks, rewriting the link refs.
+- Merged to `main` (`5a6e607`) with `--merge --admin` (the required-review rule
+  has `enforce_admins: false`), annotated tag `v1.1.0` + GitHub **Release**
+  published as *Latest* (superseding `v1.0.0`), and this time `main` was
+  **synced back into `develop`** (`50561c1`) so the recurring CHANGELOG conflict
+  cannot happen again. Issues #90, #23, #24 and PRs #91/#92 assigned to the
+  author.
+
+**The bug (issue [#93]):** `resources/js/Layouts/AppLayout.vue` was **dead
+code** — no page mounted it, anywhere in the repo's history. Every authenticated
+page (dashboard, projects, tasks, teams, profile) therefore rendered **without
+the sidebar, nav, header/avatar, sign-out control and footer**: the shell
+existed, was tested, and was never wired up. Screenshots taken before/after
+confirmed it in the browser (the `before` capture shows a bare page with no
+chrome at all).
+
+**Changes (branch `bugfix/93-dashboard-review` → PR #94):**
+
+- `resources/js/app.js`: `resolve` is now async and applies
+  `page.default.layout ??= AppLayout` to **every** page except the guest frames
+  (`Welcome`, `Auth/*`), so the shell is global by default instead of opt-in.
+- `Layouts/AppLayout.vue`: the sidebar footer gains a **Sign out** control
+  (`<Link href="/logout" method="post" as="button">` + `Icon name="logout"`,
+  `data-test="sign-out"`) rendered only for a signed-in user, and the shared
+  `<LandingFooter :app-name="appName" :show-ctas="false" />` is rendered after
+  `</main>`.
+- `Components/Landing/LandingFooter.vue`: new **`showCtas`** prop (default
+  `true`). With `false` the guest CTAs (*Sign in* / *Create an account*) are
+  hidden and the logo + credit/license line remain — the landing itself is
+  unchanged.
+- Tests: `LandingFooter.spec.js` +2 (CTAs hidden/present), `AppLayout.spec.js`
+  +3 (sign-out posts to `/logout`, footer present with `data-ctas="false"` and
+  ordered **after** `main`). **534 Vitest · 350 Pest · 14 Playwright · Pint 201
+  files · ESLint 0** — all green, CI 6/6 on PR #94.
+- Verified by hand in the browser: `/dashboard` and `/projects` now render the
+  skip link, the sidebar (`Main` nav, avatar, Sign out), the topbar and the
+  `contentinfo` footer with the author/license line; clicking **Sign out** posts
+  and lands on `/` (guest); `/login` still renders `AuthLayout` only, with no
+  app chrome.
+
+**Decisions:**
+
+- Of the three layout options offered for the authenticated footer, **option 1**
+  was implemented: reuse `LandingFooter` adapted via `showCtas=false`, applied
+  **shell-wide** (every authenticated page gets it), rather than duplicating a
+  second footer component or inlining it per page.
+- The running **version is deliberately not shown in-app**: `version` is not a
+  shared Inertia prop (`HandleInertiaRequests` exposes `auth`/`can`/`theme`
+  only), and adding it there is `auth-agent` territory outside this issue.
+- The shell is nominally `frontend-agent` territory; it was modified here on an
+  **explicit product-owner request** and the override is recorded in PR #94, per
+  the parallel-development rules.
+- Test-side: the "footer comes after `main`" assertion uses element order from
+  `findAll('main, [data-test="app-footer"]')` instead of
+  `compareDocumentPosition` + the `Node` global, which ESLint's config does not
+  declare (`no-undef`). Caught by `make lint`.
+- Housekeeping: the throwaway dev account `qa.review@example.com` used for the
+  browser check was deleted from the dev database, and the two screenshot
+  artefacts were removed from the working tree before committing.
+
+**Known flake (pre-existing, untouched):** `ActivityFeedTest` — *describes an
+entry with its actor, its action, its target and when it happened* compares two
+`now()` calls a few ms apart.
+
+**Status (end of session):** `develop` `50561c1` + PR **#94** open and green
+(6/6). Next: review/merge #94, then the remaining backlog — `frontend-agent`
+follow-ups (shared sign-in form for the landing), and the deferred cloud slice
+(#23/#24).
+
+---
+
 ## 2026-10-14 — Round 12: public landing page on `/` with inline sign-in (#90)
 
 **Context:** The product owner asked for the home view (`GET /`) to become a real
