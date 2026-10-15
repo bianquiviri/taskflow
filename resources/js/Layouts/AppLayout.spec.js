@@ -258,6 +258,20 @@ describe('AppLayout.vue', () => {
         expect(order[1].attributes('data-test')).toBe('app-footer');
     });
 
+    it('stacks the shell as a full-height column so the footer sits at the bottom', () => {
+        const wrapper = mount(AppLayout, { global });
+
+        const root = wrapper.element;
+        const column = wrapper.get('main').element.parentElement;
+
+        expect(root.classList.contains('flex')).toBe(true);
+        expect(root.classList.contains('flex-col')).toBe(true);
+        expect(root.classList.contains('min-h-dvh')).toBe(true);
+
+        expect(column.classList.contains('flex-1')).toBe(true);
+        expect(wrapper.get('main').classes()).toContain('flex-1');
+    });
+
     it('falls back to the shared auth user when no user prop is given', () => {
         pageState.props = {
             flash: {},

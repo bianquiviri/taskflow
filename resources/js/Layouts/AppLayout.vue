@@ -120,7 +120,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="min-h-dvh bg-canvas">
+  <div class="flex min-h-dvh flex-col bg-canvas">
     <a
       href="#main-content"
       class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-control focus:bg-raised focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-content focus:shadow-lg"
