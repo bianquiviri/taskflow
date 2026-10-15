@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/bianquiviri/taskflow/actions/workflows/ci.yml/badge.svg)](https://github.com/bianquiviri/taskflow/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/bianquiviri/taskflow?sort=semver)](https://github.com/bianquiviri/taskflow/releases)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](LICENSE)
 [![PHP](https://img.shields.io/badge/PHP-8.4-8892BF?logo=php&logoColor=white)](https://www.php.net/)
 [![Laravel](https://img.shields.io/badge/Laravel-13-FF2D20?logo=laravel&logoColor=white)](https://laravel.com/)
 [![Vue](https://img.shields.io/badge/Vue-3-42b883?logo=vuedotjs&logoColor=white)](https://vuejs.org/)
@@ -131,4 +131,9 @@ Planned milestones (see GitHub issues):
 
 ## License
 
-MIT
+Copyright (c) 2026 Jose Antonio Bianco. All rights reserved under the
+**Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International**
+license ([CC BY-NC-ND 4.0](https://creativecommons.org/licenses/by-nc-nd/4.0/)):
+you may view and share this work, unmodified and for non-commercial purposes
+only, crediting the author. Commercial use and modified distributions are not
+permitted. See [LICENSE](LICENSE) for the full legal code.

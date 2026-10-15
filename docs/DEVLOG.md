@@ -30,6 +30,115 @@ truth for the project's evolution.
 
 ---
 
+## 2026-10-14 — Round 12: public landing page on `/` with inline sign-in (#90)
+
+**Context:** The product owner asked for the home view (`GET /`) to become a real
+landing page that explains what TaskFlow is and lets a visitor sign in without
+leaving the page. The old `Welcome.vue` was a framework placeholder (app name +
+Laravel version) with no way into the product.
+
+**Changes (working tree on `feature/90-landing-page`, uncommitted):**
+
+- **Issue [#90]** opened: *feat(landing): public landing page that explains
+  TaskFlow and offers inline sign-in*.
+- `Pages/Welcome.vue` rewritten as a landing composed of new
+  `Components/Landing/*`: `LandingNav` (logo, `Sign in` anchor → `#signin`,
+  `Get started` → `/register`), `LandingHero` (badge, the page's single `h1`,
+  product pitch, CTAs), `LandingSignIn` (inline email/password/remember form
+  posting to `POST /login`, forgot-password link, register link),
+  `LandingFeatures` ("What is TaskFlow?" — six capabilities: projects,
+  tasks & boards, teams & invitations, comments & mentions, activity trail,
+  dashboard & metrics),   `LandingSteps` ("How it works" — three numbered steps),
+  `LandingFooter` (logo, repeat CTAs, author credit, license, running version).
+- **`Button` learned a link mode** (`href` → Inertia `Link`; a same-page
+  `#anchor` → a plain `<a>`) so the landing's CTAs reuse the one source of truth
+  for the button look instead of hand-rolled button classes. Backwards
+  compatible (no `href` → `<button>` as before).
+- **`WelcomeController`** now sends authenticated visitors to
+  `route('dashboard')`, so the landing is guest-only.
+- Tests: `Pages/Welcome.spec.js` rewritten (5) + six new landing specs (27
+  tests total) · `tests/Feature/WelcomeTest.php` gains 2 tests (authenticated
+  redirect; a failed sign-in attempt from `/` comes back to `/` with
+  `email` errors) · `tests/e2e/welcome.spec.js` rewritten for the landing
+  (title, `h1`, sections, inline form, nav anchor) + a footer credit/license
+  check.
+- **Author credit + project license** (follow-up request): `LandingFooter`
+  gains "Developed by [Jose Antonio Bianco](https://github.com/bianquiviri)"
+  (external link, `rel="noopener noreferrer"`, `target="_blank"`) and a link to
+  the license (CC BY-NC-ND 4.0); the running version is now rendered only when
+  present. The project license changed from **MIT** (Laravel skeleton default)
+  to **CC BY-NC-ND 4.0**: `LICENSE` replaced (project header + the verbatim
+  19 KB Creative Commons legalcode, downloaded from
+  `creativecommons.org/licenses/by-nc-nd/4.0/legalcode.txt`), `composer.json`
+  and `package.json` license fields set to `CC-BY-NC-ND-4.0`, README badge +
+  § *License* rewritten.   `LandingFooter.spec.js` gains 2 tests (author link,
+  license link).
+- **Site icon (favicon)** (follow-up request): the browser tab had no icon at
+  all — `public/favicon.ico` was a 0-byte placeholder from the scaffold. Added
+  `public/favicon.svg` (the product mark: brand `#4f39f6` rounded badge + white
+  check, i.e. `IconLogo` geometry scaled/centred), a real 32×32
+  `public/favicon.ico` and a 180×180 `public/apple-touch-icon.png`, all
+  declared in `app.blade.php` (`<link rel="icon">` + `apple-touch-icon`). The
+  rasters were generated with a throwaway, dependency-free PHP script
+  (4× supersampled rasteriser + hand-rolled PNG/ICO encoders) because neither
+  GD nor ImageMagick is available locally; the script was not kept.
+  `WelcomeTest` gains 2 tests (the head declares the icons; the files exist).
+
+
+**Decisions:**
+
+- The landing keeps its own sign-in form rather than refactoring
+  `Pages/Auth/Login.vue` into a shared component: extracting `LoginForm` would
+  mean moving `PasswordField`/`AuthStatusMessage` out of `Pages/Auth` and
+  touching every auth page, and #90 explicitly scoped the auth flow untouched.
+  Trade-off: the landing's password input is a plain `FormInput` (no show/hide
+  toggle). A shared form is a follow-up if the toggle is wanted there too.
+- Authenticated visitors are **redirected from `/` to `/dashboard`** even though
+  #90 listed it as out of scope: a marketing page with a sign-in form makes no
+  sense for a signed-in user, and `AppLayout`'s logo links to `/`.
+- Page title is "Project & task management for teams" — the Inertia title
+  template in `app.js` already appends "· TaskFlow", so the app name is not
+  repeated.
+- The landing is composed of small, stateless `Components/Landing/*` components
+  and follows the #18 design tokens only (light **and** dark).
+- Feature copy describes **shipped** capabilities (projects, boards/filters,
+  invitations, comments/mentions, activity log, KPI dashboard) — no invented
+  numbers or testimonials.
+- **License decision (author's call):** the recommendation was a software-grade
+  restrictive license (proprietary "All rights reserved", or PolyForm
+  Strict/Elastic for source-available), because **Creative Commons advises
+  against using its licenses for software** and CC BY-NC-ND 4.0 adds no patent
+  grant while its "NoDerivatives" clause conflicts with ordinary code use
+  (forking, patching). The author deliberately chose **CC BY-NC-ND 4.0** anyway
+  as the most restrictive CC variant; recorded here so the choice is traceable
+  rather than accidental. The `composer.json` SPDX field uses
+  `CC-BY-NC-ND-4.0`; `package.json` gained the same `license` field.
+
+**Known flake (pre-existing, not caused by this work):** `ActivityFeedTest` —
+*describes an entry with its actor, its action, its target and when it
+happened* — compares two `now()` calls made a few ms apart, so it fails when
+the second ticks over between the write and the assertion (reproduced once under
+`--parallel` at 12 processes; passes 3/3 in isolation). Candidate one-line fix:
+assert against the created model's `created_at` instead of `now()`.
+
+**Verification:** `make lint` green (Pint 201 files, ESLint 0) · `make test`
+**350 passed** (2080 assertions, 12 processes) · `make test-fe` **529 passed**
+(67 files, 97.18% statements; every `Components/Landing/*` at 100%) · `make e2e`
+**14 passed**. Manual check against `https://taskflow.josebianco.local/` (guest,
+no console errors): hero + features + steps + footer render; the footer shows the
+author credit and the CC BY-NC-ND 4.0 link; the favicon renders in the tab
+(pixel-checked: transparent corners, brand fill, white check); a wrong password
+submitted from the landing stays on `/` and shows *"These credentials do not
+match our records."* on the card (`aria-invalid` + `role="alert"`); the nav
+`Sign in` anchor scrolls to the card without an Inertia visit.
+
+**Status (end of session):** branch `feature/90-landing-page` (from `develop`
+`2d386a4`), changes **uncommitted** pending a review of the view with the product
+owner. Open issues: #23, #24 (deferred cloud phase), **#90**. Next: review the
+page, then commit + PR to `develop`.
+
+---
+
 ## 2026-10-14 — Round 11b: Mailpit delivery (#87) + test-env precedence bug
 
 **Context:** The product owner reported that transactional emails never show up

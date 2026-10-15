@@ -11,6 +11,10 @@
 
         <title>{{ config('app.name', 'TaskFlow') }}</title>
 
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+        <link rel="icon" type="image/vnd.microsoft.icon" href="/favicon.ico">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
         @inertiaHead
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>

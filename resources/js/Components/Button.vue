@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { Link } from '@inertiajs/vue3';
 
 const props = defineProps({
     variant: {
@@ -12,6 +13,7 @@ const props = defineProps({
         default: 'button',
         validator: (value) => ['button', 'submit', 'reset'].includes(value),
     },
+    href: { type: String, default: null },
     disabled: { type: Boolean, default: false },
     loading: { type: Boolean, default: false },
 });
@@ -24,12 +26,23 @@ const variantClasses = {
 };
 
 const isDisabled = computed(() => props.disabled || props.loading);
+
+// A plain in-page anchor must not go through Inertia's router.
+const tag = computed(() => {
+    if (!props.href) {
+        return 'button';
+    }
+
+    return props.href.startsWith('#') ? 'a' : Link;
+});
 </script>
 
 <template>
-  <button
-    :type="type"
-    :disabled="isDisabled"
+  <component
+    :is="tag"
+    :href="href ?? undefined"
+    :type="href ? undefined : type"
+    :disabled="href ? undefined : isDisabled"
     :aria-busy="loading || undefined"
     class="inline-flex min-h-10 items-center justify-center gap-2 rounded-control px-4 py-2 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas disabled:cursor-not-allowed disabled:opacity-60"
     :class="variantClasses[variant]"
@@ -41,5 +54,5 @@ const isDisabled = computed(() => props.disabled || props.loading);
       aria-hidden="true"
     />
     <slot />
-  </button>
+  </component>
 </template>
