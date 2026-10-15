@@ -44,12 +44,18 @@ const ThemeToggleStub = {
     template: '<button type="button" data-test="theme-toggle">{{ theme }}</button>',
 };
 
+const AppFooterStub = {
+    props: ['appName', 'version', 'showCtas'],
+    template: '<footer data-test="app-footer" :data-ctas="String(showCtas)" />',
+};
+
 const global = {
     stubs: {
         FlashMessages: FlashMessagesStub,
         Icon: IconStub,
         Avatar: AvatarStub,
         ThemeToggle: ThemeToggleStub,
+        LandingFooter: AppFooterStub,
     },
 };
 
@@ -216,6 +222,40 @@ describe('AppLayout.vue', () => {
         expect(wrapper.text()).toContain('Jane Doe');
         expect(wrapper.text()).toContain('jane@example.com');
         expect(wrapper.findAll('[data-test="avatar"]').length).toBe(2);
+    });
+
+    it('offers a sign out control that posts to the logout route', () => {
+        const user = { name: 'Jane Doe', email: 'jane@example.com', avatar: null };
+        const wrapper = mount(AppLayout, {
+            props: { user },
+            global,
+        });
+
+        const signOut = wrapper.get('aside [data-test="sign-out"]');
+
+        expect(signOut.text()).toContain('Sign out');
+        expect(signOut.attributes('href')).toBe('/logout');
+        expect(signOut.attributes('method')).toBe('post');
+    });
+
+    it('hides the sign out control for guests', () => {
+        const wrapper = mount(AppLayout, { global });
+
+        expect(wrapper.find('[data-test="sign-out"]').exists()).toBe(false);
+    });
+
+    it('renders the app footer below the main content without guest calls to action', () => {
+        const wrapper = mount(AppLayout, { global });
+
+        const footer = wrapper.get('[data-test="app-footer"]');
+
+        expect(footer.attributes('data-ctas')).toBe('false');
+        expect(wrapper.get('main').element.parentElement.contains(footer.element)).toBe(true);
+
+        const order = wrapper.findAll('main, [data-test="app-footer"]');
+
+        expect(order[0].element.tagName).toBe('MAIN');
+        expect(order[1].attributes('data-test')).toBe('app-footer');
     });
 
     it('falls back to the shared auth user when no user prop is given', () => {

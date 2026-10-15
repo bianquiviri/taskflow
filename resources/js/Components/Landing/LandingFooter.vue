@@ -6,6 +6,7 @@ import Icon from '../Icon.vue';
 defineProps({
     appName: { type: String, default: 'TaskFlow' },
     version: { type: String, default: '' },
+    showCtas: { type: Boolean, default: true },
 });
 </script>
 
@@ -27,7 +28,10 @@ defineProps({
           <span class="text-lg font-bold tracking-tight">{{ appName }}</span>
         </Link>
 
-        <div class="flex flex-wrap items-center gap-3">
+        <div
+          v-if="showCtas"
+          class="flex flex-wrap items-center gap-3"
+        >
           <Button
             href="#signin"
             variant="secondary"

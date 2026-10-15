@@ -29,6 +29,20 @@ describe('LandingFooter.vue', () => {
         expect(wrapper.get('a[href="/register"]').text()).toBe('Create an account');
     });
 
+    it('drops the guest calls to action when they are disabled', () => {
+        const wrapper = mountFooter({ showCtas: false });
+
+        expect(wrapper.find('a[href="#signin"]').exists()).toBe(false);
+        expect(wrapper.find('a[href="/register"]').exists()).toBe(false);
+    });
+
+    it('keeps the brand and the credit line when the calls to action are disabled', () => {
+        const wrapper = mountFooter({ showCtas: false });
+
+        expect(wrapper.text()).toContain('TaskFlow');
+        expect(wrapper.text()).toContain('CC BY-NC-ND 4.0');
+    });
+
     it('shows the running version', () => {
         const wrapper = mountFooter({ version: 'v13.32.0' });
 
