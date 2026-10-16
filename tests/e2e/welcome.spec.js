@@ -30,6 +30,18 @@ test.describe('TaskFlow landing page', () => {
         await expect(page.getByRole('contentinfo').getByRole('link', { name: 'Create an account' })).toBeVisible();
     });
 
+    test('reveals the inline sign-in password on demand', async ({ page }) => {
+        await page.goto('/');
+
+        const password = page.locator('#signin').getByLabel('Password', { exact: true });
+
+        await expect(password).toHaveAttribute('type', 'password');
+
+        await page.locator('#signin').getByRole('button', { name: 'Show password' }).click();
+
+        await expect(password).toHaveAttribute('type', 'text');
+    });
+
     test('jumps the visitor to the sign-in form from the navigation', async ({ page }) => {
         await page.goto('/');
 
