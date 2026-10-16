@@ -33,7 +33,9 @@ of truth for the project's evolution.
 ## 2026-10-16 — Round 15: the Projects list was not navigable (#99)
 
 **Context:** The product owner asked for a review and fix of the **Projects
-view**. The review turned up two problems, one of them a regression from #93.
+view**. The review turned up three problems — one a real bug, two of them
+regressions from #93 that the owner spotted once the pages were put on a large
+screen.
 
 **Problem 1 — you could not open a project (the real bug).** `Pages/Projects/
 Index.vue` rendered each project as a plain `<li>` with the name and the
@@ -49,35 +51,67 @@ authenticated page still carried its own `px-6 py-10` from before #93 (when the
 shell was dead code and the page container was the *only* padding). Measured in
 the browser at 390 px: text sits **40 px** from the edge on the un-fixed pages
 (shell 16 px + page 24 px) against **16 px** where the page padding is dropped.
-At wide viewports the effect is invisible — the page `max-w-*` binds and the
-centring is symmetric, so the extra padding cancels out (measured: identical
+At wide viewports the effect was invisible — the page `max-w-*` bound and the
+centring is symmetric, so the extra padding cancelled out (measured: identical
 `x` with and without it).
+
+**Problem 3 — nothing scaled on a large screen (the real complaint).** Because
+each page capped itself with its own `max-w-*` while the shell imposed no cap,
+**every** authenticated view stopped growing once its cap was reached, and the
+wider the screen the worse the ratio. Measured at the full viewport width:
+
+| View | 1920 px (available 1568) | 2560 px (available 2208) |
+| ---- | ------------------------ | ------------------------ |
+| Dashboard | 1152 → 73% | 1152 → 52% |
+| Projects (list) | 896 → 57% | 896 → 41% |
+| Projects/{id} (board) | 1024 → 65% | 1024 → 46% |
+| Tasks | 896 → 57% | 896 → 41% |
+| Profile / Password | 768 → 49% | 768 → 35% |
+
+There is **no horizontal overflow** at any width (verified 320 → 2560: the
+`viewport` meta is correct, `scrollWidth == clientWidth` everywhere), so the
+symptom was purely the caps: a kanban board squeezed into 1024 px showed **five
+192 px columns** while 593 px of screen sat empty.
 
 **Changes (branch `bugfix/99-projects-view-shell`, issue [#99]):**
 
 - `Pages/Projects/Index.vue`: each row is now an Inertia `<Link>` to
   `/projects/{project.id}` (the id-based key the rest of the app already uses —
   no `getRouteKeyName` is defined, so binding is by primary key), wrapped in a
-  card with a hover state; the container drops `px-6 py-10` and keeps
-  `mx-auto w-full max-w-4xl`.
-- `Pages/Projects/Show.vue`: the container drops `px-6 py-10` (keeps
-  `max-w-5xl`).
+  card with a hover state; the list became a responsive grid
+  (`sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4`) instead of one stretched row
+  per project.
+- **The container rule is now consistent across all 11 authenticated views**
+  (the owner chose to fix the whole app rather than Projects alone, to avoid
+  Projects looking tighter than its neighbours): the shell owns the padding, so
+  every page dropped its `px-6 py-10`, and the content pages dropped their
+  `max-w-*` cap — `Dashboard/Index`, `Projects/{Index,Show}`,
+  `Tasks/{Index,Show,Mine}`, `Teams/{Show,Settings}` now fill the shell
+  container. Only the single-column **forms** keep a narrow reading column
+  (`Profile/{Edit,Password}` at `max-w-3xl`, `Teams/Invitation` at `max-w-2xl`).
+  No spec asserted any of those classes.
 - `Pages/Projects/Index.spec.js`: +1 (*opens the project from its row*, asserting
   both hrefs).
 
-**Verification:** Pint 201 files · ESLint 0 · Pest **350** (2080 assertions) ·
-Vitest **539** (67 files) · Playwright **14** — all green. Verified by hand in
-the browser with a throwaway `qa.review@example.com` account (deleted
-afterwards): clicking a project lands on `/projects/2`, the row measures
-`max-w-4xl` (896 px) and the mobile margin is 16 px.
+**Result (measured in the browser after the change):**
 
-**Open decision (raised with the product owner):** the same duplicated padding
-survives on **9 other pages** — `Tasks/{Index,Show,Mine}.vue` (domain-agent),
-`Dashboard/Index.vue` (reporting-agent), `Profile/{Edit,Password}.vue` and
-`Teams/{Show,Settings,Invitation}.vue` (auth-agent). Fixing only Projects makes
-it *tighter* than its neighbours on small screens, so the options are: fix all
-nine in this same PR (one `px-6 py-10` deletion per file, no spec asserts those
-classes) or ship Projects alone and file a follow-up. Awaiting the decision.
+| View | before (1920) | after (1920) | after (2560) |
+| ---- | ------------- | ------------ | ------------ |
+| Dashboard | 73% | **100%** | 100% |
+| Projects (list) | 57% | **100%** (4 cards of 380 px) | 100% |
+| Projects board | 65% | **100%** (5 × 301 px) | 5 × 429 px |
+| Tasks | 57% | **100%** | 100% |
+| Profile (form) | 49% | 49% (intentionally narrow) | 35% |
+
+`overflowX` is still `0` at every width from 320 to 2560 on all six views.
+
+**Verification:** Pint 201 files · ESLint 0 · Pest **350** (2080 assertions) ·
+Vitest **539** (67 files) · Playwright **14** — all green. Measured by hand in
+the browser with a throwaway `qa.review@example.com` account (deleted
+afterwards): clicking a project lands on `/projects/{id}`, the Projects list
+lays out 4 columns at 1920 px, the kanban board renders 5 columns of 301 px
+(was 192 px), the mobile text inset is 16 px, and no view overflows
+horizontally between 320 px and 2560 px.
 
 **Status (end of session):** `main` = tag `v1.1.1`; `develop` `71c9710`; PR #98
 (shared sign-in form, #97) still open. Branch `bugfix/99-projects-view-shell`
