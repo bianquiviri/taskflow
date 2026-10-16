@@ -25,8 +25,63 @@ opencode --session <session-id>   # resume a specific session
 opencode export <session-id>      # export a conversation to JSON
 ```
 
-Ad-hoc OpenCode sessions do not replace this log; use this file as the source of
-truth for the project's evolution.
+Ad-hoc OpenCode sessions do not replace this log; use this file as the source
+of truth for the project's evolution.
+
+---
+
+## 2026-10-16 — Round 15: the Projects list was not navigable (#99)
+
+**Context:** The product owner asked for a review and fix of the **Projects
+view**. The review turned up two problems, one of them a regression from #93.
+
+**Problem 1 — you could not open a project (the real bug).** `Pages/Projects/
+Index.vue` rendered each project as a plain `<li>` with the name and the
+description and **no link**: the component did not even import `Link`. From
+`/projects` there was literally no way to reach `/projects/{project}` — the
+board, the tasks, the people and the activity trail of a project were
+unreachable from the listing (the only entrances were the dashboard's "recent
+projects" and the task pages).
+
+**Problem 2 — a duplicated page container, systemic since #93.** `AppLayout`'s
+`<main>` already provides `px-4 py-gutter sm:px-6 lg:px-8`, but every
+authenticated page still carried its own `px-6 py-10` from before #93 (when the
+shell was dead code and the page container was the *only* padding). Measured in
+the browser at 390 px: text sits **40 px** from the edge on the un-fixed pages
+(shell 16 px + page 24 px) against **16 px** where the page padding is dropped.
+At wide viewports the effect is invisible — the page `max-w-*` binds and the
+centring is symmetric, so the extra padding cancels out (measured: identical
+`x` with and without it).
+
+**Changes (branch `bugfix/99-projects-view-shell`, issue [#99]):**
+
+- `Pages/Projects/Index.vue`: each row is now an Inertia `<Link>` to
+  `/projects/{project.id}` (the id-based key the rest of the app already uses —
+  no `getRouteKeyName` is defined, so binding is by primary key), wrapped in a
+  card with a hover state; the container drops `px-6 py-10` and keeps
+  `mx-auto w-full max-w-4xl`.
+- `Pages/Projects/Show.vue`: the container drops `px-6 py-10` (keeps
+  `max-w-5xl`).
+- `Pages/Projects/Index.spec.js`: +1 (*opens the project from its row*, asserting
+  both hrefs).
+
+**Verification:** Pint 201 files · ESLint 0 · Pest **350** (2080 assertions) ·
+Vitest **539** (67 files) · Playwright **14** — all green. Verified by hand in
+the browser with a throwaway `qa.review@example.com` account (deleted
+afterwards): clicking a project lands on `/projects/2`, the row measures
+`max-w-4xl` (896 px) and the mobile margin is 16 px.
+
+**Open decision (raised with the product owner):** the same duplicated padding
+survives on **9 other pages** — `Tasks/{Index,Show,Mine}.vue` (domain-agent),
+`Dashboard/Index.vue` (reporting-agent), `Profile/{Edit,Password}.vue` and
+`Teams/{Show,Settings,Invitation}.vue` (auth-agent). Fixing only Projects makes
+it *tighter* than its neighbours on small screens, so the options are: fix all
+nine in this same PR (one `px-6 py-10` deletion per file, no spec asserts those
+classes) or ship Projects alone and file a follow-up. Awaiting the decision.
+
+**Status (end of session):** `main` = tag `v1.1.1`; `develop` `71c9710`; PR #98
+(shared sign-in form, #97) still open. Branch `bugfix/99-projects-view-shell`
+pushed with PR open against `develop`.
 
 ---
 
