@@ -81,7 +81,7 @@ classes) or ship Projects alone and file a follow-up. Awaiting the decision.
 
 **Status (end of session):** `main` = tag `v1.1.1`; `develop` `71c9710`; PR #98
 (shared sign-in form, #97) still open. Branch `bugfix/99-projects-view-shell`
-pushed with PR open against `develop`.
+pushed with PR **#100** open against `develop`.
 
 ---
 
