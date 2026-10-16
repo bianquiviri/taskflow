@@ -134,10 +134,25 @@ chrome at all).
 entry with its actor, its action, its target and when it happened* compares two
 `now()` calls a few ms apart.
 
-**Status (end of session):** `develop` `50561c1` + PR **#94** open and green
-(6/6). Next: review/merge #94, then the remaining backlog — `frontend-agent`
-follow-ups (shared sign-in form for the landing), and the deferred cloud slice
-(#23/#24).
+**Release v1.1.1 (same session):** PR #94 was reviewed and merged into
+`develop` (`3f85ba4`), then released. Because the whole `#93` work sat only on
+`develop` (the v1.1.0 release branch had left `main` behind it), the delta
+`main..develop` was released as a **patch**: branch `release/v1.1.1` from
+`develop`, `CHANGELOG.md` gained the `[1.1.1] - 2026-10-16` section (Fixed: no
+app chrome, no sign-out, floating footer, oversized footer; Changed: brand
+lockup removed) and the link refs were rewired, PR **#95** → `main` merged
+(`d1fdb3b`, `--merge --admin`; the review rule has `enforce_admins: false`).
+Annotated tag `v1.1.1` pushed and the GitHub **Release** published as *Latest*
+(notes single-sourced from the CHANGELOG section). `main` was then **synced back
+into `develop`** as a clean fast-forward (`3f85ba4..d1fdb3b`, CHANGELOG-only) —
+unlike the round-11 sync-back, no conflict this time because `develop` had not
+touched the CHANGELOG since the release branch point.
+
+**Status (end of session):** `main` = `develop` = `d1fdb3b`, tag `v1.1.1` with a
+published GitHub Release (Latest). CI green on PR #94 and #95 (6/6). Open
+issues: **#23**, **#24** (deferred cloud slice). Next: the remaining backlog —
+`frontend-agent` follow-ups (shared sign-in form for the landing) and the cloud
+phase (#23/#24).
 
 ---
 
