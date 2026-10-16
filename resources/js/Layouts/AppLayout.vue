@@ -4,6 +4,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import Avatar from '../Components/Avatar.vue';
 import FlashMessages from '../Components/FlashMessages.vue';
 import Icon from '../Components/Icon.vue';
+import LandingFooter from '../Components/Landing/LandingFooter.vue';
 import ThemeToggle from '../Components/ThemeToggle.vue';
 import { useCan } from '../Composables/useCan';
 import { useTheme } from '../Composables/useTheme';
@@ -119,7 +120,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="min-h-dvh bg-canvas">
+  <div class="flex min-h-dvh flex-col bg-canvas">
     <a
       href="#main-content"
       class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[70] focus:rounded-control focus:bg-raised focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-content focus:shadow-lg"
@@ -221,6 +222,22 @@ onBeforeUnmount(() => {
         >
           Signed in as guest
         </p>
+
+        <Link
+          v-if="currentUser"
+          href="/logout"
+          method="post"
+          as="button"
+          type="button"
+          data-test="sign-out"
+          class="mt-3 flex w-full items-center gap-2 rounded-control px-3 py-2 text-sm font-medium text-content-muted transition-colors hover:bg-sunken hover:text-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+        >
+          <Icon
+            name="logout"
+            class="size-5 shrink-0"
+          />
+          <span>Sign out</span>
+        </Link>
       </div>
     </aside>
 
@@ -277,6 +294,11 @@ onBeforeUnmount(() => {
       >
         <slot />
       </main>
+
+      <LandingFooter
+        :app-name="appName"
+        :show-ctas="false"
+      />
     </div>
   </div>
 </template>
