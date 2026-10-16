@@ -44,7 +44,7 @@ const reachable = computed(() => {
 <template>
   <Head :title="task.title" />
 
-  <div class="mx-auto w-full max-w-4xl px-6 py-10">
+  <div class="w-full">
     <p class="text-sm text-content-subtle">
       {{ task.project.name }}
     </p>

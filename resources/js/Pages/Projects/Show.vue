@@ -84,7 +84,7 @@ function switchView(view) {
 <template>
   <Head :title="project.name" />
 
-  <div class="mx-auto w-full max-w-5xl">
+  <div class="w-full">
     <div class="flex flex-wrap items-start justify-between gap-4">
       <div class="min-w-0">
         <h1 class="text-3xl font-bold tracking-tight text-content">

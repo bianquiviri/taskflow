@@ -21,7 +21,7 @@ const formOpen = ref(false);
 <template>
   <Head title="Projects" />
 
-  <div class="mx-auto w-full max-w-4xl">
+  <div class="w-full">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h1 class="text-3xl font-bold tracking-tight text-content">
         Projects
@@ -64,7 +64,7 @@ const formOpen = ref(false);
 
     <ul
       v-else
-      class="mt-6 space-y-4"
+      class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
     >
       <li
         v-for="project in projects"
