@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing yet.
 
+## [1.1.1] - 2026-10-16
+
+Maintenance release: the authenticated application shell is finally wired up.
+
+### Fixed
+
+- **Signed-in pages had no app chrome** (#93) — `AppLayout` was dead code: no
+  page mounted it, so every authenticated view (dashboard, projects, tasks,
+  teams, profile) rendered without the sidebar, the header/avatar, the sign-out
+  control and the footer. The layout is now applied to every page except the
+  guest frames (`Welcome`, `Auth/*`), so the shell is global by default.
+- **No way to sign out** (#93) — the sidebar footer gained a *Sign out* control
+  (posts to `/logout`) for signed-in users, and the shared landing footer is
+  rendered after the main content.
+- **Footer floated mid-viewport on short pages** (#93) — the shell root became a
+  full-height flex column (`flex min-h-dvh flex-col`, `flex-1` on the main
+  region) so the footer sits at the bottom.
+- **Shell footer was oversized** (#93) — the shared `LandingFooter` kept the
+  landing's `py-16` padding inside the app shell (~176px tall) and rendered a
+  stray inner divider. Padding is now `py-16` with the guest calls to action and
+  `py-5` without them, and the divider only renders with the CTAs (shell footer
+  is 61px). The landing is unchanged.
+
+### Changed
+
+- **Shared footer brand lockup removed** (#93) — `LandingFooter` no longer
+  repeats the logo + "TaskFlow" wordmark, which duplicated the sidebar logo on
+  every authenticated page. The guest calls to action keep their own row.
+
 ## [1.1.0] - 2026-10-15
 
 A public landing page on `/` and a project relicense.
@@ -138,7 +167,8 @@ parallel agent rounds on `develop`, all green on 6 CI checks.
   `feature/21-cloud-run` and `feature/22-managed-data` branches, unmerged and
   unverified against a real GCP project.
 
-[Unreleased]: https://github.com/bianquiviri/taskflow/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/bianquiviri/taskflow/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/bianquiviri/taskflow/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/bianquiviri/taskflow/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/bianquiviri/taskflow/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/bianquiviri/taskflow/compare/v0.2.0...v1.0.0
