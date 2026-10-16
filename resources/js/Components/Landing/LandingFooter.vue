@@ -9,7 +9,10 @@ defineProps({
 </script>
 
 <template>
-  <footer class="border-t border-line bg-sunken py-16">
+  <footer
+    class="border-t border-line bg-sunken"
+    :class="showCtas ? 'py-16' : 'py-5'"
+  >
     <div class="mx-auto w-full max-w-6xl px-4 sm:px-6">
       <div
         v-if="showCtas"
@@ -26,7 +29,10 @@ defineProps({
         </Button>
       </div>
 
-      <div class="flex flex-col gap-2 border-t border-line pt-6 text-sm text-content-subtle sm:flex-row sm:items-center sm:justify-between">
+      <div
+        class="flex flex-col gap-2 text-sm text-content-subtle sm:flex-row sm:items-center sm:justify-between"
+        :class="showCtas ? 'border-t border-line pt-6' : ''"
+      >
         <p>
           {{ appName }} — project &amp; task management for teams.
         </p>

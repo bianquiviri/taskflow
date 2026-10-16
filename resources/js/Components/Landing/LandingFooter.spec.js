@@ -43,6 +43,21 @@ describe('LandingFooter.vue', () => {
         expect(wrapper.text()).toContain('CC BY-NC-ND 4.0');
     });
 
+    it('renders a compact footer without guest calls to action', () => {
+        const compact = mountFooter({ showCtas: false });
+        const landing = mountFooter();
+
+        expect(compact.get('footer').classes()).toContain('py-5');
+        expect(compact.get('footer').classes()).not.toContain('py-16');
+        expect(landing.get('footer').classes()).toContain('py-16');
+    });
+
+    it('drops the inner divider when the calls to action are disabled', () => {
+        const wrapper = mountFooter({ showCtas: false });
+
+        expect(wrapper.get('footer > div > div').classes()).not.toContain('border-t');
+    });
+
     it('does not repeat the brand lockup', () => {
         const wrapper = mountFooter();
 
