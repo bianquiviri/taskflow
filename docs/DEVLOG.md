@@ -105,6 +105,31 @@ chrome at all).
   browser check was deleted from the dev database, and the two screenshot
   artefacts were removed from the working tree before committing.
 
+**Follow-ups (same session, pushed to PR #94):**
+
+- **Footer pinned to the viewport bottom:** the shell root was only
+  `min-h-dvh`, so on short pages (e.g. an empty dashboard) the footer floated
+  mid-viewport instead of sitting at the bottom. Root became
+  `flex min-h-dvh flex-col` with `flex-1` on the middle wrapper and `<main>`;
+  `AppLayout.spec.js` +1 asserts the stacking.
+- **Brand lockup removed from the shared footer** (product-owner request on the
+  dashboard review): `LandingFooter` no longer renders the logo-badge + "TaskFlow"
+  link to `/` (it duplicated the sidebar logo on every authenticated page). The
+  CTAs now live in their own `v-if="showCtas"` row (`sm:justify-end`, `mb-10`),
+  so the app-shell footer collapses to just the bottom line (tagline, author,
+  license, version) with no empty row. Spec +1 (*does not repeat the brand
+  lockup*), one test renamed. The tagline "TaskFlow — project & task management
+  for teams." was deliberately **kept** — the request covered the button/wordmark,
+  not the descriptive line.
+- **App-shell footer height reduced** (product-owner request on the dashboard
+  review): the shared footer kept the landing's `py-16` even in the shell, so
+  the two-line bar measured ~176px tall; the inner `border-t pt-6` divider also
+  rendered as a stray second rule once the guest CTAs were gone. Padding is now
+  `showCtas ? 'py-16' : 'py-5'` and the divider is applied only with the CTAs,
+  dropping the shell footer to **61px**. The landing is unchanged (verified in
+  the browser: `/` still 64px padding + CTAs, `/dashboard` 20px, no divider);
+  `LandingFooter.spec.js` +2 (compact padding, no inner divider).
+
 **Known flake (pre-existing, untouched):** `ActivityFeedTest` — *describes an
 entry with its actor, its action, its target and when it happened* compares two
 `now()` calls a few ms apart.
