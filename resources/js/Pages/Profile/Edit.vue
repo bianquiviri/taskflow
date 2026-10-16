@@ -47,7 +47,7 @@ function remove() {
 <template>
   <Head title="Profile" />
 
-  <div class="mx-auto w-full max-w-3xl px-6 py-10">
+  <div class="mx-auto w-full max-w-3xl">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h1 class="text-3xl font-bold tracking-tight text-content">
