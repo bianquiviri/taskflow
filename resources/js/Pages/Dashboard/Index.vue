@@ -28,7 +28,7 @@ const hasProject = computed(() => (props.kpis.projects ?? 0) > 0);
 <template>
   <Head title="Dashboard" />
 
-  <div class="mx-auto w-full max-w-6xl px-6 py-10">
+  <div class="w-full">
     <header>
       <h1 class="text-3xl font-bold tracking-tight text-content">
         Dashboard

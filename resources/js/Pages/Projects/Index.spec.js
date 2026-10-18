@@ -76,6 +76,13 @@ describe('Projects/Index.vue', () => {
         expect(rows[1].find('[data-test="project-description"]').exists()).toBe(false);
     });
 
+    it('opens each project from its row', () => {
+        const rows = mountPage().findAll('[data-test="project-row"]');
+
+        expect(rows[0].get('a').attributes('href')).toBe('/projects/1');
+        expect(rows[1].get('a').attributes('href')).toBe('/projects/2');
+    });
+
     it('paints a skeleton while the listing is on its way', async () => {
         const wrapper = mountPage();
 

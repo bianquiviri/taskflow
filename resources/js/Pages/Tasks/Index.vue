@@ -30,7 +30,7 @@ const emptyDescription = computed(() => (hasFilters.value
 <template>
   <Head :title="`${project.name} tasks`" />
 
-  <div class="mx-auto w-full max-w-4xl px-6 py-10">
+  <div class="w-full">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h1 class="text-3xl font-bold tracking-tight text-content">
         {{ project.name }} Tasks
