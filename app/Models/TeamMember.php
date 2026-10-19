@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\TeamRole;
+use App\Models\Concerns\HasEncryptedRouteKey;
 use Database\Factories\TeamMemberFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TeamMember extends Model
 {
     /** @use HasFactory<TeamMemberFactory> */
+    use HasEncryptedRouteKey;
     use HasFactory;
 
     protected function casts(): array

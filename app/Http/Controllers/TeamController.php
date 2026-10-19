@@ -21,6 +21,7 @@ class TeamController extends Controller
         return Inertia::render('Teams/Show', [
             'team' => [
                 'id' => $team->getKey(),
+                'key' => $team->getRouteKey(),
                 'name' => $team->name,
                 'slug' => $team->slug,
             ],
@@ -30,6 +31,7 @@ class TeamController extends Controller
                 ->get()
                 ->map(fn (TeamMember $membership): array => [
                     'id' => $membership->getKey(),
+                    'key' => $membership->getRouteKey(),
                     'name' => $membership->user->name,
                     'email' => $membership->user->email,
                     'role' => $membership->role->value,
@@ -42,6 +44,7 @@ class TeamController extends Controller
                 ->get()
                 ->map(fn (TeamInvitation $invitation): array => [
                     'id' => $invitation->getKey(),
+                    'key' => $invitation->getRouteKey(),
                     'email' => $invitation->email,
                     'role' => $invitation->role->value,
                     'expiresAt' => $invitation->expires_at->toIso8601String(),
@@ -60,6 +63,7 @@ class TeamController extends Controller
         return Inertia::render('Teams/Settings', [
             'team' => [
                 'id' => $team->getKey(),
+                'key' => $team->getRouteKey(),
                 'name' => $team->name,
                 'slug' => $team->slug,
             ],
@@ -69,6 +73,7 @@ class TeamController extends Controller
                 ->get()
                 ->map(fn (TeamMember $membership): array => [
                     'id' => $membership->getKey(),
+                    'key' => $membership->getRouteKey(),
                     'name' => $membership->user->name,
                     'email' => $membership->user->email,
                     'role' => $membership->role->value,
@@ -81,6 +86,7 @@ class TeamController extends Controller
                 ->get()
                 ->map(fn (TeamInvitation $invitation): array => [
                     'id' => $invitation->getKey(),
+                    'key' => $invitation->getRouteKey(),
                     'email' => $invitation->email,
                     'role' => $invitation->role->value,
                     'status' => $invitation->status(),

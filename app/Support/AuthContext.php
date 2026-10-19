@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\Gate;
 final class AuthContext
 {
     /**
-     * @var array{user: array{id: int, name: string, email: string, avatar: string|null}|null, team: array{id: int, name: string, slug: string, role: string}|null, can: list<string>}|null
+     * @var array{user: array{id: int, name: string, email: string, avatar: string|null}|null, team: array{id: int, key: string, name: string, slug: string, role: string}|null, can: list<string>}|null
      */
     private ?array $payload = null;
 
@@ -30,7 +30,7 @@ final class AuthContext
     private ?int $resolvedFor = null;
 
     /**
-     * @return array{user: array{id: int, name: string, email: string, avatar: string|null}|null, team: array{id: int, name: string, slug: string, role: string}|null, can: list<string>}
+     * @return array{user: array{id: int, name: string, email: string, avatar: string|null}|null, team: array{id: int, key: string, name: string, slug: string, role: string}|null, can: list<string>}
      */
     public function resolve(?User $user): array
     {
@@ -43,7 +43,7 @@ final class AuthContext
     }
 
     /**
-     * @return array{user: array{id: int, name: string, email: string, avatar: string|null}|null, team: array{id: int, name: string, slug: string, role: string}|null, can: list<string>}
+     * @return array{user: array{id: int, name: string, email: string, avatar: string|null}|null, team: array{id: int, key: string, name: string, slug: string, role: string}|null, can: list<string>}
      */
     private function build(?User $user): array
     {
@@ -76,6 +76,7 @@ final class AuthContext
 
         return [
             'id' => $team->getKey(),
+            'key' => $team->getRouteKey(),
             'name' => $team->name,
             'slug' => $team->slug,
             'role' => $membership->role->value,
