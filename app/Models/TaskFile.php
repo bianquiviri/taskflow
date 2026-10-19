@@ -16,8 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TaskFile extends Model
 {
     /** @use HasFactory<TaskFileFactory> */
-    use HasEncryptedRouteKey;
     use HasFactory;
+    use HasEncryptedRouteKey;
 
     /**
      * The private disk an attachment is kept on unless another one is given.

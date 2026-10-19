@@ -16,8 +16,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TeamMember extends Model
 {
     /** @use HasFactory<TeamMemberFactory> */
-    use HasEncryptedRouteKey;
     use HasFactory;
+    use HasEncryptedRouteKey;
 
     protected function casts(): array
     {

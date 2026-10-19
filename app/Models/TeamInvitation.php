@@ -17,8 +17,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TeamInvitation extends Model
 {
     /** @use HasFactory<TeamInvitationFactory> */
-    use HasEncryptedRouteKey;
     use HasFactory;
+    use HasEncryptedRouteKey;
 
     protected function casts(): array
     {

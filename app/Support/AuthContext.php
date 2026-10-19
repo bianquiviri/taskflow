@@ -66,7 +66,7 @@ final class AuthContext
     }
 
     /**
-     * @return array{id: int, name: string, slug: string, role: string}|null
+     * @return array{id: int, key: string, name: string, slug: string, role: string}|null
      */
     private function team(?Team $team, ?TeamMember $membership): ?array
     {

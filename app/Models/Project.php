@@ -18,8 +18,8 @@ use Illuminate\Support\Str;
 class Project extends Model
 {
     /** @use HasFactory<ProjectFactory> */
-    use HasEncryptedRouteKey;
     use HasFactory;
+    use HasEncryptedRouteKey;
 
     /**
      * Get the attributes that should be cast.

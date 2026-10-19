@@ -17,8 +17,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Team extends Model
 {
     /** @use HasFactory<TeamFactory> */
-    use HasEncryptedRouteKey;
     use HasFactory;
+    use HasEncryptedRouteKey;
 
     public function owner(): BelongsTo
     {
