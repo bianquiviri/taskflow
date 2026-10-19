@@ -1,10 +1,10 @@
 <script setup>
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import PasswordField from '../../Components/Auth/PasswordField.vue';
 import Button from '../../Components/Button.vue';
 import FormInput from '../../Components/FormInput.vue';
 import AuthLayout from '../../Layouts/AuthLayout.vue';
 import AuthStatusMessage from './AuthStatusMessage.vue';
-import PasswordField from './PasswordField.vue';
 
 defineProps({
     status: { type: String, default: null },

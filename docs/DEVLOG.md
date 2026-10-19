@@ -119,6 +119,60 @@ pushed with PR **#100** open against `develop`.
 
 ---
 
+## 2026-10-16 — Round 14: a shared sign-in form for the login page and the landing (#97)
+
+**Context:** The Round-12 follow-up recorded in the Round-13 entry: the landing's
+inline sign-in form had a **plain password input** (no show/hide toggle) while
+`Pages/Auth/Login.vue` used `PasswordField`. #90 had deliberately left that as a
+shortcut (to keep the auth flow untouched), with a shared form as the follow-up.
+The v1.1.1 release from the previous session is logged in the Round-13 entry.
+
+**Changes (issue [#97], branch `feature/97-shared-login-form`):**
+
+- New **`Components/Auth/LoginForm.vue`** — the one sign-in form (email,
+  `PasswordField` with the show/hide toggle, "Remember me", the forgot-password
+  link and the submit button), posting to `POST /login`. It takes a single
+  `autofocus` prop; the page keeps its own heading, `AuthStatusMessage` and
+  "create an account" link, so `Pages/Auth/Login.vue` and
+  `Components/Landing/LandingSignIn.vue` now share the whole form.
+- **`PasswordField.vue` moved** `Pages/Auth/` → `Components/Auth/` (it is
+  reusable UI used by the login, register and reset-password forms) and the
+  `Register`/`ResetPassword` import paths were updated. No behaviour change.
+- The two forms had drifted on small details; they are now unified: the
+  checkbox focus-ring offset is `ring-offset-raised` (both sit on a `bg-raised`
+  card), the helper link weight is `font-medium`, the email field is `required`,
+  and the landing's form **gains the password show/hide toggle**. `autofocus`
+  remains the only intended difference (login only).
+- Tests: new `Components/Auth/LoginForm.spec.js` (7) + `LandingSignIn.spec.js`
+  +1 (reveals the password) + one e2e in `tests/e2e/welcome.spec.js` (the inline
+  form reveals the password). `PasswordField.spec.js` moved with the component.
+
+**Decisions:**
+
+- `LoginForm` lives in `Components/Auth/` (reusable UI), not `Pages/Auth/`, so
+  the landing can consume it without a Components → Pages import. Moving
+  `PasswordField` alongside it was the price; it is now used by three forms, so
+  it belongs in `Components/` anyway.
+- The register link and the status message stay in the pages: their copy differs
+  ("New to TaskFlow?" vs "New to {{ appName }}?") and the landing adds a top
+  border to that row, so pulling them into the shared form would add props for
+  no reuse.
+- Unifying the checkbox focus-ring offset to `ring-offset-raised` is a small
+  correctness fix on the landing: the form sits on a `bg-raised` card, so the
+  previous `ring-offset-canvas` offset colour was wrong.
+
+**Verification:** `make lint` green (Pint 201 files, ESLint 0) · `make test`
+**350 passed** · `make test-fe` **546 passed** (68 files; +8) · `make e2e`
+**15 passed** (+1). Verified in the browser: `/` shows the *Show password*
+toggle and a required email field; `/login` is unchanged (autofocus, toggle,
+remember, forgot, register link).
+
+**Status (end of session):** `main` = tag `v1.1.1` (`d1fdb3b`); `develop`
+`71c9710` + PR to be opened for #97. Open issues: **#23**, **#24** (deferred
+cloud slice). Next: merge #97, then the cloud phase.
+
+---
+
 ## 2026-10-15 — Round 13: v1.1.0 released + the app shell wired to pages (#93)
 
 **Context:** Two pieces of work. First the release train for the landing page
