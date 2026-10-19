@@ -120,6 +120,21 @@ same token names the row 1 of different tables; that is harmless (each route
 picks its own model and its own policy) but worth remembering if a global token
 map is ever introduced.
 
+**Merged and cleaned up.** Both PRs went in: #103 was made redundant and closed,
+#104 was squash-merged into `develop` as `c5a019b`. The squash carried **all
+seven commits**, including the two of #103, because #104 was stacked on #103 and
+a squash computes its diff against the **merge-base**, not against the base
+branch's tip. So the work of #102 shipped inside the #104 commit — worth
+remembering before stacking branches: the parent PR becomes redundant as soon as
+the child is merged, and it must be closed rather than merged (this branch's
+`Show.vue` is now *behind* `develop`, not ahead of it). `develop` was verified
+green after the squash.
+
+**Convention decided this session:** every issue is created **assigned to the
+maintainer** (`@bianquiviri`) — `gh issue create --assignee bianquiviri`.
+Recorded in AGENTS.md (new *Issues* section, #105); #101 and #102 were assigned
+retroactively.
+
 ---
 
 ## 2026-10-16 — Round 15: the Projects list was not navigable (#99)

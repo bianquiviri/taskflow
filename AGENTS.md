@@ -34,6 +34,16 @@ main ─────────────────────────
 - Keep feature branches short-lived; rebase onto `develop` before opening a PR.
 - Never commit directly to `main` or `develop`.
 
+## Issues
+
+- **Every issue is created assigned to the maintainer** (`@bianquiviri`). Nothing
+  is left unassigned for later triage:
+  ```sh
+  gh issue create --assignee bianquiviri --title "..." --body "..."
+  ```
+- The issue is the entry point of every change: its number names the branch
+  (`feature/<id>-<slug>`) and it closes itself from the PR body (`Closes #<id>`).
+
 ## TDD — Test Driven Development (MANDATORY)
 
 1. RED: write a failing test describing the behaviour first.
