@@ -25,7 +25,7 @@ vi.mock('@inertiajs/vue3', () => ({
 
 import Settings from './Settings.vue';
 
-const team = { id: 7, name: 'Platform', slug: 'platform' };
+const team = { id: 7, key: 'tm7', name: 'Platform', slug: 'platform' };
 
 const roles = [
     { value: 'owner', label: 'Owner', tone: 'indigo' },
@@ -35,10 +35,11 @@ const roles = [
 
 const assignableRoles = roles.filter((role) => role.value !== 'owner');
 
-const owner = { id: 1, name: 'Ada Lovelace', email: 'ada@example.com', role: 'owner', canBeRemoved: false, canBeReassigned: false };
-const member = { id: 2, name: 'Grace Hopper', email: 'grace@example.com', role: 'member', canBeRemoved: true, canBeReassigned: true };
+const owner = { id: 1, key: 'mb1', name: 'Ada Lovelace', email: 'ada@example.com', role: 'owner', canBeRemoved: false, canBeReassigned: false };
+const member = { id: 2, key: 'mb2', name: 'Grace Hopper', email: 'grace@example.com', role: 'member', canBeRemoved: true, canBeReassigned: true };
 const invitation = {
     id: 30,
+    key: 'inv30',
     email: 'invitee@example.com',
     role: 'admin',
     status: 'pending',
@@ -79,7 +80,7 @@ describe('Teams/Settings.vue', () => {
     });
 
     it('points back to the team overview', () => {
-        expect(mountPage().get('[data-test="back-to-team"]').attributes('href')).toBe('/teams/7');
+        expect(mountPage().get('[data-test="back-to-team"]').attributes('href')).toBe('/teams/tm7');
     });
 
     it('offers the assignable roles to a manager', () => {
@@ -123,7 +124,7 @@ describe('Teams/Settings.vue', () => {
         await wrapper.get('input[name="email"]').setValue('new@example.com');
         await wrapper.get('[data-test="invite-form"] form').trigger('submit');
 
-        expect(formState.post).toHaveBeenCalledWith('/teams/7/invitations', expect.any(Object));
+        expect(formState.post).toHaveBeenCalledWith('/teams/tm7/invitations', expect.any(Object));
     });
 
     it('clears the invite form once the invitation is sent', async () => {
@@ -150,7 +151,7 @@ describe('Teams/Settings.vue', () => {
         await row.get('select[name="role"]').setValue('admin');
         await row.get('form').trigger('submit');
 
-        expect(formState.patch).toHaveBeenCalledWith('/teams/7/members/2', expect.any(Object));
+        expect(formState.patch).toHaveBeenCalledWith('/teams/tm7/members/mb2', expect.any(Object));
     });
 
     it('leaves the removal and the invitation actions to their rows', async () => {
@@ -160,8 +161,8 @@ describe('Teams/Settings.vue', () => {
         await wrapper.get('[data-test="resend-invitation"]').trigger('click');
         await wrapper.get('[data-test="cancel-invitation"]').trigger('click');
 
-        expect(formState.delete).toHaveBeenNthCalledWith(1, '/teams/7/members/2', expect.any(Object));
-        expect(formState.post).toHaveBeenCalledWith('/teams/7/invitations/30/resend', expect.any(Object));
-        expect(formState.delete).toHaveBeenNthCalledWith(2, '/teams/7/invitations/30', expect.any(Object));
+        expect(formState.delete).toHaveBeenNthCalledWith(1, '/teams/tm7/members/mb2', expect.any(Object));
+        expect(formState.post).toHaveBeenCalledWith('/teams/tm7/invitations/inv30/resend', expect.any(Object));
+        expect(formState.delete).toHaveBeenNthCalledWith(2, '/teams/tm7/invitations/inv30', expect.any(Object));
     });
 });

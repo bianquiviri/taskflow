@@ -22,7 +22,7 @@ vi.mock('@inertiajs/vue3', () => ({
 import Invitation from './Invitation.vue';
 
 const props = {
-    team: { id: 4, name: 'Platform' },
+    team: { id: 4, key: 'tm4', name: 'Platform' },
     email: 'invitee@example.com',
     role: { value: 'admin', label: 'Admin', tone: 'sky' },
     expiresAt: '2026-10-07T10:00:00+00:00',
@@ -93,6 +93,6 @@ describe('Teams/Invitation.vue', () => {
         const wrapper = mountPage({ status: 'already_member' });
 
         expect(wrapper.find('[data-test="accept-button"]').exists()).toBe(false);
-        expect(wrapper.get('a[href="/teams/4"]').text()).toBe('Open the team');
+        expect(wrapper.get('a[href="/teams/tm4"]').text()).toBe('Open the team');
     });
 });

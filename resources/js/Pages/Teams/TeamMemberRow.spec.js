@@ -24,7 +24,7 @@ vi.mock('@inertiajs/vue3', () => ({
 
 import TeamMemberRow from './TeamMemberRow.vue';
 
-const team = { id: 7, name: 'Platform', slug: 'platform' };
+const team = { id: 7, key: 'tm7', name: 'Platform', slug: 'platform' };
 
 const roles = [
     { value: 'admin', label: 'Admin', tone: 'sky' },
@@ -33,6 +33,7 @@ const roles = [
 
 const member = {
     id: 2,
+    key: 'mb2',
     name: 'Grace Hopper',
     email: 'grace@example.com',
     role: 'member',
@@ -67,7 +68,7 @@ describe('Teams/TeamMemberRow.vue', () => {
         await wrapper.get('select[name="role"]').setValue('admin');
         await wrapper.get('form').trigger('submit');
 
-        expect(formState.patch).toHaveBeenCalledWith('/teams/7/members/2', expect.any(Object));
+        expect(formState.patch).toHaveBeenCalledWith('/teams/tm7/members/mb2', expect.any(Object));
     });
 
     it('clears the form once the role is saved', async () => {
@@ -92,7 +93,7 @@ describe('Teams/TeamMemberRow.vue', () => {
 
         await wrapper.get('[data-test="remove-member"]').trigger('click');
 
-        expect(formState.delete).toHaveBeenCalledWith('/teams/7/members/2', expect.any(Object));
+        expect(formState.delete).toHaveBeenCalledWith('/teams/tm7/members/mb2', expect.any(Object));
     });
 
     it('hides the controls a viewer may not use', () => {

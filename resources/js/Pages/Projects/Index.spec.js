@@ -47,8 +47,8 @@ import PageSkeleton from '../../Components/PageSkeleton.vue';
 import ProjectFormModal from '../../Components/ProjectFormModal.vue';
 
 const projects = [
-    { id: 1, name: 'Website', slug: 'website', description: 'Rebuild the marketing site.' },
-    { id: 2, name: 'Mobile app', slug: 'mobile-app', description: null },
+    { id: 1, key: 'pr1', name: 'Website', slug: 'website', description: 'Rebuild the marketing site.' },
+    { id: 2, key: 'pr2', name: 'Mobile app', slug: 'mobile-app', description: null },
 ];
 
 function mountPage(props = {}) {
@@ -79,8 +79,8 @@ describe('Projects/Index.vue', () => {
     it('opens each project from its row', () => {
         const rows = mountPage().findAll('[data-test="project-row"]');
 
-        expect(rows[0].get('a').attributes('href')).toBe('/projects/1');
-        expect(rows[1].get('a').attributes('href')).toBe('/projects/2');
+        expect(rows[0].get('a').attributes('href')).toBe('/projects/pr1');
+        expect(rows[1].get('a').attributes('href')).toBe('/projects/pr2');
     });
 
     it('paints a skeleton while the listing is on its way', async () => {

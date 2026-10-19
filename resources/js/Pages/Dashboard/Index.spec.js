@@ -45,9 +45,10 @@ const props = {
         { value: 'done', label: 'Done', count: 4 },
         { value: 'cancelled', label: 'Cancelled', count: 1 },
     ],
-    recentProjects: [{ id: 1, name: 'Website', slug: 'website', tasks: 6, open: 2 }],
+    recentProjects: [{ id: 1, key: 'pr1', name: 'Website', slug: 'website', tasks: 6, open: 2 }],
     openTasks: [{
         id: 7,
+        key: 'tk7',
         title: 'Fix the checkout',
         status: 'todo',
         priority: 'high',
@@ -136,17 +137,17 @@ describe('Dashboard/Index.vue', () => {
             hasTeam: false,
             hasProject: false,
             hasTask: false,
-            teamId: null,
-            projectId: null,
+            teamKey: null,
+            projectKey: null,
         });
     });
 
     it('hands the checklist the team of a first run user', () => {
-        pageState.props.auth.team = { id: 4, name: 'Acme' };
+        pageState.props.auth.team = { id: 4, key: 'tm4', name: 'Acme' };
 
         const wrapper = mountPage(emptyProps);
 
-        expect(wrapper.findComponent(Checklist).props()).toMatchObject({ hasTeam: true, teamId: 4 });
+        expect(wrapper.findComponent(Checklist).props()).toMatchObject({ hasTeam: true, teamKey: 'tm4' });
 
         pageState.props.auth.team = null;
     });

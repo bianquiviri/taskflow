@@ -145,7 +145,7 @@ const reachable = computed(() => {
 
       <div class="mt-6">
         <TaskAttachmentForm
-          :url="`/tasks/${task.id}/files`"
+          :url="`/tasks/${task.key}/files`"
           :accept="attachmentRules.extensions"
           :max-size="attachmentRules.max_size"
         />
@@ -162,7 +162,7 @@ const reachable = computed(() => {
       </div>
 
       <div class="mt-6">
-        <CommentForm :url="`/tasks/${task.id}/comments`" />
+        <CommentForm :url="`/tasks/${task.key}/comments`" />
       </div>
     </section>
   </div>

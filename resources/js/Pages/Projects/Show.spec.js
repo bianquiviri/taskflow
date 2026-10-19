@@ -44,10 +44,11 @@ import TaskBoard from '../../Components/TaskBoard.vue';
 import TaskFormModal from '../../Components/TaskFormModal.vue';
 import TaskList from '../../Components/TaskList.vue';
 
-const project = { id: 1, name: 'Website Redesign', description: 'Revamp the marketing site.' };
+const project = { id: 1, key: 'pr1', name: 'Website Redesign', description: 'Revamp the marketing site.' };
 
 const task = (id, status) => ({
     id,
+    key: `tk${id}`,
     title: `Task ${id}`,
     status,
     priority: 'medium',
@@ -156,7 +157,7 @@ describe('Projects/Show.vue', () => {
         expect(wrapper.findComponent(TaskList).exists()).toBe(false);
         expect(board.props('statuses')).toEqual(statuses);
         expect(wrapper.getComponent(TaskFormModal).props('priorities')).toEqual(priorities);
-        expect(wrapper.getComponent(TaskFormModal).props('projectId')).toBe(1);
+        expect(wrapper.getComponent(TaskFormModal).props('projectKey')).toBe('pr1');
     });
 
     it('shows the filtered list instead of the board on request', () => {
@@ -175,7 +176,7 @@ describe('Projects/Show.vue', () => {
         await wrapper.get('[data-test="view-list"]').trigger('click');
 
         expect(router.get).toHaveBeenCalledWith(
-            '/projects/1',
+            '/projects/pr1',
             { status: 'todo', view: 'list' },
             expect.objectContaining({ preserveState: true, preserveScroll: true }),
         );
@@ -186,7 +187,7 @@ describe('Projects/Show.vue', () => {
 
         await wrapper.get('[data-test="view-board"]').trigger('click');
 
-        expect(router.get).toHaveBeenCalledWith('/projects/1', {}, expect.any(Object));
+        expect(router.get).toHaveBeenCalledWith('/projects/pr1', {}, expect.any(Object));
     });
 
     it('stays put when the view that is already shown is picked again', async () => {
@@ -200,7 +201,7 @@ describe('Projects/Show.vue', () => {
     it('keeps the filter form pointed at the project', () => {
         const wrapper = mountPage();
 
-        expect(wrapper.getComponent({ name: 'TaskFilterForm' }).props('url')).toBe('/projects/1');
+        expect(wrapper.getComponent({ name: 'TaskFilterForm' }).props('url')).toBe('/projects/pr1');
     });
 
     it('shows the progress bar after the header and before the filter form', () => {
@@ -245,7 +246,7 @@ describe('Projects/Show.vue', () => {
         await nextTick();
 
         expect(router.patch).toHaveBeenCalledWith(
-            '/tasks/1/status',
+            '/tasks/tk1/status',
             { status: 'done' },
             expect.objectContaining({ preserveState: true, preserveScroll: true, optimistic: expect.any(Function) }),
         );

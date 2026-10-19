@@ -74,7 +74,7 @@ function switchView(view) {
         return;
     }
 
-    router.get(`/projects/${props.project.id}`, { ...activeFilters(), ...(view === 'board' ? {} : { view }) }, {
+    router.get(`/projects/${props.project.key}`, { ...activeFilters(), ...(view === 'board' ? {} : { view }) }, {
         preserveState: true,
         preserveScroll: true,
     });
@@ -150,7 +150,7 @@ function switchView(view) {
 
     <div class="mt-6 w-full">
       <TaskFilterForm
-        :url="`/projects/${project.id}`"
+        :url="`/projects/${project.key}`"
         :filters="filters"
         :statuses="filterOptions.statuses"
         :priorities="filterOptions.priorities"
@@ -234,7 +234,7 @@ function switchView(view) {
 
   <TaskFormModal
     v-model="formOpen"
-    :project-id="project.id"
+    :project-key="project.key"
     :priorities="filterOptions.priorities"
   />
 </template>

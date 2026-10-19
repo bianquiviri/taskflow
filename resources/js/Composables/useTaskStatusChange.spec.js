@@ -6,8 +6,8 @@ vi.mock('@inertiajs/vue3', () => ({ router: { patch } }));
 
 import { useTaskStatusChange, withTaskStatus } from './useTaskStatusChange';
 
-const task = { id: 7, title: 'Fix the login redirect', status: 'todo' };
-const other = { id: 8, title: 'Write the release notes', status: 'done' };
+const task = { id: 7, key: 'tk7', title: 'Fix the login redirect', status: 'todo' };
+const other = { id: 8, key: 'tk8', title: 'Write the release notes', status: 'done' };
 
 function paginator(data) {
     return {
@@ -34,7 +34,7 @@ describe('useTaskStatusChange', () => {
         changeStatus(task, 'in_progress');
 
         expect(patch).toHaveBeenCalledTimes(1);
-        expect(patch.mock.calls[0][0]).toBe('/tasks/7/status');
+        expect(patch.mock.calls[0][0]).toBe('/tasks/tk7/status');
         expect(patch.mock.calls[0][1]).toEqual({ status: 'in_progress' });
         expect(optionsOf().optimistic({ tasks: paginator([task, other]) })).toEqual({
             tasks: paginator([{ ...task, status: 'in_progress' }, other]),

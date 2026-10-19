@@ -20,8 +20,8 @@ const BadgeStub = {
 const global = { stubs: { EmptyState: EmptyStateStub, Badge: BadgeStub } };
 
 const projects = [
-    { id: 4, name: 'Website', slug: 'website', tasks: 6, open: 2 },
-    { id: 9, name: 'Platform', slug: 'platform', tasks: 2, open: 0 },
+    { id: 4, key: 'pr4', name: 'Website', slug: 'website', tasks: 6, open: 2 },
+    { id: 9, key: 'pr9', name: 'Platform', slug: 'platform', tasks: 2, open: 0 },
 ];
 
 describe('Dashboard/RecentProjects.vue', () => {
@@ -31,7 +31,7 @@ describe('Dashboard/RecentProjects.vue', () => {
         const rows = wrapper.findAll('[data-test="recent-project"]');
 
         expect(rows).toHaveLength(2);
-        expect(wrapper.get('[data-test="recent-project-link"]').attributes('href')).toBe('/projects/4');
+        expect(wrapper.get('[data-test="recent-project-link"]').attributes('href')).toBe('/projects/pr4');
         expect(wrapper.get('[data-test="recent-project-link"]').text()).toBe('Website');
         expect(wrapper.get('[data-test="recent-project-open"]').text()).toBe('2 open');
         expect(wrapper.get('[data-test="recent-project-tasks"]').text()).toBe('6 tasks');
