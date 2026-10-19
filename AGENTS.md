@@ -120,7 +120,11 @@ app/
 
 ## Pull Requests
 
-- Every PR links an issue and targets `develop`.
+- Every PR is created **assigned to the maintainer** (`@bianquiviri`), links an
+  issue and targets `develop`:
+  ```sh
+  gh pr create --assignee bianquiviri --base develop --title "..." --body "..."
+  ```
 - PR title uses conventional commits; description lists acceptance criteria.
 - CI must be green (lint + backend + frontend + coverage + e2e).
 - Reviewer(s) approve before merge; the author then squashes the branch.
