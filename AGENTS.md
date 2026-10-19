@@ -47,7 +47,7 @@ main ─────────────────────────
   make test        # Pest
   make test-fe     # Vitest
   make e2e         # Playwright
-  make lint        # Pint + ESLint
+  make lint        # Pint + ESLint + PHPStan
   ```
 
 ## KISS & YAGNI

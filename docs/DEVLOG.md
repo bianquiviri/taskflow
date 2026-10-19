@@ -97,6 +97,24 @@ dependency). What shipped instead:
 `migrate:fresh --seed` green and a tinker smoke check confirmed
 `route('projects.show', $project)` produces the token instead of the id.
 
+**Caught by CI, not locally — and the gap closed.** The first push failed the
+`Static Analysis (PHPStan)` job with 12 errors, none of which the local commands
+could have caught: `make lint` ran Pint and ESLint only, while CI has a separate
+Larastan job. Three findings:
+
+- Adding a second trait to the five models moved `use HasEncryptedRouteKey;`
+  **before** the `/** @use HasFactory<XFactory> */` annotation, and PHPStan
+  reports the `@use` tag as describing a trait the class does not use unless that
+  annotated trait comes first. The annotation now sits directly above
+  `use HasFactory;`, with the new trait after it.
+- `AuthContext::team()`'s `@return` shape had not been given the new `key`.
+- The three baseline entries for `TeamController`'s `map()` callbacks described
+  the payload shapes without `key`; once the shapes changed, the ignores no
+  longer matched (which is itself an error) and the real mismatch surfaced.
+
+`make analyse` was added (and `make lint` now depends on it) so the local lint set
+is exactly the CI lint set — the AGENTS.md command list was updated to match.
+
 **Open items:** none for these three. `key` is derived from the id alone, so the
 same token names the row 1 of different tables; that is harmless (each route
 picks its own model and its own policy) but worth remembering if a global token
