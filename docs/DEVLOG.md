@@ -30,6 +30,80 @@ of truth for the project's evolution.
 
 ---
 
+## 2026-10-19 — Round 17: progress bar placement, demo seeders and encrypted ids in URLs (#102, #101)
+
+**Context:** Three follow-ups from a review of the projects views, on
+`feature/102-projects-view-improvements` and then `feature/101-encrypted-urls`.
+
+**1. The progress bar moved above the filters (#102).** On `Pages/Projects/Show.vue`
+the task progress summary sat *below* the filter form. It describes the project,
+not the listing, so it now sits directly under the header: header → progress →
+filters → view toggle (the toggle keeps an `mt-6 inline-flex` so it still reads as
+its own row). `Show.spec.js` pins the order by comparing the offsets of the
+`data-test="project-progress"`, `data-test="filter-search"` and header markers.
+
+**2. A seeder that fills every domain table (#102).** `database/seeders/DemoSeeder.php`
+now seeds users, teams, memberships, invitations (pending/expired/revoked),
+projects, project members, tasks in **every** status, comments, attachments (real
+files on the `attachments` disk), the activity trail they generate and the
+mention notifications behind them. It goes through the real Actions
+(`CreateProjectAction`, `ChangeTaskStatusAction`, `AddCommentAction`,
+`InviteTeamMemberAction`) with `Auth::login()` per actor, so the observers stamp
+real actors and the data obeys the domain rules; `updateOrCreate` avoids
+duplicating the owner membership that `TeamObserver` and `CreateProjectAction`
+already create. Every account shares the password `password`
+(`owner@`, `admin@`, `member@`, `second@`, `outsider@taskflow.test` — the last one
+belongs to no team, which the forbidden-path tests need).
+
+**3. Resource ids are encrypted in every URL (#101).** Query strings and paths no
+longer expose a sequential primary key. The design constraint found first:
+`Crypt::encryptString()` draws a **random IV**, so the same id yields a different
+payload on every call — `route()` would be unstable and the **56**
+`assertRedirect(route(...))` assertions would never match. Signed URLs and an
+external hashids package were rejected for the same reason (and for adding a
+dependency). What shipped instead:
+
+- `app/Support/IdCipher.php`: `aes-256-cbc` with a **synthetic IV** derived from
+  the plaintext (`hmac-sha256(APP_KEY, cipher:plain)`, truncated to 16 bytes) and
+  carried in the token, base64url encoded. Deterministic, reversible and
+  self-checking: decryption recomputes the
+  IV and refuses a token whose IV does not match, so tampering 404s instead of
+  resolving to another record. Unit-tested in `tests/Unit/IdCipherTest.php`
+  (determinism, uniqueness, round trip, tampered/foreign tokens).
+- `app/Models/Concerns/HasEncryptedRouteKey.php`, used by `Project`, `Task`,
+  `Team`, `TeamMember`, `TeamInvitation` and `TaskFile`: `getRouteKey()` returns
+  the token, `resolveRouteBindingQuery()` decrypts it and matches nothing on
+  failure, and `getArrayableAppends()` adds the token as **`key`** so every
+  serialised model carries it. Covered by `tests/Feature/EncryptedRouteKeyTest.php`
+  (binding, raw id → 404, forged token → 404, scoped child binding still scoped).
+- `key` was added to the hand-built payloads that never go through a model:
+  `AuthContext` (the `auth.team` shared prop), `DashboardMetricsService`
+  (`recentProjects`, `openTasks` — raw rows, so the cipher is injected),
+  `TeamController` (team, members, invitations) and
+  `TeamInvitationAcceptController`.
+- **Frontend:** `id` stays numeric — it is the domain identity the permission
+  strings use (`tasks.{id}.changeStatus`, built by `ProjectOverviewService`) — and
+  only `key` builds URLs. 19 templates across pages/components switched `.id` →
+  `.key`; `TaskFormModal`'s `projectId` prop became `projectKey` and the
+  `Checklist`'s `teamId`/`projectId` became `teamKey`/`projectKey`, since those
+  values are only used to build a href. Pagination links and activity feed URLs
+  needed no change: they are built server-side through `route()`.
+- The consequence to remember: **a numeric id in a URL is now a 404**, so old
+  bookmarks break (intended).
+
+**Verification:** Pint clean (206 files) and ESLint clean; Pest **365 passed**
+(2109 assertions) including the 15 new ones; Vitest **540 passed** (67 files) —
+35 spec assertions updated to fixtures carrying `key`; Playwright **14 passed**;
+`migrate:fresh --seed` green and a tinker smoke check confirmed
+`route('projects.show', $project)` produces the token instead of the id.
+
+**Open items:** none for these three. `key` is derived from the id alone, so the
+same token names the row 1 of different tables; that is harmless (each route
+picks its own model and its own policy) but worth remembering if a global token
+map is ever introduced.
+
+---
+
 ## 2026-10-16 — Round 15: the Projects list was not navigable (#99)
 
 **Context:** The product owner asked for a review and fix of the **Projects
