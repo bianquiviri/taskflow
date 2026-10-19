@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\HasEncryptedRouteKey;
 use App\Support\AttachmentRules;
 use Database\Factories\TaskFileFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -16,6 +17,7 @@ class TaskFile extends Model
 {
     /** @use HasFactory<TaskFileFactory> */
     use HasFactory;
+    use HasEncryptedRouteKey;
 
     /**
      * The private disk an attachment is kept on unless another one is given.

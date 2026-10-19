@@ -7,6 +7,7 @@ const tasks = {
     data: [
         {
             id: 7,
+            key: 'tk7',
             title: 'Fix the login redirect',
             status: 'in_progress',
             priority: 'urgent',
@@ -16,6 +17,7 @@ const tasks = {
         },
         {
             id: 8,
+            key: 'tk8',
             title: 'Write the release notes',
             status: 'todo',
             priority: 'low',
@@ -53,7 +55,7 @@ describe('TaskList.vue', () => {
         expect(rows[0].find('[data-test="task-row-assignee"]').text()).toContain('Alan Turing');
         expect(rows[0].findAll('[data-test="pill"]').map((pill) => pill.text()))
             .toEqual(['in_progress', 'urgent']);
-        expect(rows[0].get('a').attributes('href')).toBe('/tasks/7');
+        expect(rows[0].get('a').attributes('href')).toBe('/tasks/tk7');
     });
 
     it('reports how many tasks the listing holds', () => {

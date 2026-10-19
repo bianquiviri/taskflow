@@ -19,7 +19,7 @@ vi.mock('@inertiajs/vue3', () => ({
 
 import TeamInvitationRow from './TeamInvitationRow.vue';
 
-const team = { id: 7, name: 'Platform', slug: 'platform' };
+const team = { id: 7, key: 'tm7', name: 'Platform', slug: 'platform' };
 
 const roles = [
     { value: 'admin', label: 'Admin', tone: 'sky' },
@@ -28,6 +28,7 @@ const roles = [
 
 const invitation = {
     id: 30,
+    key: 'inv30',
     email: 'invitee@example.com',
     role: 'admin',
     status: 'pending',
@@ -79,7 +80,7 @@ describe('Teams/TeamInvitationRow.vue', () => {
 
         await wrapper.get('[data-test="resend-invitation"]').trigger('click');
 
-        expect(formState.post).toHaveBeenCalledWith('/teams/7/invitations/30/resend', expect.any(Object));
+        expect(formState.post).toHaveBeenCalledWith('/teams/tm7/invitations/inv30/resend', expect.any(Object));
     });
 
     it('cancels a pending invitation', async () => {
@@ -87,7 +88,7 @@ describe('Teams/TeamInvitationRow.vue', () => {
 
         await wrapper.get('[data-test="cancel-invitation"]').trigger('click');
 
-        expect(formState.delete).toHaveBeenCalledWith('/teams/7/invitations/30', expect.any(Object));
+        expect(formState.delete).toHaveBeenCalledWith('/teams/tm7/invitations/inv30', expect.any(Object));
     });
 
     it('hides the resend action when the invitation is no longer pending', () => {

@@ -63,6 +63,7 @@ it('shares the current team with its role', function () {
             fn ($page) => $page
             ->where('auth.team', [
                 'id' => $team->id,
+                'key' => $team->getRouteKey(),
                 'name' => 'Analytical Engines',
                 'slug' => $team->slug,
                 'role' => TeamRole::Owner->value,
@@ -145,7 +146,7 @@ it('shares the same auth context on every authenticated page', function () {
 
     $expected = [
         'user' => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'avatar' => null],
-        'team' => ['id' => $team->id, 'name' => $team->name, 'slug' => $team->slug, 'role' => 'owner'],
+        'team' => ['id' => $team->id, 'key' => $team->getRouteKey(), 'name' => $team->name, 'slug' => $team->slug, 'role' => 'owner'],
         'can' => ['projects.viewAny', 'projects.create', 'teams.view', 'teams.manageMembers'],
     ];
 

@@ -41,6 +41,7 @@ const priorities = [
 
 const task = {
     id: 9,
+    key: 'tk9',
     title: 'Ship the release',
     description: 'Tag, build, publish.',
     status: 'in_progress',
@@ -56,7 +57,7 @@ function field(name) {
 
 function mountModal(props = {}) {
     wrapper = mount(TaskFormModal, {
-        props: { modelValue: true, projectId: 1, priorities, ...props },
+        props: { modelValue: true, projectKey: 'pr1', priorities, ...props },
         attachTo: document.body,
     });
 
@@ -94,7 +95,7 @@ describe('TaskFormModal.vue', () => {
         document.querySelector('form').dispatchEvent(new window.Event('submit'));
         await wrapper.vm.$nextTick();
 
-        expect(formState.post).toHaveBeenCalledWith('/projects/1/tasks', expect.any(Object));
+        expect(formState.post).toHaveBeenCalledWith('/projects/pr1/tasks', expect.any(Object));
         expect(formState.patch).not.toHaveBeenCalled();
         expect(formState.transformed).toEqual({
             title: 'Draft the copy',
@@ -116,7 +117,7 @@ describe('TaskFormModal.vue', () => {
         document.querySelector('form').dispatchEvent(new window.Event('submit'));
         await wrapper.vm.$nextTick();
 
-        expect(formState.patch).toHaveBeenCalledWith('/tasks/9', expect.any(Object));
+        expect(formState.patch).toHaveBeenCalledWith('/tasks/tk9', expect.any(Object));
         expect(formState.post).not.toHaveBeenCalled();
     });
 
@@ -175,7 +176,7 @@ describe('TaskFormModal.vue', () => {
 
         await wrapper.setProps({
             modelValue: true,
-            task: { id: 10, title: 'Write the release notes', description: '', priority: 'low', due_date: null },
+            task: { id: 10, key: 'tk10', title: 'Write the release notes', description: '', priority: 'low', due_date: null },
         });
 
         expect(formState.title).toBe('Write the release notes');

@@ -29,6 +29,7 @@ import TaskFormModal from '../../Components/TaskFormModal.vue';
 
 const task = {
     id: 9,
+    key: 'tk9',
     title: 'Ship the release',
     description: 'Tag, build, publish.',
     status: 'in_progress',
@@ -96,7 +97,7 @@ describe('Tasks/Show.vue', () => {
         await wrapper.get('[data-test="task-status"]').setValue('in_review');
 
         expect(patch).toHaveBeenCalledWith(
-            '/tasks/9/status',
+            '/tasks/tk9/status',
             { status: 'in_review' },
             expect.objectContaining({ preserveState: true, preserveScroll: true, optimistic: expect.any(Function) }),
         );
@@ -142,7 +143,7 @@ describe('Tasks/Show.vue', () => {
 
         expect(wrapper.get('[data-test="comment"]').text()).toContain('Ready for review @grace-hopper');
         expect(wrapper.get('textarea').attributes('name')).toBe('body');
-        expect(wrapper.getComponent(CommentForm).props('url')).toBe('/tasks/9/comments');
+        expect(wrapper.getComponent(CommentForm).props('url')).toBe('/tasks/tk9/comments');
     });
 
     it('shows the empty state when the task has no comment', () => {

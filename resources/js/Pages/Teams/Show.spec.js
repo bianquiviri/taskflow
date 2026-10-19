@@ -30,7 +30,7 @@ vi.mock('@inertiajs/vue3', () => ({
 
 import Show from './Show.vue';
 
-const team = { id: 7, name: 'Platform', slug: 'platform' };
+const team = { id: 7, key: 'tm7', name: 'Platform', slug: 'platform' };
 
 const roles = [
     { value: 'owner', label: 'Owner', tone: 'indigo' },
@@ -40,10 +40,11 @@ const roles = [
 
 const invitableRoles = roles.filter((role) => role.value !== 'owner');
 
-const owner = { id: 1, name: 'Ada Lovelace', email: 'ada@example.com', role: 'owner', canBeRemoved: false };
-const member = { id: 2, name: 'Grace Hopper', email: 'grace@example.com', role: 'member', canBeRemoved: true };
+const owner = { id: 1, key: 'mb1', name: 'Ada Lovelace', email: 'ada@example.com', role: 'owner', canBeRemoved: false };
+const member = { id: 2, key: 'mb2', name: 'Grace Hopper', email: 'grace@example.com', role: 'member', canBeRemoved: true };
 const invitation = {
     id: 30,
+    key: 'inv30',
     email: 'invitee@example.com',
     role: 'admin',
     expiresAt: '2026-10-07T10:00:00+00:00',
@@ -88,7 +89,7 @@ describe('Teams/Show.vue', () => {
     it('links to the team settings page', () => {
         const wrapper = mountPage();
 
-        expect(wrapper.get('[data-test="team-settings-link"]').attributes('href')).toBe('/teams/7/settings');
+        expect(wrapper.get('[data-test="team-settings-link"]').attributes('href')).toBe('/teams/tm7/settings');
     });
 
     it('lists the pending invitations with their expiry', () => {
@@ -139,7 +140,7 @@ describe('Teams/Show.vue', () => {
         await wrapper.get('form').trigger('submit');
 
         expect(formState.email).toBe('invitee@example.com');
-        expect(formState.post).toHaveBeenCalledWith('/teams/7/invitations', expect.any(Object));
+        expect(formState.post).toHaveBeenCalledWith('/teams/tm7/invitations', expect.any(Object));
     });
 
     it('clears the invite form once the invitation is sent', async () => {
@@ -165,7 +166,7 @@ describe('Teams/Show.vue', () => {
 
         await wrapper.get('[data-test="invitation-row"] button').trigger('click');
 
-        expect(formState.delete).toHaveBeenCalledWith('/teams/7/invitations/30', expect.any(Object));
+        expect(formState.delete).toHaveBeenCalledWith('/teams/tm7/invitations/inv30', expect.any(Object));
     });
 
     it('removes a member but never the owner', async () => {
@@ -177,6 +178,6 @@ describe('Teams/Show.vue', () => {
 
         await rows[1].get('button').trigger('click');
 
-        expect(formState.delete).toHaveBeenCalledWith('/teams/7/members/2', expect.any(Object));
+        expect(formState.delete).toHaveBeenCalledWith('/teams/tm7/members/mb2', expect.any(Object));
     });
 });

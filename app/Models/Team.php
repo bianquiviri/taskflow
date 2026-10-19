@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\HasEncryptedRouteKey;
 use Database\Factories\TeamFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -17,6 +18,7 @@ class Team extends Model
 {
     /** @use HasFactory<TeamFactory> */
     use HasFactory;
+    use HasEncryptedRouteKey;
 
     public function owner(): BelongsTo
     {

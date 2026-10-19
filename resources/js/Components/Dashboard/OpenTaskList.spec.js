@@ -27,6 +27,7 @@ const global = { stubs: { EmptyState: EmptyStateStub, StatusPill: StatusPillStub
 const tasks = [
     {
         id: 12,
+        key: 'tk12',
         title: 'Fix the checkout',
         status: 'in_progress',
         priority: 'urgent',
@@ -36,6 +37,7 @@ const tasks = [
     },
     {
         id: 13,
+        key: 'tk13',
         title: 'Ship the landing page',
         status: 'todo',
         priority: 'medium',
@@ -45,6 +47,7 @@ const tasks = [
     },
     {
         id: 14,
+        key: 'tk14',
         title: 'Write the runbook',
         status: 'todo',
         priority: 'low',
@@ -60,7 +63,7 @@ describe('Dashboard/OpenTaskList.vue', () => {
         const rows = wrapper.findAll('[data-test="open-task"]');
 
         expect(rows).toHaveLength(3);
-        expect(wrapper.get('[data-test="open-task-link"]').attributes('href')).toBe('/tasks/12');
+        expect(wrapper.get('[data-test="open-task-link"]').attributes('href')).toBe('/tasks/tk12');
         expect(wrapper.get('[data-test="open-task-link"]').text()).toBe('Fix the checkout');
         expect(wrapper.get('[data-test="open-task-project"]').text()).toBe('Website');
     });

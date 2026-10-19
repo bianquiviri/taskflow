@@ -52,7 +52,7 @@ export function useTaskStatusChange({ canChange = () => true, apply = patchTaskL
         pending.value = [...pending.value, task.id];
         error.value = '';
 
-        router.patch(`/tasks/${task.id}/status`, { status }, {
+        router.patch(`/tasks/${task.key}/status`, { status }, {
             preserveScroll: true,
             preserveState: true,
             optimistic: (props) => apply(props, task, status),

@@ -49,8 +49,8 @@ const hasProject = computed(() => (props.kpis.projects ?? 0) > 0);
           :has-team="team !== null"
           :has-project="hasProject"
           :has-task="(kpis.total ?? 0) > 0"
-          :team-id="team?.id ?? null"
-          :project-id="recentProjects[0]?.id ?? null"
+          :team-key="team?.key ?? null"
+          :project-key="recentProjects[0]?.key ?? null"
         />
       </div>
 

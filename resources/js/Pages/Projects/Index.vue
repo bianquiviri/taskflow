@@ -73,7 +73,7 @@ const formOpen = ref(false);
         class="rounded-panel border border-line bg-raised shadow-sm transition-colors hover:border-line-strong hover:bg-sunken/50"
       >
         <Link
-          :href="`/projects/${project.id}`"
+          :href="`/projects/${project.key}`"
           class="block p-5"
         >
           <h2 class="text-lg font-semibold text-content">

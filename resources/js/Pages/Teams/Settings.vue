@@ -28,7 +28,7 @@ const pendingCount = computed(
 );
 
 function invite() {
-    form.post(`/teams/${props.team.id}/invitations`, {
+    form.post(`/teams/${props.team.key}/invitations`, {
         preserveScroll: true,
         onSuccess: () => form.reset(),
     });
@@ -50,7 +50,7 @@ function invite() {
       </div>
       <Link
         data-test="back-to-team"
-        :href="`/teams/${team.id}`"
+        :href="`/teams/${team.key}`"
         class="text-sm font-medium text-brand-text hover:underline"
       >
         Back to the team

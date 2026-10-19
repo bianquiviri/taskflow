@@ -54,7 +54,7 @@ function formatDate(value) {
         <div class="min-w-0">
           <Link
             data-test="open-task-link"
-            :href="`/tasks/${task.id}`"
+            :href="`/tasks/${task.key}`"
             class="font-medium text-content hover:text-brand-text"
           >
             {{ task.title }}

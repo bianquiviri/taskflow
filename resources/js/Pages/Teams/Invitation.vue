@@ -99,7 +99,7 @@ function accept() {
         <Link
           v-if="status === 'already_member'"
           class="text-sm font-medium text-brand-text hover:underline"
-          :href="`/teams/${team.id}`"
+          :href="`/teams/${team.key}`"
         >
           Open the team
         </Link>

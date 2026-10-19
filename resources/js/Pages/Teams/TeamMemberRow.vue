@@ -27,14 +27,14 @@ watch(
 );
 
 function saveRole() {
-    form.patch(`/teams/${props.team.id}/members/${props.member.id}`, {
+    form.patch(`/teams/${props.team.key}/members/${props.member.key}`, {
         preserveScroll: true,
         onSuccess: () => form.reset(),
     });
 }
 
 function removeMember() {
-    form.delete(`/teams/${props.team.id}/members/${props.member.id}`, { preserveScroll: true });
+    form.delete(`/teams/${props.team.key}/members/${props.member.key}`, { preserveScroll: true });
 }
 </script>
 
