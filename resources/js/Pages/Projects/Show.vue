@@ -148,36 +148,34 @@ function switchView(view) {
       </div>
     </section>
 
-    <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
-      <div
-        data-test="view-toggle"
-        class="inline-flex rounded-control border border-line-strong bg-raised p-0.5"
-      >
-        <button
-          v-for="option in views"
-          :key="option.value"
-          type="button"
-          :data-test="`view-${option.value}`"
-          :aria-pressed="view === option.value"
-          class="rounded px-3 py-1.5 text-sm font-medium transition-colors"
-          :class="view === option.value
-            ? 'bg-brand-600 text-content-inverted'
-            : 'text-content-muted hover:bg-sunken'"
-          @click="switchView(option.value)"
-        >
-          {{ option.label }}
-        </button>
-      </div>
+    <div class="mt-6 w-full">
+      <TaskFilterForm
+        :url="`/projects/${project.id}`"
+        :filters="filters"
+        :statuses="filterOptions.statuses"
+        :priorities="filterOptions.priorities"
+        :assignees="filterOptions.assignees"
+      />
+    </div>
 
-      <div class="w-full sm:w-auto">
-        <TaskFilterForm
-          :url="`/projects/${project.id}`"
-          :filters="filters"
-          :statuses="filterOptions.statuses"
-          :priorities="filterOptions.priorities"
-          :assignees="filterOptions.assignees"
-        />
-      </div>
+    <div
+      data-test="view-toggle"
+      class="mt-6 inline-flex rounded-control border border-line-strong bg-raised p-0.5"
+    >
+      <button
+        v-for="option in views"
+        :key="option.value"
+        type="button"
+        :data-test="`view-${option.value}`"
+        :aria-pressed="view === option.value"
+        class="rounded px-3 py-1.5 text-sm font-medium transition-colors"
+        :class="view === option.value
+          ? 'bg-brand-600 text-content-inverted'
+          : 'text-content-muted hover:bg-sunken'"
+        @click="switchView(option.value)"
+      >
+        {{ option.label }}
+      </button>
     </div>
 
     <p

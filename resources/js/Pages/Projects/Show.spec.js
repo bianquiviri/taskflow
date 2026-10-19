@@ -203,6 +203,17 @@ describe('Projects/Show.vue', () => {
         expect(wrapper.getComponent({ name: 'TaskFilterForm' }).props('url')).toBe('/projects/1');
     });
 
+    it('shows the progress bar after the header and before the filter form', () => {
+        const wrapper = mountPage();
+        const html = wrapper.html();
+        const searchAt = html.indexOf('data-test="filter-search"');
+        const progressAt = html.indexOf('data-test="project-progress"');
+        const titleAt = html.indexOf('<h1');
+
+        expect(progressAt).toBeGreaterThan(titleAt);
+        expect(searchAt).toBeGreaterThan(progressAt);
+    });
+
     it('lets the user create a task only with the permission', async () => {
         const wrapper = mountPage();
         const modal = wrapper.getComponent(TaskFormModal);
