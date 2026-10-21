@@ -296,6 +296,12 @@ maintainer** (`@bianquiviri`) — `gh issue create --assignee bianquiviri`.
 Recorded in AGENTS.md (new *Issues* section, #105); #101 and #102 were assigned
 retroactively.
 
+Extended immediately after, and backfilled: the rule covers **pull requests** as
+well (`gh pr create --assignee bianquiviri`, #107, in the *Pull Requests*
+section), and the whole history was assigned in one pass — **37 issues and 57
+pull requests**, all of them authored by the maintainer — leaving zero unassigned
+items in the repository.
+
 ---
 
 ## 2026-10-16 — Round 15: the Projects list was not navigable (#99)
