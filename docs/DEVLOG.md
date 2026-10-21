@@ -30,6 +30,85 @@ of truth for the project's evolution.
 
 ---
 
+## 2026-10-21 — Round 20: v1.2.0 released (#113) + backlog merged
+
+**Context:** the session resumed with the GitHub MCP fix (Round 19) already
+pushed and PR **#112** open. The instruction was *"sube los cambios al
+repositorio"* — so the first job was to establish what was actually still
+missing, not to push again.
+
+**What the repository was actually missing:**
+
+- PR **#112** (#111, GitHub MCP auth) had been merged by the maintainer while the
+  session was paused → `develop` had it as `23cb41d`.
+- PR **#108** (#107, PRs assigned to the maintainer) was still open with CI
+  **6/6 green** → squash-merged as `315092d`.
+- The local `develop` and `main` were **stale** (`develop` 1 commit behind,
+  `main` 10 behind): the working tree looked dirty by comparison, but the
+  checkout had simply reverted to an older `develop`. Fast-forwarded both.
+- **Housekeeping:** the `stash@{0}` left over from Round 11 was inspected before
+  being dropped — it held exactly the corrupt `package-lock.json` fingerprint
+  documented twice already (`name: taskflow → html`, `libc` fields dropped), the
+  residue of an npm regeneration outside the project. Applying it would have
+  **reintroduced** that bug, so it was discarded. Two local-only branches
+  (`bugfix/79-fix-broken-nav-links`, `release/v1.0.0`) whose content was
+  already in `develop`/`main` (verified with `git log --cherry-pick
+  --right-only`, not with `--is-ancestor`, which is too strict after a squash
+  merge) were deleted.
+
+**The release train — v1.2.0 (issue [#113], branch `release/v1.2.0`):**
+
+`develop` was **8 commits** over `main` (v1.1.1): #101, #102, #97, #99, #109,
+#111, #105, #107. A feature release, so **v1.2.0**.
+
+- `CHANGELOG.md` gained the `[1.2.0]` section (Added / Fixed / Changed) and the
+  link refs were rewired (`[Unreleased]` now compares from `v1.2.0`).
+- PR **#114** → `main`, assigned to the maintainer, CI **6/6 green**, merged
+  with `--merge --admin` → `e551c4d`.
+- Annotated tag **`v1.2.0`** pushed; GitHub **Release** published as *Latest*,
+  its notes **single-sourced from the CHANGELOG section** (the `awk` extraction
+  is what keeps the two diffable).
+- `main` synced back into `develop` as a clean fast-forward, so both branches
+  sit on `e551c4d` and the recurring CHANGELOG conflict (Round 13) cannot
+  happen again.
+
+**Decisions:**
+
+- **v1.2.0, not v2.0.0**, even though encrypted ids (#101) is a *breaking*
+  change: a numeric id in a URL is now a 404, so old bookmarks die. It is not
+  a major bump because there is no public API and no external consumer — the
+  app is self-hosted and still in development. The break is stated loudly
+  anyway: in the CHANGELOG, in the release notes, in the PR body and in issue
+  #113, so nobody upgrades blind.
+- **The release branch carried the CHANGELOG only** — no code changes — so the
+  diff between `main` and `develop` stays exactly "what shipped". The DEVLOG
+  entry for the release is a separate `docs:` commit on `develop` afterwards,
+  the same shape as `71c9710` (`docs: log the v1.1.1 release in the DEVLOG`).
+- **The release notes are generated from the CHANGELOG**, not written twice.
+
+**Gotcha worth remembering:** the repository's **default branch is `develop`**,
+not `main`. GitHub closes an issue referenced with `Closes #N` in a PR body only
+when that PR lands in the **default** branch — so the release PR (#114, merged
+into `main`) left issue **#113 open** and it had to be closed by hand. Same
+family as the Round 13 CHANGELOG conflict: the *release* path touches
+`main`, while the *automation* reasons about `develop`.
+
+**Verification:** `make lint` green (PHPStan no errors · Pint 206 files ·
+ESLint 0) · `make test` **365 passed** (2109 assertions, 12 processes) ·
+`make test-fe` **548 passed** (68 files) · `make e2e` **15 passed** · CI **6/6**
+on PR #114. Release verified with `gh release list` (v1.2.0 → *Latest*) and
+`git ls-remote --tags`.
+
+**Status (end of session):** `main` = `e551c4d` (the commit tagged `v1.2.0`)
+and `develop` = that same tree plus this DEVLOG commit, which ships with the
+next release — exactly like `71c9710` did for v1.1.1. GitHub Release published
+as *Latest*. Issues #111, #107 and #113 closed. Open issues: **#23** (custom
+domain) and **#24** (deployment docs) — the deferred cloud slice, owned by
+`infra-agent`. Next: the cloud phase (#23/#24), or a new feature round on
+`develop`.
+
+---
+
 ## 2026-10-21 — Round 19: the GitHub MCP server never connected (#111)
 
 **Context:** The session opened with another failed OpenCode component:
