@@ -30,6 +30,57 @@ of truth for the project's evolution.
 
 ---
 
+## 2026-10-20 — Round 18: the docker MCP server never started (#109)
+
+**Context:** The session opened with a failed OpenCode component:
+
+```
+MCP server: docker — failed
+Connection closed: MCP server process exited with code 1:
+npm error could not determine executable to run
+```
+
+**Root cause:** `opencode.json` launched the server as `npx -y mcp-docker`. The
+npm package `mcp-docker@1.0.0` declares **no `bin` field** (only
+`main: build/index.js`), so npx has no executable to run and exits 1 before
+anything else happens. The package is doubly broken: its only declared
+dependency is `dotenv`, yet the code imports `@modelcontextprotocol/sdk`,
+`dockerode` and `zod` — so even `node build/index.js` would die with
+module-not-found. It is a single v1.0.0 published 2025-09-07 by an unrelated
+third party (not the official Docker MCP server). No env vars, credentials or
+project setup were involved; the other servers (playwright, mysql, github) were
+unaffected because their packages do declare `bin`.
+
+**Fix (issue [#109], branch `bugfix/109-docker-mcp`):** the `docker` entry now
+runs the **official Docker MCP Toolkit gateway** that already ships with the
+local Docker CLI 29.5.3: `"command": ["docker", "mcp", "gateway", "run"]`.
+Verified it boots locally (reads the profile, pulls MCP images, speaks MCP over
+stdio) — and the `docker` MCP tools are exposed in this very session as proof.
+No credentials or env vars added; if the full catalog is wanted, run
+`docker mcp catalog pull mcp/docker-mcp-catalog:latest` once.
+
+**Housekeeping:** the recurring stray `package-lock.json` rewrite
+(`name: taskflow` → `html`, `libc` fields dropped — the fingerprint of an npm
+regeneration outside the project, see Round 11) was found uncommitted on
+`feature/107-assign-prs` and discarded.
+
+**Decisions:**
+
+- Prefer the official gateway over any third-party npm package: the old entry
+  handed a Docker socket to an abandoned one-off package; the gateway is
+  maintained with Docker Desktop itself.
+- One-line config fix, no application code touched — hence no new Vitest/Playwright
+  specs (nothing in `resources/js` or `app/` changed).
+
+**Verification:** `make lint` green (Pint 206 files, ESLint 0) · `make test`
+**365 passed** (2109 assertions, 12 processes, 4.08s) · `opencode.json`
+re-parses as valid JSON · gateway smoke-tested.
+
+**Status (end of session):** branch `bugfix/109-docker-mcp` (from `develop`),
+issue [#109] opened. Next: push + PR to `develop`.
+
+---
+
 ## 2026-10-19 — Round 17: progress bar placement, demo seeders and encrypted ids in URLs (#102, #101)
 
 **Context:** Three follow-ups from a review of the projects views, on

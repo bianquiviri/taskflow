@@ -33,7 +33,7 @@
     },
     "docker": {
       "type": "local",
-      "command": ["npx", "-y", "mcp-docker"],
+      "command": ["docker", "mcp", "gateway", "run"],
       "enabled": true
     }
   },
