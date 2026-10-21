@@ -19,8 +19,8 @@ const props = defineProps({
     hasProject: { type: Boolean, default: false },
     hasTask: { type: Boolean, default: false },
     invited: { type: Boolean, default: false },
-    teamId: { type: [Number, String], default: null },
-    projectId: { type: [Number, String], default: null },
+    teamKey: { type: [Number, String], default: null },
+    projectKey: { type: [Number, String], default: null },
 });
 
 const steps = computed(() => [
@@ -29,7 +29,7 @@ const steps = computed(() => [
         title: 'Create your team',
         description: 'A team is the workspace shared with everybody you invite.',
         done: props.hasTeam,
-        cta: props.hasTeam && props.teamId ? { href: `/teams/${props.teamId}`, label: 'Open your team' } : null,
+        cta: props.hasTeam && props.teamKey ? { href: `/teams/${props.teamKey}`, label: 'Open your team' } : null,
         unavailable: !props.hasTeam,
     },
     {
@@ -37,7 +37,7 @@ const steps = computed(() => [
         title: 'Invite a teammate',
         description: 'Send an invitation so somebody else can see the work.',
         done: props.invited,
-        cta: props.teamId ? { href: `/teams/${props.teamId}`, label: 'Invite somebody' } : null,
+        cta: props.teamKey ? { href: `/teams/${props.teamKey}`, label: 'Invite somebody' } : null,
         unavailable: false,
     },
     {
@@ -53,8 +53,8 @@ const steps = computed(() => [
         title: 'Add your first task',
         description: 'Break the project down into tasks on its board.',
         done: props.hasTask,
-        cta: props.projectId
-            ? { href: `/projects/${props.projectId}`, label: 'Open the board' }
+        cta: props.projectKey
+            ? { href: `/projects/${props.projectKey}`, label: 'Open the board' }
             : { href: '/projects', label: 'Go to projects' },
         unavailable: false,
     },

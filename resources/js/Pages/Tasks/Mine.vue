@@ -29,7 +29,7 @@ const emptyDescription = computed(() => (hasFilters.value
 <template>
   <Head title="My tasks" />
 
-  <div class="mx-auto w-full max-w-4xl px-6 py-10">
+  <div class="w-full">
     <h1 class="text-3xl font-bold tracking-tight text-content">
       My Tasks
     </h1>

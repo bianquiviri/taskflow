@@ -28,6 +28,7 @@ class TeamInvitationAcceptController extends Controller
         return Inertia::render('Teams/Invitation', [
             'team' => [
                 'id' => $invitation->team_id,
+                'key' => $invitation->team->getRouteKey(),
                 'name' => $invitation->team->name,
             ],
             'email' => $invitation->email,

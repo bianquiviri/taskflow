@@ -30,7 +30,7 @@ const emptyDescription = computed(() => (hasFilters.value
 <template>
   <Head :title="`${project.name} tasks`" />
 
-  <div class="mx-auto w-full max-w-4xl px-6 py-10">
+  <div class="w-full">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h1 class="text-3xl font-bold tracking-tight text-content">
         {{ project.name }} Tasks
@@ -46,7 +46,7 @@ const emptyDescription = computed(() => (hasFilters.value
 
     <div class="mt-6">
       <TaskFilterForm
-        :url="`/projects/${project.id}/tasks`"
+        :url="`/projects/${project.key}/tasks`"
         :filters="filters"
         :statuses="filterOptions.statuses"
         :priorities="filterOptions.priorities"
@@ -71,7 +71,7 @@ const emptyDescription = computed(() => (hasFilters.value
       >
         <Link
           data-test="task-list-cta"
-          :href="`/projects/${project.id}`"
+          :href="`/projects/${project.key}`"
           class="inline-flex min-h-10 items-center rounded-control bg-brand-600 px-4 py-2 text-sm font-semibold text-content-inverted"
         >
           Open the board

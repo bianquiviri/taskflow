@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import Button from '../../Components/Button.vue';
 import EmptyState from '../../Components/EmptyState.vue';
 import PageSkeleton from '../../Components/PageSkeleton.vue';
@@ -21,7 +21,7 @@ const formOpen = ref(false);
 <template>
   <Head title="Projects" />
 
-  <div class="mx-auto w-full max-w-4xl px-6 py-10">
+  <div class="w-full">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h1 class="text-3xl font-bold tracking-tight text-content">
         Projects
@@ -64,24 +64,29 @@ const formOpen = ref(false);
 
     <ul
       v-else
-      class="mt-6 space-y-4"
+      class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
     >
       <li
         v-for="project in projects"
         :key="project.id"
         data-test="project-row"
-        class="rounded-panel border border-line bg-raised p-5 shadow-sm"
+        class="rounded-panel border border-line bg-raised shadow-sm transition-colors hover:border-line-strong hover:bg-sunken/50"
       >
-        <h2 class="text-lg font-semibold text-content">
-          {{ project.name }}
-        </h2>
-        <p
-          v-if="project.description"
-          data-test="project-description"
-          class="mt-1 text-sm text-content-subtle"
+        <Link
+          :href="`/projects/${project.key}`"
+          class="block p-5"
         >
-          {{ project.description }}
-        </p>
+          <h2 class="text-lg font-semibold text-content">
+            {{ project.name }}
+          </h2>
+          <p
+            v-if="project.description"
+            data-test="project-description"
+            class="mt-1 text-sm text-content-subtle"
+          >
+            {{ project.description }}
+          </p>
+        </Link>
       </li>
     </ul>
   </div>

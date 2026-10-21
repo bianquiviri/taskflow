@@ -48,7 +48,7 @@ const navigation = computed(() => {
         return props.navItems;
     }
 
-    return [...props.navItems, { label: current.name, href: `/teams/${current.id}`, icon: 'projects' }];
+    return [...props.navItems, { label: current.name, href: `/teams/${current.key}`, icon: 'projects' }];
 });
 
 /**

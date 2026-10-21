@@ -44,7 +44,7 @@ const reachable = computed(() => {
 <template>
   <Head :title="task.title" />
 
-  <div class="mx-auto w-full max-w-4xl px-6 py-10">
+  <div class="w-full">
     <p class="text-sm text-content-subtle">
       {{ task.project.name }}
     </p>
@@ -145,7 +145,7 @@ const reachable = computed(() => {
 
       <div class="mt-6">
         <TaskAttachmentForm
-          :url="`/tasks/${task.id}/files`"
+          :url="`/tasks/${task.key}/files`"
           :accept="attachmentRules.extensions"
           :max-size="attachmentRules.max_size"
         />
@@ -162,7 +162,7 @@ const reachable = computed(() => {
       </div>
 
       <div class="mt-6">
-        <CommentForm :url="`/tasks/${task.id}/comments`" />
+        <CommentForm :url="`/tasks/${task.key}/comments`" />
       </div>
     </section>
   </div>

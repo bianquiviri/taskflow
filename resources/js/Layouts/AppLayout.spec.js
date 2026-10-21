@@ -289,7 +289,7 @@ describe('AppLayout.vue', () => {
         pageState.props = {
             flash: {},
             can: [],
-            auth: { team: { id: 3, name: 'Analytical Engines', role: 'owner' } },
+            auth: { team: { id: 3, key: 'tm3', name: 'Analytical Engines', role: 'owner' } },
         };
 
         const denied = mount(AppLayout, { global });
@@ -298,11 +298,11 @@ describe('AppLayout.vue', () => {
         holder.page.props = {
             flash: {},
             can: ['teams.view'],
-            auth: { team: { id: 3, name: 'Analytical Engines', role: 'member' } },
+            auth: { team: { id: 3, key: 'tm3', name: 'Analytical Engines', role: 'member' } },
         };
 
         const granted = mount(AppLayout, { global });
-        const team = granted.findAll('nav a').find((anchor) => anchor.attributes('href') === '/teams/3');
+        const team = granted.findAll('nav a').find((anchor) => anchor.attributes('href') === '/teams/tm3');
 
         expect(team.text()).toContain('Analytical Engines');
     });

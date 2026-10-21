@@ -42,6 +42,16 @@ describe('LandingSignIn.vue', () => {
         expect(wrapper.text()).toContain('Sign in to TaskFlow');
     });
 
+    it('reveals the password on demand', async () => {
+        const wrapper = mountForm();
+
+        const password = wrapper.get('input[name="password"]');
+
+        await wrapper.get('[data-test="password-toggle"]').trigger('click');
+
+        expect(password.attributes('type')).toBe('text');
+    });
+
     it('posts the credentials to the login endpoint without leaving the page', async () => {
         const wrapper = mountForm();
 

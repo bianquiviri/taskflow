@@ -70,6 +70,32 @@ Action. If two Actions share logic, extract it into a Service.
   notifications must `implement ShouldQueue` (see below for queued delivery).
 - `app/Support/**`: small framework-agnostic helpers.
 
+### Encrypted resource ids in URLs
+
+Every route that addresses a project, task, team, membership, invitation or
+attachment carries an **opaque token** instead of the primary key
+(`/projects/4ryMfugi7CN92ac0c8bhE5S80EdD1bWaIp-BR1Zh_ZA`): sequential keys are
+enumerable and made the address guessable.
+
+- `app/Support/IdCipher.php` encrypts an id and turns it back. It has to be
+  **deterministic** — one record must always produce one URL — so Laravel's
+  `Crypt` is unusable here: it draws a random IV on every call, which would make
+  `route()` unstable and break every `assertRedirect(route(...))`. The IV is
+  instead derived from the plaintext and sealed under `APP_KEY` (the synthetic IV
+  of an SIV construction), and decryption recomputes it, so an edited token stops
+  resolving instead of pointing at another record.
+- `app/Models/Concerns/HasEncryptedRouteKey.php` is used by the route-bound
+  models (`Project`, `Task`, `Team`, `TeamMember`, `TeamInvitation`, `TaskFile`).
+  It returns the token from `getRouteKey()` — which is what makes `route()` build
+  the encrypted URL — decrypts it again in `resolveRouteBindingQuery()` (a token
+  nobody issued matches no row, so the binding answers 404, scoped child bindings
+  included), and serialises the token as `key` beside the numeric `id`.
+- **Frontend:** `id` stays numeric and keeps being the domain identity the
+  permission strings use (`tasks.{id}.changeStatus`); `key` is the only field
+  used to build a URL. Payloads that are hand-built rather than serialised from a
+  model (`AuthContext`, `DashboardMetricsService`, `TeamController`,
+  `TeamInvitationAcceptController`) must carry `key` next to `id` too.
+
 ### Queued mail & the queue worker
 
 Mail is delivered asynchronously. Notifications implementing `ShouldQueue` are

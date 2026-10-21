@@ -11,6 +11,7 @@ const statuses = [
 
 const task = {
     id: 7,
+    key: 'tk7',
     title: 'Fix the login redirect',
     status: 'todo',
     priority: 'urgent',
@@ -33,7 +34,7 @@ describe('TaskCard.vue', () => {
     it('links the title to the task and shows its priority, due date and assignee', () => {
         const wrapper = mountCard();
 
-        expect(wrapper.get('a').attributes('href')).toBe('/tasks/7');
+        expect(wrapper.get('a').attributes('href')).toBe('/tasks/tk7');
         expect(wrapper.get('a').text()).toBe('Fix the login redirect');
         expect(wrapper.get('[data-test="task-card-priority"]').text()).toBe('Urgent');
         expect(wrapper.get('[data-test="task-card-due"]').text()).toContain('2026');

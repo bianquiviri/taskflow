@@ -28,32 +28,32 @@ const formattedExpiry = (value) =>
     new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium' }).format(new Date(value));
 
 function invite() {
-    form.post(`/teams/${props.team.id}/invitations`, {
+    form.post(`/teams/${props.team.key}/invitations`, {
         preserveScroll: true,
         onSuccess: () => form.reset(),
     });
 }
 
 function revoke(invitation) {
-    form.delete(`/teams/${props.team.id}/invitations/${invitation.id}`, { preserveScroll: true });
+    form.delete(`/teams/${props.team.key}/invitations/${invitation.key}`, { preserveScroll: true });
 }
 
 function removeMember(member) {
-    form.delete(`/teams/${props.team.id}/members/${member.id}`, { preserveScroll: true });
+    form.delete(`/teams/${props.team.key}/members/${member.key}`, { preserveScroll: true });
 }
 </script>
 
 <template>
   <Head :title="team.name" />
 
-  <div class="mx-auto w-full max-w-4xl px-6 py-10">
+  <div class="w-full">
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h1 class="text-3xl font-bold tracking-tight text-content">
         {{ team.name }}
       </h1>
       <Link
         data-test="team-settings-link"
-        :href="`/teams/${team.id}/settings`"
+        :href="`/teams/${team.key}/settings`"
         class="text-sm font-medium text-brand-text hover:underline"
       >
         Team settings

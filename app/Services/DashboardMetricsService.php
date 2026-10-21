@@ -8,6 +8,7 @@ use App\Enums\TaskStatus;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\User;
+use App\Support\IdCipher;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Support\Carbon;
@@ -25,11 +26,15 @@ final readonly class DashboardMetricsService
 
     public const int OPEN_TASKS_LIMIT = 8;
 
+    public function __construct(private IdCipher $cipher)
+    {
+    }
+
     /**
      * The whole dashboard: the KPI counters, the distribution behind the bar
      * chart, the projects worth opening and the tasks waiting on the user.
      *
-     * @return array{kpis: array{projects: int, open: int, overdue: int, done: int, total: int}, statusBreakdown: list<array{value: string, label: string, count: int}>, recentProjects: list<array{id: int, name: string, slug: string, tasks: int, open: int}>, openTasks: list<array{id: int, title: string, status: string, priority: string, due_date: string|null, overdue: bool, project: array{id: int, name: string}}>}
+     * @return array{kpis: array{projects: int, open: int, overdue: int, done: int, total: int}, statusBreakdown: list<array{value: string, label: string, count: int}>, recentProjects: list<array{id: int, key: string, name: string, slug: string, tasks: int, open: int}>, openTasks: list<array{id: int, key: string, title: string, status: string, priority: string, due_date: string|null, overdue: bool, project: array{id: int, name: string}}>}
      */
     public function overview(User $user): array
     {
@@ -80,7 +85,7 @@ final readonly class DashboardMetricsService
      * is still open. The counts are read through the model rather than as
      * properties because they only exist on a query carrying the sub-selects.
      *
-     * @return list<array{id: int, name: string, slug: string, tasks: int, open: int}>
+     * @return list<array{id: int, key: string, name: string, slug: string, tasks: int, open: int}>
      */
     public function recentProjects(User $user): array
     {
@@ -96,6 +101,7 @@ final readonly class DashboardMetricsService
             ->get()
             ->map(fn (Project $project): array => [
                 'id' => $project->getKey(),
+                'key' => $project->getRouteKey(),
                 'name' => $project->name,
                 'slug' => $project->slug,
                 'tasks' => (int) $project->getAttribute('tasks_count'),
@@ -110,7 +116,7 @@ final readonly class DashboardMetricsService
      * never needs a hydrated model, and the date is compared here rather than
      * in the browser.
      *
-     * @return list<array{id: int, title: string, status: string, priority: string, due_date: string|null, overdue: bool, project: array{id: int, name: string}}>
+     * @return list<array{id: int, key: string, title: string, status: string, priority: string, due_date: string|null, overdue: bool, project: array{id: int, name: string}}>
      */
     public function openTasks(User $user): array
     {
@@ -152,7 +158,7 @@ final readonly class DashboardMetricsService
 
     /**
      * @param  array<string, mixed>  $row
-     * @return array{id: int, title: string, status: string, priority: string, due_date: string|null, overdue: bool, project: array{id: int, name: string}}
+     * @return array{id: int, key: string, title: string, status: string, priority: string, due_date: string|null, overdue: bool, project: array{id: int, name: string}}
      */
     private function openTask(array $row): array
     {
@@ -160,6 +166,7 @@ final readonly class DashboardMetricsService
 
         return [
             'id' => (int) $row['id'],
+            'key' => $this->cipher->encrypt((int) $row['id']),
             'title' => (string) $row['title'],
             'status' => (string) $row['status'],
             'priority' => (string) $row['priority'],

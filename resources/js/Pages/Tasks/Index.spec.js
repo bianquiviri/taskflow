@@ -27,11 +27,12 @@ vi.mock('@inertiajs/vue3', () => ({
 
 import Index from './Index.vue';
 
-const project = { id: 1, name: 'Website' };
+const project = { id: 1, key: 'pr1', name: 'Website' };
 
 const paginatedTasks = {
     data: [{
         id: 3,
+        key: 'tk3',
         title: 'Ship the website',
         status: 'in_progress',
         priority: 'high',
@@ -94,7 +95,7 @@ describe('Tasks/Index.vue', () => {
         await wrapper.get('form').trigger('submit');
 
         expect(router.get).toHaveBeenCalledWith(
-            '/projects/1/tasks',
+            '/projects/pr1/tasks',
             { status: 'in_progress' },
             expect.any(Object),
         );
@@ -128,7 +129,7 @@ describe('Tasks/Index.vue', () => {
         const wrapper = mountPage({ tasks: emptyTasks });
 
         expect(wrapper.get('[data-test="task-list-empty"]').text()).toContain('No tasks in Website yet');
-        expect(wrapper.get('[data-test="task-list-empty"] a').attributes('href')).toBe('/projects/1');
+        expect(wrapper.get('[data-test="task-list-empty"] a').attributes('href')).toBe('/projects/pr1');
     });
 
     it('offers to clear the filters when they hide the tasks', () => {

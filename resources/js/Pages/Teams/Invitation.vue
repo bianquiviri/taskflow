@@ -41,7 +41,7 @@ function accept() {
 <template>
   <Head :title="`Join ${team.name}`" />
 
-  <div class="mx-auto w-full max-w-2xl px-6 py-10">
+  <div class="mx-auto w-full max-w-2xl">
     <h1 class="text-3xl font-bold tracking-tight text-content">
       Join {{ team.name }}
     </h1>
@@ -99,7 +99,7 @@ function accept() {
         <Link
           v-if="status === 'already_member'"
           class="text-sm font-medium text-brand-text hover:underline"
-          :href="`/teams/${team.id}`"
+          :href="`/teams/${team.key}`"
         >
           Open the team
         </Link>

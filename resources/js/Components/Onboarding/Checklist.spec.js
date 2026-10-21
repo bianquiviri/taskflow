@@ -54,11 +54,11 @@ describe('Onboarding/Checklist.vue', () => {
     });
 
     it('sends the team and invitation steps to the team page', () => {
-        const wrapper = mountChecklist({ hasTeam: true, teamId: 4 });
+        const wrapper = mountChecklist({ hasTeam: true, teamKey: 'tm4' });
 
-        expect(cta(wrapper, 'team').attributes('href')).toBe('/teams/4');
+        expect(cta(wrapper, 'team').attributes('href')).toBe('/teams/tm4');
         expect(cta(wrapper, 'team').text()).toBe('Open your team');
-        expect(cta(wrapper, 'invite').attributes('href')).toBe('/teams/4');
+        expect(cta(wrapper, 'invite').attributes('href')).toBe('/teams/tm4');
         expect(cta(wrapper, 'invite').text()).toBe('Invite somebody');
     });
 
@@ -78,9 +78,9 @@ describe('Onboarding/Checklist.vue', () => {
     });
 
     it('sends the first task to the board that creates tasks', () => {
-        const wrapper = mountChecklist({ projectId: 7 });
+        const wrapper = mountChecklist({ projectKey: 'pr7' });
 
-        expect(cta(wrapper, 'task').attributes('href')).toBe('/projects/7');
+        expect(cta(wrapper, 'task').attributes('href')).toBe('/projects/pr7');
         expect(cta(wrapper, 'task').text()).toBe('Open the board');
     });
 

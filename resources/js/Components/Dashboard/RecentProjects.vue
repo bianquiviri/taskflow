@@ -60,7 +60,7 @@ function tasks(count) {
       >
         <Link
           data-test="recent-project-link"
-          :href="`/projects/${project.id}`"
+          :href="`/projects/${project.key}`"
           class="font-medium text-content hover:text-brand-text"
         >
           {{ project.name }}

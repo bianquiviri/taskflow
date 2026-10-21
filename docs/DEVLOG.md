@@ -25,8 +25,425 @@ opencode --session <session-id>   # resume a specific session
 opencode export <session-id>      # export a conversation to JSON
 ```
 
-Ad-hoc OpenCode sessions do not replace this log; use this file as the source of
-truth for the project's evolution.
+Ad-hoc OpenCode sessions do not replace this log; use this file as the source
+of truth for the project's evolution.
+
+---
+
+## 2026-10-21 — Round 19: the GitHub MCP server never connected (#111)
+
+**Context:** The session opened with another failed OpenCode component:
+
+```
+MCP server: github — failed
+Error POSTing to endpoint: bad request: Authorization header is badly formatted
+ (HTTP 400)
+```
+
+Like #109, this was **not a regression**: the `github` server had never
+connected since the scaffold (2026-09-17) — the log carries the same 400 on
+every attempt since then.
+
+**Root cause:** `opencode.json` read the credential from an environment
+variable:
+
+```jsonc
+"headers": { "Authorization": "Bearer {env:GITHUB_TOKEN}" }
+```
+
+`GITHUB_TOKEN` is **not defined in the environment of the OpenCode background
+service** — verified with `ps eww -p <service pid>`: zero `GITHUB*` variables.
+It is set in no shell rc file, in no `.env`, and in no global config. The
+OpenCode configuration reference is explicit:
+
+> If the environment variable is not set, it will be replaced with an empty string.
+
+So the header went out as `Authorization: Bearer ` — the scheme with **no
+credential** — and `api.githubcopilot.com` rejects that shape with exactly the
+reported 400. Reproduced directly against the endpoint:
+
+| `Authorization` header            | Result                                             |
+| --------------------------------- | -------------------------------------------------- |
+| *(absent)*                        | 401 `missing required Authorization header`         |
+| `Bearer ` (empty credential)      | **400 `Authorization header is badly formatted`**   |
+| `Bearer <valid token>`            | 200 — the MCP `initialize` handshake succeeds       |
+
+The OAuth path was dead too: the log shows `mcp oauth authorization setup
+failed — Incompatible auth server: does not support dynamic client
+registration`, i.e. GitHub's authorization server supports neither DCR nor CIMD,
+so `oauth` cannot complete without a pre-registered client. Header
+authentication is the supported path.
+
+**Fix (issue [#111], branch `bugfix/111-github-mcp-auth`):**
+
+- The credential is now read from a **file** through the `{file:...}`
+  substitution — `"Authorization": "Bearer {file:~/.config/opencode/github-token}"`.
+  A file works where an environment variable did not: it does not depend on the
+  background service inheriting a shell's environment, so it survives a service
+  restart or a reboot. The file lives **outside the repository**
+  (`~/.config/opencode/github-token`, mode `0600`) and is never committed.
+  One-time setup (documented in the README):
+  `printf '%s' "$(gh auth token)" > ~/.config/opencode/github-token` — it reuses
+  the token the `gh` CLI already keeps in the macOS keychain, so no new
+  credential had to be minted.
+- `"oauth": false` on the `github` server: the credential is a header
+  credential, and the OAuth route is unusable against GitHub's authorization
+  server anyway. Without it, the TUI offers a *Connect* button that can only
+  fail.
+- **The whole `mcp` block was migrated to the V2 shape `mcp.servers`.** The
+  flat `mcp.<name>` form still works in 2.0.32, but the published schema marks
+  it `deprecated: true` and it is no longer the documented shape. The migration
+  also fixed a **second, independent bug**: the local servers' environment block
+  was keyed `env`, while the schema only accepts `environment` — so the MySQL
+  credentials were never passed to the child process and the `mysql` server had
+  been failing with `process exited with code 1` (visible in `opencode mcp
+  list`, dismissed as npm noise in the earlier rounds). It is now `environment`
+  and it connects.
+
+**Verification:** `opencode.json` validates cleanly against
+`https://opencode.ai/config.json` (a schema walk over the old shape reports
+`playwright` and `mysql` as matching none of the branches). All four servers
+connect:
+
+```
+$ opencode mcp list
+✓ docker      connected
+✓ github      connected
+✓ mysql       connected
+✓ playwright  connected
+```
+
+`github.get_me` answers with the authenticated account, and the 46 GitHub tools
+are exposed in the session. `make lint` green · `make test` **365 passed**
+(2109 assertions).
+
+**Decisions:**
+
+- **File over environment variable**, not the other way round: the failure was
+  caused by an environment variable that the MCP host never inherits; the same
+  reasoning that made the #101 route keys and the `IdCipher` deterministic
+  applies — pick the mechanism that cannot silently degrade. A missing file
+  also expands to an empty string, but the README documents the setup and the
+  failure mode is now visible (`401`) rather than a confusing 400.
+- **Reuse the `gh` keychain token** instead of minting a new PAT: it already
+  carries `repo`, `workflow`, `read:org`, `user` and `gist`, which is
+  everything the MCP server needs.
+- **OAuth was not pursued**: it would require a pre-registered client id, which
+  GitHub does not publish for arbitrary third-party MCP clients. Header
+  authentication is documented and verified working.
+- The token file stays **outside the working tree**, so no `.gitignore` entry
+  was needed and the repository still contains no secret.
+
+**Status (end of session):** `develop` `b17e321` (PR #110 for #109 merged
+first, so this branch carries only the #111 work). Issue [#111] opened. Next:
+push + PR to `develop`.
+
+---
+
+## 2026-10-20 — Round 18: the docker MCP server never started (#109)
+
+**Context:** The session opened with a failed OpenCode component:
+
+```
+MCP server: docker — failed
+Connection closed: MCP server process exited with code 1:
+npm error could not determine executable to run
+```
+
+**Root cause:** `opencode.json` launched the server as `npx -y mcp-docker`. The
+npm package `mcp-docker@1.0.0` declares **no `bin` field** (only
+`main: build/index.js`), so npx has no executable to run and exits 1 before
+anything else happens. The package is doubly broken: its only declared
+dependency is `dotenv`, yet the code imports `@modelcontextprotocol/sdk`,
+`dockerode` and `zod` — so even `node build/index.js` would die with
+module-not-found. It is a single v1.0.0 published 2025-09-07 by an unrelated
+third party (not the official Docker MCP server). No env vars, credentials or
+project setup were involved; the other servers (playwright, mysql, github) were
+unaffected because their packages do declare `bin`.
+
+**Fix (issue [#109], branch `bugfix/109-docker-mcp`):** the `docker` entry now
+runs the **official Docker MCP Toolkit gateway** that already ships with the
+local Docker CLI 29.5.3: `"command": ["docker", "mcp", "gateway", "run"]`.
+Verified it boots locally (reads the profile, pulls MCP images, speaks MCP over
+stdio) — and the `docker` MCP tools are exposed in this very session as proof.
+No credentials or env vars added; if the full catalog is wanted, run
+`docker mcp catalog pull mcp/docker-mcp-catalog:latest` once.
+
+**Housekeeping:** the recurring stray `package-lock.json` rewrite
+(`name: taskflow` → `html`, `libc` fields dropped — the fingerprint of an npm
+regeneration outside the project, see Round 11) was found uncommitted on
+`feature/107-assign-prs` and discarded.
+
+**Decisions:**
+
+- Prefer the official gateway over any third-party npm package: the old entry
+  handed a Docker socket to an abandoned one-off package; the gateway is
+  maintained with Docker Desktop itself.
+- One-line config fix, no application code touched — hence no new Vitest/Playwright
+  specs (nothing in `resources/js` or `app/` changed).
+
+**Verification:** `make lint` green (Pint 206 files, ESLint 0) · `make test`
+**365 passed** (2109 assertions, 12 processes, 4.08s) · `opencode.json`
+re-parses as valid JSON · gateway smoke-tested.
+
+**Status (end of session):** branch `bugfix/109-docker-mcp` (from `develop`),
+issue [#109] opened. Next: push + PR to `develop`.
+
+---
+
+## 2026-10-19 — Round 17: progress bar placement, demo seeders and encrypted ids in URLs (#102, #101)
+
+**Context:** Three follow-ups from a review of the projects views, on
+`feature/102-projects-view-improvements` and then `feature/101-encrypted-urls`.
+
+**1. The progress bar moved above the filters (#102).** On `Pages/Projects/Show.vue`
+the task progress summary sat *below* the filter form. It describes the project,
+not the listing, so it now sits directly under the header: header → progress →
+filters → view toggle (the toggle keeps an `mt-6 inline-flex` so it still reads as
+its own row). `Show.spec.js` pins the order by comparing the offsets of the
+`data-test="project-progress"`, `data-test="filter-search"` and header markers.
+
+**2. A seeder that fills every domain table (#102).** `database/seeders/DemoSeeder.php`
+now seeds users, teams, memberships, invitations (pending/expired/revoked),
+projects, project members, tasks in **every** status, comments, attachments (real
+files on the `attachments` disk), the activity trail they generate and the
+mention notifications behind them. It goes through the real Actions
+(`CreateProjectAction`, `ChangeTaskStatusAction`, `AddCommentAction`,
+`InviteTeamMemberAction`) with `Auth::login()` per actor, so the observers stamp
+real actors and the data obeys the domain rules; `updateOrCreate` avoids
+duplicating the owner membership that `TeamObserver` and `CreateProjectAction`
+already create. Every account shares the password `password`
+(`owner@`, `admin@`, `member@`, `second@`, `outsider@taskflow.test` — the last one
+belongs to no team, which the forbidden-path tests need).
+
+**3. Resource ids are encrypted in every URL (#101).** Query strings and paths no
+longer expose a sequential primary key. The design constraint found first:
+`Crypt::encryptString()` draws a **random IV**, so the same id yields a different
+payload on every call — `route()` would be unstable and the **56**
+`assertRedirect(route(...))` assertions would never match. Signed URLs and an
+external hashids package were rejected for the same reason (and for adding a
+dependency). What shipped instead:
+
+- `app/Support/IdCipher.php`: `aes-256-cbc` with a **synthetic IV** derived from
+  the plaintext (`hmac-sha256(APP_KEY, cipher:plain)`, truncated to 16 bytes) and
+  carried in the token, base64url encoded. Deterministic, reversible and
+  self-checking: decryption recomputes the
+  IV and refuses a token whose IV does not match, so tampering 404s instead of
+  resolving to another record. Unit-tested in `tests/Unit/IdCipherTest.php`
+  (determinism, uniqueness, round trip, tampered/foreign tokens).
+- `app/Models/Concerns/HasEncryptedRouteKey.php`, used by `Project`, `Task`,
+  `Team`, `TeamMember`, `TeamInvitation` and `TaskFile`: `getRouteKey()` returns
+  the token, `resolveRouteBindingQuery()` decrypts it and matches nothing on
+  failure, and `getArrayableAppends()` adds the token as **`key`** so every
+  serialised model carries it. Covered by `tests/Feature/EncryptedRouteKeyTest.php`
+  (binding, raw id → 404, forged token → 404, scoped child binding still scoped).
+- `key` was added to the hand-built payloads that never go through a model:
+  `AuthContext` (the `auth.team` shared prop), `DashboardMetricsService`
+  (`recentProjects`, `openTasks` — raw rows, so the cipher is injected),
+  `TeamController` (team, members, invitations) and
+  `TeamInvitationAcceptController`.
+- **Frontend:** `id` stays numeric — it is the domain identity the permission
+  strings use (`tasks.{id}.changeStatus`, built by `ProjectOverviewService`) — and
+  only `key` builds URLs. 19 templates across pages/components switched `.id` →
+  `.key`; `TaskFormModal`'s `projectId` prop became `projectKey` and the
+  `Checklist`'s `teamId`/`projectId` became `teamKey`/`projectKey`, since those
+  values are only used to build a href. Pagination links and activity feed URLs
+  needed no change: they are built server-side through `route()`.
+- The consequence to remember: **a numeric id in a URL is now a 404**, so old
+  bookmarks break (intended).
+
+**Verification:** Pint clean (206 files) and ESLint clean; Pest **365 passed**
+(2109 assertions) including the 15 new ones; Vitest **540 passed** (67 files) —
+35 spec assertions updated to fixtures carrying `key`; Playwright **14 passed**;
+`migrate:fresh --seed` green and a tinker smoke check confirmed
+`route('projects.show', $project)` produces the token instead of the id.
+
+**Caught by CI, not locally — and the gap closed.** The first push failed the
+`Static Analysis (PHPStan)` job with 12 errors, none of which the local commands
+could have caught: `make lint` ran Pint and ESLint only, while CI has a separate
+Larastan job. Three findings:
+
+- Adding a second trait to the five models moved `use HasEncryptedRouteKey;`
+  **before** the `/** @use HasFactory<XFactory> */` annotation, and PHPStan
+  reports the `@use` tag as describing a trait the class does not use unless that
+  annotated trait comes first. The annotation now sits directly above
+  `use HasFactory;`, with the new trait after it.
+- `AuthContext::team()`'s `@return` shape had not been given the new `key`.
+- The three baseline entries for `TeamController`'s `map()` callbacks described
+  the payload shapes without `key`; once the shapes changed, the ignores no
+  longer matched (which is itself an error) and the real mismatch surfaced.
+
+`make analyse` was added (and `make lint` now depends on it) so the local lint set
+is exactly the CI lint set — the AGENTS.md command list was updated to match.
+
+**Open items:** none for these three. `key` is derived from the id alone, so the
+same token names the row 1 of different tables; that is harmless (each route
+picks its own model and its own policy) but worth remembering if a global token
+map is ever introduced.
+
+**Merged and cleaned up.** Both PRs went in: #103 was made redundant and closed,
+#104 was squash-merged into `develop` as `c5a019b`. The squash carried **all
+seven commits**, including the two of #103, because #104 was stacked on #103 and
+a squash computes its diff against the **merge-base**, not against the base
+branch's tip. So the work of #102 shipped inside the #104 commit — worth
+remembering before stacking branches: the parent PR becomes redundant as soon as
+the child is merged, and it must be closed rather than merged (this branch's
+`Show.vue` is now *behind* `develop`, not ahead of it). `develop` was verified
+green after the squash.
+
+**Convention decided this session:** every issue is created **assigned to the
+maintainer** (`@bianquiviri`) — `gh issue create --assignee bianquiviri`.
+Recorded in AGENTS.md (new *Issues* section, #105); #101 and #102 were assigned
+retroactively.
+
+Extended immediately after, and backfilled: the rule covers **pull requests** as
+well (`gh pr create --assignee bianquiviri`, #107, in the *Pull Requests*
+section), and the whole history was assigned in one pass — **37 issues and 57
+pull requests**, all of them authored by the maintainer — leaving zero unassigned
+items in the repository.
+
+---
+
+## 2026-10-16 — Round 15: the Projects list was not navigable (#99)
+
+**Context:** The product owner asked for a review and fix of the **Projects
+view**. The review turned up three problems — one a real bug, two of them
+regressions from #93 that the owner spotted once the pages were put on a large
+screen.
+
+**Problem 1 — you could not open a project (the real bug).** `Pages/Projects/
+Index.vue` rendered each project as a plain `<li>` with the name and the
+description and **no link**: the component did not even import `Link`. From
+`/projects` there was literally no way to reach `/projects/{project}` — the
+board, the tasks, the people and the activity trail of a project were
+unreachable from the listing (the only entrances were the dashboard's "recent
+projects" and the task pages).
+
+**Problem 2 — a duplicated page container, systemic since #93.** `AppLayout`'s
+`<main>` already provides `px-4 py-gutter sm:px-6 lg:px-8`, but every
+authenticated page still carried its own `px-6 py-10` from before #93 (when the
+shell was dead code and the page container was the *only* padding). Measured in
+the browser at 390 px: text sits **40 px** from the edge on the un-fixed pages
+(shell 16 px + page 24 px) against **16 px** where the page padding is dropped.
+At wide viewports the effect was invisible — the page `max-w-*` bound and the
+centring is symmetric, so the extra padding cancelled out (measured: identical
+`x` with and without it).
+
+**Problem 3 — nothing scaled on a large screen (the real complaint).** Because
+each page capped itself with its own `max-w-*` while the shell imposed no cap,
+**every** authenticated view stopped growing once its cap was reached, and the
+wider the screen the worse the ratio. Measured at the full viewport width:
+
+| View | 1920 px (available 1568) | 2560 px (available 2208) |
+| ---- | ------------------------ | ------------------------ |
+| Dashboard | 1152 → 73% | 1152 → 52% |
+| Projects (list) | 896 → 57% | 896 → 41% |
+| Projects/{id} (board) | 1024 → 65% | 1024 → 46% |
+| Tasks | 896 → 57% | 896 → 41% |
+| Profile / Password | 768 → 49% | 768 → 35% |
+
+There is **no horizontal overflow** at any width (verified 320 → 2560: the
+`viewport` meta is correct, `scrollWidth == clientWidth` everywhere), so the
+symptom was purely the caps: a kanban board squeezed into 1024 px showed **five
+192 px columns** while 593 px of screen sat empty.
+
+**Changes (branch `bugfix/99-projects-view-shell`, issue [#99]):**
+
+- `Pages/Projects/Index.vue`: each row is now an Inertia `<Link>` to
+  `/projects/{project.id}` (the id-based key the rest of the app already uses —
+  no `getRouteKeyName` is defined, so binding is by primary key), wrapped in a
+  card with a hover state; the list became a responsive grid
+  (`sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4`) instead of one stretched row
+  per project.
+- **The container rule is now consistent across all 11 authenticated views**
+  (the owner chose to fix the whole app rather than Projects alone, to avoid
+  Projects looking tighter than its neighbours): the shell owns the padding, so
+  every page dropped its `px-6 py-10`, and the content pages dropped their
+  `max-w-*` cap — `Dashboard/Index`, `Projects/{Index,Show}`,
+  `Tasks/{Index,Show,Mine}`, `Teams/{Show,Settings}` now fill the shell
+  container. Only the single-column **forms** keep a narrow reading column
+  (`Profile/{Edit,Password}` at `max-w-3xl`, `Teams/Invitation` at `max-w-2xl`).
+  No spec asserted any of those classes.
+- `Pages/Projects/Index.spec.js`: +1 (*opens the project from its row*, asserting
+  both hrefs).
+
+**Result (measured in the browser after the change):**
+
+| View | before (1920) | after (1920) | after (2560) |
+| ---- | ------------- | ------------ | ------------ |
+| Dashboard | 73% | **100%** | 100% |
+| Projects (list) | 57% | **100%** (4 cards of 380 px) | 100% |
+| Projects board | 65% | **100%** (5 × 301 px) | 5 × 429 px |
+| Tasks | 57% | **100%** | 100% |
+| Profile (form) | 49% | 49% (intentionally narrow) | 35% |
+
+`overflowX` is still `0` at every width from 320 to 2560 on all six views.
+
+**Verification:** Pint 201 files · ESLint 0 · Pest **350** (2080 assertions) ·
+Vitest **539** (67 files) · Playwright **14** — all green. Measured by hand in
+the browser with a throwaway `qa.review@example.com` account (deleted
+afterwards): clicking a project lands on `/projects/{id}`, the Projects list
+lays out 4 columns at 1920 px, the kanban board renders 5 columns of 301 px
+(was 192 px), the mobile text inset is 16 px, and no view overflows
+horizontally between 320 px and 2560 px.
+
+**Status (end of session):** `main` = tag `v1.1.1`; `develop` `71c9710`; PR #98
+(shared sign-in form, #97) still open. Branch `bugfix/99-projects-view-shell`
+pushed with PR **#100** open against `develop`.
+
+---
+
+## 2026-10-16 — Round 14: a shared sign-in form for the login page and the landing (#97)
+
+**Context:** The Round-12 follow-up recorded in the Round-13 entry: the landing's
+inline sign-in form had a **plain password input** (no show/hide toggle) while
+`Pages/Auth/Login.vue` used `PasswordField`. #90 had deliberately left that as a
+shortcut (to keep the auth flow untouched), with a shared form as the follow-up.
+The v1.1.1 release from the previous session is logged in the Round-13 entry.
+
+**Changes (issue [#97], branch `feature/97-shared-login-form`):**
+
+- New **`Components/Auth/LoginForm.vue`** — the one sign-in form (email,
+  `PasswordField` with the show/hide toggle, "Remember me", the forgot-password
+  link and the submit button), posting to `POST /login`. It takes a single
+  `autofocus` prop; the page keeps its own heading, `AuthStatusMessage` and
+  "create an account" link, so `Pages/Auth/Login.vue` and
+  `Components/Landing/LandingSignIn.vue` now share the whole form.
+- **`PasswordField.vue` moved** `Pages/Auth/` → `Components/Auth/` (it is
+  reusable UI used by the login, register and reset-password forms) and the
+  `Register`/`ResetPassword` import paths were updated. No behaviour change.
+- The two forms had drifted on small details; they are now unified: the
+  checkbox focus-ring offset is `ring-offset-raised` (both sit on a `bg-raised`
+  card), the helper link weight is `font-medium`, the email field is `required`,
+  and the landing's form **gains the password show/hide toggle**. `autofocus`
+  remains the only intended difference (login only).
+- Tests: new `Components/Auth/LoginForm.spec.js` (7) + `LandingSignIn.spec.js`
+  +1 (reveals the password) + one e2e in `tests/e2e/welcome.spec.js` (the inline
+  form reveals the password). `PasswordField.spec.js` moved with the component.
+
+**Decisions:**
+
+- `LoginForm` lives in `Components/Auth/` (reusable UI), not `Pages/Auth/`, so
+  the landing can consume it without a Components → Pages import. Moving
+  `PasswordField` alongside it was the price; it is now used by three forms, so
+  it belongs in `Components/` anyway.
+- The register link and the status message stay in the pages: their copy differs
+  ("New to TaskFlow?" vs "New to {{ appName }}?") and the landing adds a top
+  border to that row, so pulling them into the shared form would add props for
+  no reuse.
+- Unifying the checkbox focus-ring offset to `ring-offset-raised` is a small
+  correctness fix on the landing: the form sits on a `bg-raised` card, so the
+  previous `ring-offset-canvas` offset colour was wrong.
+
+**Verification:** `make lint` green (Pint 201 files, ESLint 0) · `make test`
+**350 passed** · `make test-fe` **546 passed** (68 files; +8) · `make e2e`
+**15 passed** (+1). Verified in the browser: `/` shows the *Show password*
+toggle and a required email field; `/login` is unchanged (autofocus, toggle,
+remember, forgot, register link).
+
+**Status (end of session):** `main` = tag `v1.1.1` (`d1fdb3b`); `develop`
+`71c9710` + PR to be opened for #97. Open issues: **#23**, **#24** (deferred
+cloud slice). Next: merge #97, then the cloud phase.
 
 ---
 
@@ -134,10 +551,25 @@ chrome at all).
 entry with its actor, its action, its target and when it happened* compares two
 `now()` calls a few ms apart.
 
-**Status (end of session):** `develop` `50561c1` + PR **#94** open and green
-(6/6). Next: review/merge #94, then the remaining backlog — `frontend-agent`
-follow-ups (shared sign-in form for the landing), and the deferred cloud slice
-(#23/#24).
+**Release v1.1.1 (same session):** PR #94 was reviewed and merged into
+`develop` (`3f85ba4`), then released. Because the whole `#93` work sat only on
+`develop` (the v1.1.0 release branch had left `main` behind it), the delta
+`main..develop` was released as a **patch**: branch `release/v1.1.1` from
+`develop`, `CHANGELOG.md` gained the `[1.1.1] - 2026-10-16` section (Fixed: no
+app chrome, no sign-out, floating footer, oversized footer; Changed: brand
+lockup removed) and the link refs were rewired, PR **#95** → `main` merged
+(`d1fdb3b`, `--merge --admin`; the review rule has `enforce_admins: false`).
+Annotated tag `v1.1.1` pushed and the GitHub **Release** published as *Latest*
+(notes single-sourced from the CHANGELOG section). `main` was then **synced back
+into `develop`** as a clean fast-forward (`3f85ba4..d1fdb3b`, CHANGELOG-only) —
+unlike the round-11 sync-back, no conflict this time because `develop` had not
+touched the CHANGELOG since the release branch point.
+
+**Status (end of session):** `main` = `develop` = `d1fdb3b`, tag `v1.1.1` with a
+published GitHub Release (Latest). CI green on PR #94 and #95 (6/6). Open
+issues: **#23**, **#24** (deferred cloud slice). Next: the remaining backlog —
+`frontend-agent` follow-ups (shared sign-in form for the landing) and the cloud
+phase (#23/#24).
 
 ---
 

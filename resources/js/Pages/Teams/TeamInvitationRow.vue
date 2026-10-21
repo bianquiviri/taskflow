@@ -33,13 +33,13 @@ const formattedExpiry = computed(() =>
 );
 
 function resend() {
-    form.post(`/teams/${props.team.id}/invitations/${props.invitation.id}/resend`, {
+    form.post(`/teams/${props.team.key}/invitations/${props.invitation.key}/resend`, {
         preserveScroll: true,
     });
 }
 
 function cancel() {
-    form.delete(`/teams/${props.team.id}/invitations/${props.invitation.id}`, {
+    form.delete(`/teams/${props.team.key}/invitations/${props.invitation.key}`, {
         preserveScroll: true,
     });
 }

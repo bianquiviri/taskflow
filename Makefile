@@ -70,9 +70,12 @@ test-fe: ## Run frontend unit tests (Vitest)
 e2e: ## Run Playwright end-to-end tests (inside Docker)
 	docker compose --profile e2e run --rm e2e
 
-lint: ## Run Pint + ESLint
+lint: analyse ## Run Pint + ESLint + PHPStan (the same checks the CI lint job runs)
 	docker compose exec app ./vendor/bin/pint --test
 	docker compose exec node npm run lint
+
+analyse: ## Run PHPStan (Larastan) static analysis
+	docker compose exec app ./vendor/bin/phpstan analyse --memory-limit=1G --no-progress
 
 fix: ## Apply Pint fixes
 	docker compose exec app ./vendor/bin/pint

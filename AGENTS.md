@@ -34,6 +34,16 @@ main ─────────────────────────
 - Keep feature branches short-lived; rebase onto `develop` before opening a PR.
 - Never commit directly to `main` or `develop`.
 
+## Issues
+
+- **Every issue is created assigned to the maintainer** (`@bianquiviri`). Nothing
+  is left unassigned for later triage:
+  ```sh
+  gh issue create --assignee bianquiviri --title "..." --body "..."
+  ```
+- The issue is the entry point of every change: its number names the branch
+  (`feature/<id>-<slug>`) and it closes itself from the PR body (`Closes #<id>`).
+
 ## TDD — Test Driven Development (MANDATORY)
 
 1. RED: write a failing test describing the behaviour first.
@@ -47,7 +57,7 @@ main ─────────────────────────
   make test        # Pest
   make test-fe     # Vitest
   make e2e         # Playwright
-  make lint        # Pint + ESLint
+  make lint        # Pint + ESLint + PHPStan
   ```
 
 ## KISS & YAGNI
@@ -110,7 +120,11 @@ app/
 
 ## Pull Requests
 
-- Every PR links an issue and targets `develop`.
+- Every PR is created **assigned to the maintainer** (`@bianquiviri`), links an
+  issue and targets `develop`:
+  ```sh
+  gh pr create --assignee bianquiviri --base develop --title "..." --body "..."
+  ```
 - PR title uses conventional commits; description lists acceptance criteria.
 - CI must be green (lint + backend + frontend + coverage + e2e).
 - Reviewer(s) approve before merge; the author then squashes the branch.

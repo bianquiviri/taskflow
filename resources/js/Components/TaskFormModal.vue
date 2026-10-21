@@ -11,7 +11,7 @@ const DEFAULT_PRIORITY = 'medium';
 
 const props = defineProps({
     modelValue: { type: Boolean, default: false },
-    projectId: { type: [Number, String], default: null },
+    projectKey: { type: [Number, String], default: null },
     task: { type: Object, default: null },
     priorities: { type: Array, default: () => [] },
 });
@@ -21,8 +21,8 @@ const emit = defineEmits(['update:modelValue']);
 const isEditing = computed(() => Boolean(props.task));
 const dialogTitle = computed(() => (isEditing.value ? 'Edit task' : 'New task'));
 const url = computed(() => (isEditing.value
-    ? `/tasks/${props.task.id}`
-    : `/projects/${props.projectId}/tasks`));
+    ? `/tasks/${props.task.key}`
+    : `/projects/${props.projectKey}/tasks`));
 
 const form = useForm({
     title: '',

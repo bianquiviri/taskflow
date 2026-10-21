@@ -67,7 +67,7 @@ function formatDate(value) {
         <div class="flex items-start justify-between gap-4">
           <div class="min-w-0">
             <Link
-              :href="`/tasks/${task.id}`"
+              :href="`/tasks/${task.key}`"
               class="font-semibold text-content hover:text-brand-text"
             >
               {{ task.title }}

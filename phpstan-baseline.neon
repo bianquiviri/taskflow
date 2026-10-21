@@ -133,19 +133,19 @@ parameters:
 			path: app/Http/Controllers/TeamController.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: mixed, email\: string\|null, role\: mixed, status\: string, expiresAt\: mixed, canBeResent\: bool, canBeCancelled\: bool\}, Closure\(App\\Models\\TeamInvitation\)\: array\{id\: mixed, email\: string\|null, role\: mixed, status\: string, expiresAt\: mixed, canBeResent\: bool, canBeCancelled\: bool\} given\.$#'
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: mixed, key\: string, email\: string\|null, role\: mixed, status\: string, expiresAt\: mixed, canBeResent\: bool, canBeCancelled\: bool\}, Closure\(App\\Models\\TeamInvitation\)\: array\{id\: mixed, key\: string, email\: string\|null, role\: mixed, status\: string, expiresAt\: mixed, canBeResent\: bool, canBeCancelled\: bool\} given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Http/Controllers/TeamController.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: mixed, name\: mixed, email\: mixed, role\: mixed, canBeRemoved\: bool, canBeReassigned\: bool\}, Closure\(App\\Models\\TeamMember\)\: array\{id\: mixed, name\: mixed, email\: mixed, role\: mixed, canBeRemoved\: bool, canBeReassigned\: bool\} given\.$#'
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: mixed, key\: string, name\: mixed, email\: mixed, role\: mixed, canBeRemoved\: bool, canBeReassigned\: bool\}, Closure\(App\\Models\\TeamMember\)\: array\{id\: mixed, key\: string, name\: mixed, email\: mixed, role\: mixed, canBeRemoved\: bool, canBeReassigned\: bool\} given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Http/Controllers/TeamController.php
 
 		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: mixed, name\: mixed, email\: mixed, role\: mixed, canBeRemoved\: bool\}, Closure\(App\\Models\\TeamMember\)\: array\{id\: mixed, name\: mixed, email\: mixed, role\: mixed, canBeRemoved\: bool\} given\.$#'
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: mixed, key\: string, name\: mixed, email\: mixed, role\: mixed, canBeRemoved\: bool\}, Closure\(App\\Models\\TeamMember\)\: array\{id\: mixed, key\: string, name\: mixed, email\: mixed, role\: mixed, canBeRemoved\: bool\} given\.$#'
 			identifier: argument.type
 			count: 1
 			path: app/Http/Controllers/TeamController.php
