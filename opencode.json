@@ -3,38 +3,37 @@
   "default_agent": "scaffolder",
   "instructions": ["AGENTS.md", "docs/ARCHITECTURE.md", "docs/DEVLOG.md"],
   "mcp": {
-    "github": {
-      "type": "remote",
-      "url": "https://api.githubcopilot.com/mcp/",
-      "enabled": true,
-      "headers": {
-        "Authorization": "Bearer {env:GITHUB_TOKEN}"
+    "servers": {
+      "github": {
+        "type": "remote",
+        "url": "https://api.githubcopilot.com/mcp/",
+        "oauth": false,
+        "headers": {
+          "Authorization": "Bearer {file:~/.config/opencode/github-token}"
+        }
+      },
+      "playwright": {
+        "type": "local",
+        "command": ["npx", "-y", "@playwright/mcp@latest"],
+        "environment": {
+          "BROWSER": "chromium"
+        }
+      },
+      "mysql": {
+        "type": "local",
+        "command": ["npx", "-y", "@benborla29/mcp-server-mysql"],
+        "environment": {
+          "MYSQL_HOST": "127.0.0.1",
+          "MYSQL_PORT": "3306",
+          "MYSQL_USER": "taskflow",
+          "MYSQL_PASS": "taskflow",
+          "MYSQL_DB": "taskflow"
+        }
+      },
+      "docker": {
+        "type": "local",
+        "command": ["docker", "mcp", "gateway", "run"]
       }
-    },
-    "playwright": {
-      "type": "local",
-      "command": ["npx", "-y", "@playwright/mcp@latest"],
-      "enabled": true,
-      "env": {
-        "BROWSER": "chromium"
-      }
-    },
-    "mysql": {
-      "type": "local",
-      "command": ["npx", "-y", "@benborla29/mcp-server-mysql"],
-      "enabled": true,
-      "env": {
-        "MYSQL_HOST": "127.0.0.1",
-        "MYSQL_PORT": "3306",
-        "MYSQL_USER": "taskflow",
-        "MYSQL_PASS": "taskflow",
-        "MYSQL_DB": "taskflow"
-      }
-    },
-    "docker": {
-      "type": "local",
-      "command": ["docker", "mcp", "gateway", "run"],
-      "enabled": true
     }
   },
   "agent": {

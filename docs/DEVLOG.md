@@ -30,6 +30,116 @@ of truth for the project's evolution.
 
 ---
 
+## 2026-10-21 — Round 19: the GitHub MCP server never connected (#111)
+
+**Context:** The session opened with another failed OpenCode component:
+
+```
+MCP server: github — failed
+Error POSTing to endpoint: bad request: Authorization header is badly formatted
+ (HTTP 400)
+```
+
+Like #109, this was **not a regression**: the `github` server had never
+connected since the scaffold (2026-09-17) — the log carries the same 400 on
+every attempt since then.
+
+**Root cause:** `opencode.json` read the credential from an environment
+variable:
+
+```jsonc
+"headers": { "Authorization": "Bearer {env:GITHUB_TOKEN}" }
+```
+
+`GITHUB_TOKEN` is **not defined in the environment of the OpenCode background
+service** — verified with `ps eww -p <service pid>`: zero `GITHUB*` variables.
+It is set in no shell rc file, in no `.env`, and in no global config. The
+OpenCode configuration reference is explicit:
+
+> If the environment variable is not set, it will be replaced with an empty string.
+
+So the header went out as `Authorization: Bearer ` — the scheme with **no
+credential** — and `api.githubcopilot.com` rejects that shape with exactly the
+reported 400. Reproduced directly against the endpoint:
+
+| `Authorization` header            | Result                                             |
+| --------------------------------- | -------------------------------------------------- |
+| *(absent)*                        | 401 `missing required Authorization header`         |
+| `Bearer ` (empty credential)      | **400 `Authorization header is badly formatted`**   |
+| `Bearer <valid token>`            | 200 — the MCP `initialize` handshake succeeds       |
+
+The OAuth path was dead too: the log shows `mcp oauth authorization setup
+failed — Incompatible auth server: does not support dynamic client
+registration`, i.e. GitHub's authorization server supports neither DCR nor CIMD,
+so `oauth` cannot complete without a pre-registered client. Header
+authentication is the supported path.
+
+**Fix (issue [#111], branch `bugfix/111-github-mcp-auth`):**
+
+- The credential is now read from a **file** through the `{file:...}`
+  substitution — `"Authorization": "Bearer {file:~/.config/opencode/github-token}"`.
+  A file works where an environment variable did not: it does not depend on the
+  background service inheriting a shell's environment, so it survives a service
+  restart or a reboot. The file lives **outside the repository**
+  (`~/.config/opencode/github-token`, mode `0600`) and is never committed.
+  One-time setup (documented in the README):
+  `printf '%s' "$(gh auth token)" > ~/.config/opencode/github-token` — it reuses
+  the token the `gh` CLI already keeps in the macOS keychain, so no new
+  credential had to be minted.
+- `"oauth": false` on the `github` server: the credential is a header
+  credential, and the OAuth route is unusable against GitHub's authorization
+  server anyway. Without it, the TUI offers a *Connect* button that can only
+  fail.
+- **The whole `mcp` block was migrated to the V2 shape `mcp.servers`.** The
+  flat `mcp.<name>` form still works in 2.0.32, but the published schema marks
+  it `deprecated: true` and it is no longer the documented shape. The migration
+  also fixed a **second, independent bug**: the local servers' environment block
+  was keyed `env`, while the schema only accepts `environment` — so the MySQL
+  credentials were never passed to the child process and the `mysql` server had
+  been failing with `process exited with code 1` (visible in `opencode mcp
+  list`, dismissed as npm noise in the earlier rounds). It is now `environment`
+  and it connects.
+
+**Verification:** `opencode.json` validates cleanly against
+`https://opencode.ai/config.json` (a schema walk over the old shape reports
+`playwright` and `mysql` as matching none of the branches). All four servers
+connect:
+
+```
+$ opencode mcp list
+✓ docker      connected
+✓ github      connected
+✓ mysql       connected
+✓ playwright  connected
+```
+
+`github.get_me` answers with the authenticated account, and the 46 GitHub tools
+are exposed in the session. `make lint` green · `make test` **365 passed**
+(2109 assertions).
+
+**Decisions:**
+
+- **File over environment variable**, not the other way round: the failure was
+  caused by an environment variable that the MCP host never inherits; the same
+  reasoning that made the #101 route keys and the `IdCipher` deterministic
+  applies — pick the mechanism that cannot silently degrade. A missing file
+  also expands to an empty string, but the README documents the setup and the
+  failure mode is now visible (`401`) rather than a confusing 400.
+- **Reuse the `gh` keychain token** instead of minting a new PAT: it already
+  carries `repo`, `workflow`, `read:org`, `user` and `gist`, which is
+  everything the MCP server needs.
+- **OAuth was not pursued**: it would require a pre-registered client id, which
+  GitHub does not publish for arbitrary third-party MCP clients. Header
+  authentication is documented and verified working.
+- The token file stays **outside the working tree**, so no `.gitignore` entry
+  was needed and the repository still contains no secret.
+
+**Status (end of session):** `develop` `b17e321` (PR #110 for #109 merged
+first, so this branch carries only the #111 work). Issue [#111] opened. Next:
+push + PR to `develop`.
+
+---
+
 ## 2026-10-20 — Round 18: the docker MCP server never started (#109)
 
 **Context:** The session opened with a failed OpenCode component:

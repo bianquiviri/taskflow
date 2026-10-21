@@ -106,6 +106,39 @@ send in production. If the Mailpit inbox stays empty, check the app logs
 (`make logs`) for the `queue-worker` program and confirm `.env` keeps
 `QUEUE_CONNECTION=redis` (the default in `.env.example`).
 
+### MCP servers (OpenCode)
+
+`opencode.json` wires four MCP servers: `github` (remote), `playwright`,
+`mysql` and `docker`. Check their state with:
+
+```sh
+opencode mcp list
+```
+
+Three of them need nothing beyond the stack already running. The `github`
+server needs a credential — it talks to `api.githubcopilot.com/mcp/` with a
+Personal Access Token, read from a file **outside the repository** so it is
+never committed:
+
+```sh
+# one-time setup (reuses the token already stored in the macOS keychain by `gh`)
+umask 077
+printf '%s' "$(gh auth token)" > ~/.config/opencode/github-token
+
+opencode mcp list   # → ✓ github connected
+```
+
+`opencode.json` reads it through the `{file:...}` substitution
+(`"Authorization": "Bearer {file:~/.config/opencode/github-token}"`). A token
+with the `repo` scope is enough. To use a different token, replace the file
+contents and restart OpenCode — no secret ever enters the working tree.
+
+> The credential is **not** read from an environment variable on purpose:
+> OpenCode runs its MCP connections in a background service that does not
+> inherit the shell's environment, so `{env:GITHUB_TOKEN}` would silently
+> expand to an empty string and the server would answer
+> `400 Authorization header is badly formatted`.
+
 ## GitFlow
 
 - `main` — production. Protected: merges only via PR from `develop` with CI green.
