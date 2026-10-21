@@ -9,6 +9,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing yet.
 
+## [1.2.0] - 2026-10-21
+
+Feature release: opaque resource ids in URLs, one shared sign-in form, a
+navigable and scalable project view, and the two MCP servers that had never
+connected.
+
+### Added
+
+- **Encrypted resource ids in URLs** (#101) — every route that addresses a
+  project, task, team, membership, invitation or attachment now carries an
+  opaque token instead of a sequential primary key. `app/Support/IdCipher.php`
+  (AES-256-CBC with a synthetic IV derived from the plaintext and sealed under
+  `APP_KEY`) is **deterministic**, so `route()` stays stable, and
+  **self-checking**: an edited token resolves to nothing instead of pointing at
+  another record. `HasEncryptedRouteKey` decrypts it in
+  `resolveRouteBindingQuery()` (scoped child bindings included) and serialises
+  it as `key` beside the numeric `id`. **A numeric id in a URL is now a 404**,
+  so old bookmarks break by design.
+- **Shared sign-in form** (#97) — `Components/Auth/LoginForm.vue` is now the one
+  sign-in form, consumed by both `Pages/Auth/Login.vue` and the landing page's
+  inline card. `PasswordField` moved to `Components/Auth/` (three forms use it
+  now); the landing's form gains the password show/hide toggle and a required
+  email field, and its checkbox focus-ring offset was corrected to
+  `ring-offset-raised` (the landing card sits on `bg-raised`).
+- **Demo seeder** (#102) — `database/seeders/DemoSeeder.php` seeds every domain
+  table (users, teams, memberships, invitations, projects, project members,
+  tasks in every status, comments, attachments on the private disk, the
+  activity trail they generate and the mention notifications behind them). It
+  goes through the real Actions with `Auth::login()` per actor, so the
+  observers stamp real actors and the data obeys the domain rules.
+
+### Fixed
+
+- **The projects list was not navigable** (#99) — each row was a plain `<li>`
+  with no link, so from `/projects` there was no way to reach a project's board,
+  tasks, people or activity trail.
+- **Every view stopped scaling on a large screen** (#99) — each authenticated
+  page capped itself with its own `max-w-*` while the shell imposed no cap, so
+  the wider the screen the worse the ratio (the projects list filled 57% of a
+  1920 px viewport and 41% of a 2560 px one). The shell now owns the padding
+  and the pages dropped their own `px-6 py-10` and their caps; only the
+  single-column forms keep a narrow reading column.
+- **The docker MCP server never started** (#109) — `opencode.json` launched
+  `npx -y mcp-docker`, a third-party package that declares no `bin` field and
+  imports modules it does not depend on. It now runs the official Docker MCP
+  Toolkit gateway that ships with the local Docker CLI
+  (`docker mcp gateway run`).
+- **The GitHub MCP server never connected** (#111) — the credential was read
+  from `{env:GITHUB_TOKEN}`, a variable the OpenCode background service does
+  not inherit, so the header went out as `Authorization: Bearer ` (empty
+  credential) and GitHub answered `400 Authorization header is badly
+  formatted`. The credential is now read from a **file**
+  (`{file:~/.config/opencode/github-token}`), which survives a service restart
+  or a reboot, and the `mcp` block was migrated to the current `mcp.servers`
+  shape — which also fixed the `mysql` server, whose env block was keyed `env`
+  instead of `environment`, so the MySQL credentials never reached the child
+  process.
+
+### Changed
+
+- **Issues and pull requests are assigned to the maintainer** (#105, #107) —
+  `AGENTS.md` records the rule for both, and the whole history was backfilled
+  in one pass: 37 issues and 57 pull requests, zero left unassigned.
+- **The local lint set now equals the CI lint set** (#101) — `make lint` also
+  runs `make analyse` (PHPStan/Larastan), so the 12 static-analysis errors that
+  only CI caught cannot slip through locally again.
+
 ## [1.1.1] - 2026-10-16
 
 Maintenance release: the authenticated application shell is finally wired up.
@@ -167,7 +234,8 @@ parallel agent rounds on `develop`, all green on 6 CI checks.
   `feature/21-cloud-run` and `feature/22-managed-data` branches, unmerged and
   unverified against a real GCP project.
 
-[Unreleased]: https://github.com/bianquiviri/taskflow/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/bianquiviri/taskflow/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/bianquiviri/taskflow/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/bianquiviri/taskflow/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/bianquiviri/taskflow/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/bianquiviri/taskflow/compare/v1.0.0...v1.0.1
