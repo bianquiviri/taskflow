@@ -55,9 +55,7 @@
     "taskflow": {
       "type": "local",
       "command": [
-        "php",
-        "artisan",
-        "mcp:serve"
+        "/Users/bianquiviri/Code/taskflow/scripts/mcp-taskflow.sh"
       ],
       "enabled": true,
       "env": {
