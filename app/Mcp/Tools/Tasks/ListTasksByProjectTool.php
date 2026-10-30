@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace App\Mcp\Tools\Tasks;
 
+use App\Enums\TaskPriority;
+use App\Enums\TaskStatus;
 use App\Mcp\Support\McpResponse;
 use App\Models\Project;
 use App\Models\Task;
+use App\Support\IdCipher;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use PhpMcp\Server\Attributes\McpTool;
@@ -22,7 +27,12 @@ final class ListTasksByProjectTool
             throw new \RuntimeException('Not authenticated in MCP context.');
         }
 
-        $project = Project::whereKey($projectKey)->firstOrFail();
+        $projectId = app(IdCipher::class)->decrypt($projectKey);
+        $project = $projectId === null ? null : Project::findOrFail($projectId);
+
+        if ($project === null) {
+            throw (new ModelNotFoundException())->setModel(Project::class);
+        }
 
         Gate::authorize('view', $project);
 
@@ -51,14 +61,23 @@ final class ListTasksByProjectTool
             ->limit(max(1, min($limit ?? 50, 100)))
             ->get();
 
-        $items = $tasks->map(function (Task $task) {
+        $items = $tasks->map(function (Task $task): array {
+            /** @var TaskStatus $status */
+            $status = $task->status;
+
+            /** @var TaskPriority $priority */
+            $priority = $task->priority;
+
+            /** @var Carbon|null $dueDate */
+            $dueDate = $task->due_date;
+
             return [
                 'key' => $task->getRouteKey(),
                 'id' => $task->id,
                 'title' => $task->title,
-                'status' => $task->status instanceof \UnitEnum ? $task->status->value : $task->status,
-                'priority' => $task->priority instanceof \UnitEnum ? $task->priority->value : $task->priority,
-                'due_date' => $task->due_date?->toDateString(),
+                'status' => $status->value,
+                'priority' => $priority->value,
+                'due_date' => $dueDate?->toDateString(),
                 'assignee' => $task->assignee ? [
                     'id' => $task->assignee->id,
                     'name' => $task->assignee->name,

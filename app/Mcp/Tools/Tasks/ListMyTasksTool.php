@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace App\Mcp\Tools\Tasks;
 
+use App\Enums\TaskPriority;
+use App\Enums\TaskStatus;
 use App\Mcp\Support\McpResponse;
 use App\Models\Task;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use PhpMcp\Server\Attributes\McpTool;
 
@@ -22,7 +25,7 @@ final class ListMyTasksTool
 
         $query = Task::query()
             ->where('assignee_id', $user->id)
-            ->with(['project:id,name,key']);
+            ->with(['project:id,name']);
 
         if (is_array($status) && $status !== []) {
             $query->whereIn('status', $status);
@@ -47,14 +50,23 @@ final class ListMyTasksTool
             ->limit(max(1, min($limit ?? 50, 100)))
             ->get();
 
-        $items = $tasks->map(function (Task $task) {
+        $items = $tasks->map(function (Task $task): array {
+            /** @var TaskStatus $status */
+            $status = $task->status;
+
+            /** @var TaskPriority $priority */
+            $priority = $task->priority;
+
+            /** @var Carbon|null $dueDate */
+            $dueDate = $task->due_date;
+
             return [
                 'key' => $task->getRouteKey(),
                 'id' => $task->id,
                 'title' => $task->title,
-                'status' => $task->status instanceof \UnitEnum ? $task->status->value : $task->status,
-                'priority' => $task->priority instanceof \UnitEnum ? $task->priority->value : $task->priority,
-                'due_date' => $task->due_date?->toDateString(),
+                'status' => $status->value,
+                'priority' => $priority->value,
+                'due_date' => $dueDate?->toDateString(),
                 'project' => $task->project ? [
                     'key' => $task->project->getRouteKey(),
                     'id' => $task->project->id,

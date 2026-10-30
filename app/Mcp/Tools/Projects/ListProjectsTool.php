@@ -6,6 +6,7 @@ namespace App\Mcp\Tools\Projects;
 
 use App\Mcp\Support\McpResponse;
 use App\Models\Project;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use PhpMcp\Server\Attributes\McpTool;
 
@@ -43,14 +44,17 @@ final class ListProjectsTool
             ->limit(max(1, min($limit ?? 50, 100)))
             ->get();
 
-        $items = $projects->map(function (Project $project) {
+        $items = $projects->map(function (Project $project): array {
+            /** @var Carbon|null $archivedAt */
+            $archivedAt = $project->archived_at;
+
             return [
                 'key' => $project->getRouteKey(),
                 'id' => $project->id,
                 'name' => $project->name,
                 'description' => $project->description,
                 'slug' => $project->slug,
-                'archived_at' => $project->archived_at?->toISOString(),
+                'archived_at' => $archivedAt?->toISOString(),
             ];
         })->all();
 

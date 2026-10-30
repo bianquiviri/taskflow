@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace App\Mcp\Tools\Tasks;
 
+use App\Enums\TaskPriority;
+use App\Enums\TaskStatus;
 use App\Mcp\Support\McpResponse;
 use App\Models\Task;
+use App\Support\IdCipher;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use PhpMcp\Server\Attributes\McpTool;
@@ -21,11 +26,23 @@ final class GetTaskTool
             throw new \RuntimeException('Not authenticated in MCP context.');
         }
 
-        $task = Task::whereKey($taskKey)
-            ->with(['project', 'assignee', 'creator'])
-            ->firstOrFail();
+        $taskId = app(IdCipher::class)->decrypt($taskKey);
+        $task = $taskId === null ? null : Task::with(['project', 'assignee'])->findOrFail($taskId);
+
+        if ($task === null) {
+            throw (new ModelNotFoundException())->setModel(Task::class);
+        }
 
         Gate::authorize('view', $task);
+
+        /** @var TaskStatus $status */
+        $status = $task->status;
+
+        /** @var TaskPriority $priority */
+        $priority = $task->priority;
+
+        /** @var Carbon|null $dueDate */
+        $dueDate = $task->due_date;
 
         return McpResponse::json([
             'task' => [
@@ -33,9 +50,9 @@ final class GetTaskTool
                 'id' => $task->id,
                 'title' => $task->title,
                 'description' => $task->description,
-                'status' => $task->status instanceof \UnitEnum ? $task->status->value : $task->status,
-                'priority' => $task->priority instanceof \UnitEnum ? $task->priority->value : $task->priority,
-                'due_date' => $task->due_date?->toDateString(),
+                'status' => $status->value,
+                'priority' => $priority->value,
+                'due_date' => $dueDate?->toDateString(),
                 'position' => $task->position,
                 'project' => $task->project ? [
                     'key' => $task->project->getRouteKey(),
@@ -46,11 +63,6 @@ final class GetTaskTool
                     'id' => $task->assignee->id,
                     'name' => $task->assignee->name,
                     'email' => $task->assignee->email,
-                ] : null,
-                'creator' => $task->creator ? [
-                    'id' => $task->creator->id,
-                    'name' => $task->creator->name,
-                    'email' => $task->creator->email,
                 ] : null,
                 'created_at' => $task->created_at?->toISOString(),
                 'updated_at' => $task->updated_at?->toISOString(),
