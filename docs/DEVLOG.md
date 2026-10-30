@@ -30,6 +30,42 @@ of truth for the project's evolution.
 
 ---
 
+## 2026-10-30 — Hotfix round: MCP lint blockers repaired + activity feed flake
+
+**Context:** follow-up on the `feature/115-taskflow-mcp-server` work-in-progress:
+the branch was red on `make lint` (PHPStan) and carried a corrupted lockfile.
+
+**What was fixed:**
+
+- `package-lock.json`: restored via `git checkout --` — it had been corrupted by
+  an accidental npm regeneration outside the project (the Round-11 fingerprint:
+  `name: taskflow` → `html`, dropped `libc` fields). No dependency change.
+- `app/Mcp/Tools/Projects/ListProjectsTool.php`: added the `Carbon` import and a
+  `/** @var Carbon|null $archivedAt */` annotation (PHPStan: `toISOString()` on
+  string); fixed the unresolvable-type error on the `map` closure.
+- `app/Mcp/Tools/Tasks/GetTaskTool.php`, `ListMyTasksTool.php`,
+  `ListTasksByProjectTool.php`: removed the always-true `instanceof TaskStatus` /
+  `instanceof TaskPriority` ternaries (native enums already narrow the type) and
+  read `->value` directly.
+- `phpstan-baseline.neon`: regenerated; removed 7 stale ignore entries that no
+  longer matched (AddCommentAction, AssignTaskAction, CommentPolicy, TaskPolicy)
+  — they became obsolete once the `@return` relation docblocks landed on `Task`.
+- `app/Models/Task.php`: Pint formatting fix (missing blank line between methods).
+- `tests/Feature/ActivityFeedTest.php`: fixed the known flake — the assertion
+  compared against two fresh `now()` calls; it now compares against the persisted
+  `created_at` of the created entry.
+
+**Verification:** `make lint` green (PHPStan `[OK] No errors` · Pint PASS 224
+files · ESLint ✓) · `make test` **372 passed** (2116 assertions, 12 processes) ·
+MCP tool tests **7 passed**.
+
+**Status (end of session):** bug-fixing round on `feature/115-taskflow-mcp-server`.
+The branch still carries the uncommitted #115 WIP (McpUserResolver, GetDashboard-
+SummaryTool, GetProjectTool, config/mcp.php, opencode.json, tests/Feature/Mcp).
+Next: commit the fixes, push, and open the PR to `develop`.
+
+---
+
 ## 2026-10-29 — Round 21: TaskFlow exposed as a local MCP server (#115)
 
 **Context:** The product asked to make TaskFlow usable by OpenCode as an MCP
