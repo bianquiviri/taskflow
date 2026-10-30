@@ -21,6 +21,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | MCP User Resolution
+    |--------------------------------------------------------------------------
+    |
+    | The local user the MCP tools run as. MCP clients authenticate through
+    | this user so tools reuse the same policies and services as the app.
+    |
+    */
+    'user' => [
+        'id' => env('MCP_USER_ID'),
+        'email' => env('MCP_USER_EMAIL'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | MCP Discovery Configuration
     |--------------------------------------------------------------------------
     |

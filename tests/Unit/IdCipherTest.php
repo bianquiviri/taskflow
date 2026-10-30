@@ -50,5 +50,8 @@ it('refuses a token whose ciphertext was tampered with', function () {
     $cipher = app(IdCipher::class);
     $token = $cipher->encrypt(42);
 
-    expect($cipher->decrypt(substr($token, 0, -1).'A'))->toBeNull();
+    $chars = str_split($token);
+    $chars[count($chars) - 1] = $chars[count($chars) - 1] === 'A' ? 'B' : 'A';
+
+    expect($cipher->decrypt(implode('', $chars)))->toBeNull();
 });

@@ -11,8 +11,8 @@ final class McpUserResolver
 {
     public function resolve(): User
     {
-        $userId = env('MCP_USER_ID');
-        $userEmail = env('MCP_USER_EMAIL');
+        $userId = config('mcp.user.id');
+        $userEmail = config('mcp.user.email');
 
         if (is_string($userId) && $userId !== '') {
             $user = User::find((int) $userId);
