@@ -30,6 +30,31 @@ of truth for the project's evolution.
 
 ---
 
+## 2026-10-30 — Issue #117: MCP tool coverage completed (tests for every tool)
+
+**Context:** continuing with issue #117 — the MCP tools misresolve encrypted keys and
+`tasks.mine` always crashed.
+
+**What was done:**
+
+- `GetProjectToolTest`: added the policy-denial case (outsider → `AuthorizationException`).
+- `GetTaskToolTest`: added the policy-denial case (outsider → `AuthorizationException`).
+- `ListTasksByProjectToolTest`: added the forged/unknown-key case (→ `ModelNotFoundException`)
+  and the policy-denial case (→ `AuthorizationException`).
+- `ListMyTasksToolTest`: strengthened the happy path to assert the returned task
+  carries the encrypted `key`.
+- `make lint && make test` green again after the IdCipher tamper-test fix
+  (376 Pest passed, 2121 assertions).
+
+**Verification:** `make lint` green · `make test` **376 passed** · MCP tool tests **11 passed**.
+
+**Status (end of session):** issue #117 — encrypted-key resolution, the `tasks.mine` SQL
+fix and the `dashboard.summary` fix are in the branch (via PR #116 plus the hotfix commits);
+the missing tool tests are now in place. Next: commit, push, and let PR #118 checks go green
+again.
+
+---
+
 ## 2026-10-30 — Hotfix round: MCP lint blockers repaired + activity feed flake
 
 **Context:** follow-up on the `feature/115-taskflow-mcp-server` work-in-progress:
