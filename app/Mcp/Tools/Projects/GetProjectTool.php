@@ -6,6 +6,9 @@ namespace App\Mcp\Tools\Projects;
 
 use App\Mcp\Support\McpResponse;
 use App\Models\Project;
+use App\Support\IdCipher;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use PhpMcp\Server\Attributes\McpTool;
@@ -21,9 +24,17 @@ final class GetProjectTool
             throw new \RuntimeException('Not authenticated in MCP context.');
         }
 
-        $project = Project::whereKey($projectKey)->firstOrFail();
+        $projectId = app(IdCipher::class)->decrypt($projectKey);
+        $project = $projectId === null ? null : Project::findOrFail($projectId);
+
+        if ($project === null) {
+            throw (new ModelNotFoundException())->setModel(Project::class);
+        }
 
         Gate::authorize('view', $project);
+
+        /** @var Carbon|null $archivedAt */
+        $archivedAt = $project->archived_at;
 
         $project->loadCount('tasks');
 
@@ -34,7 +45,7 @@ final class GetProjectTool
                 'name' => $project->name,
                 'description' => $project->description,
                 'slug' => $project->slug,
-                'archived_at' => $project->archived_at?->toISOString(),
+                'archived_at' => $archivedAt?->toISOString(),
                 'tasks_count' => $project->tasks_count,
             ],
         ]);
