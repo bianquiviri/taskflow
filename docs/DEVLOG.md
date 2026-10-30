@@ -30,6 +30,107 @@ of truth for the project's evolution.
 
 ---
 
+## 2026-10-30 — Hotfix round: MCP lint blockers repaired + activity feed flake
+
+**Context:** follow-up on the `feature/115-taskflow-mcp-server` work-in-progress:
+the branch was red on `make lint` (PHPStan) and carried a corrupted lockfile.
+
+**What was fixed:**
+
+- `package-lock.json`: restored via `git checkout --` — it had been corrupted by
+  an accidental npm regeneration outside the project (the Round-11 fingerprint:
+  `name: taskflow` → `html`, dropped `libc` fields). No dependency change.
+- `app/Mcp/Tools/Projects/ListProjectsTool.php`: added the `Carbon` import and a
+  `/** @var Carbon|null $archivedAt */` annotation (PHPStan: `toISOString()` on
+  string); fixed the unresolvable-type error on the `map` closure.
+- `app/Mcp/Tools/Tasks/GetTaskTool.php`, `ListMyTasksTool.php`,
+  `ListTasksByProjectTool.php`: removed the always-true `instanceof TaskStatus` /
+  `instanceof TaskPriority` ternaries (native enums already narrow the type) and
+  read `->value` directly.
+- `phpstan-baseline.neon`: regenerated; removed 7 stale ignore entries that no
+  longer matched (AddCommentAction, AssignTaskAction, CommentPolicy, TaskPolicy)
+  — they became obsolete once the `@return` relation docblocks landed on `Task`.
+- `app/Models/Task.php`: Pint formatting fix (missing blank line between methods).
+- `tests/Feature/ActivityFeedTest.php`: fixed the known flake — the assertion
+  compared against two fresh `now()` calls; it now compares against the persisted
+  `created_at` of the created entry.
+
+**Verification:** `make lint` green (PHPStan `[OK] No errors` · Pint PASS 224
+files · ESLint ✓) · `make test` **372 passed** (2116 assertions, 12 processes) ·
+MCP tool tests **7 passed**.
+
+**Status (end of session):** bug-fixing round on `feature/115-taskflow-mcp-server`.
+The branch still carries the uncommitted #115 WIP (McpUserResolver, GetDashboard-
+SummaryTool, GetProjectTool, config/mcp.php, opencode.json, tests/Feature/Mcp).
+Next: commit the fixes, push, and open the PR to `develop`.
+
+---
+
+## 2026-10-29 — Round 21: TaskFlow exposed as a local MCP server (#115)
+
+**Context:** The product asked to make TaskFlow usable by OpenCode as an MCP
+server (stdio). Goal: expose a read-only subset of TaskFlow's domain while
+reusing the existing architecture (`Actions`, `Policies`, `Services`, `Models`)
+instead of duplicating business logic.
+
+**Approach:** Install **`php-mcp/laravel` v4.0** (adds Laravel 13 support),
+wire a local stdio server, authenticate as a configured user from the
+environment, and register tools that delegate to policies and services.
+
+**What shipped (branch `feature/115-taskflow-mcp-server`, issue [#115]):**
+
+- **Dependencies / scaffolding:** `php-mcp/laravel:^4.0` installed via composer
+  (and `php-mcp/server`), config published to `config/mcp.php` (renamed server
+  to `TaskFlow`), MCP sessions migration published and run, `routes/mcp.php`
+  created.
+- **Auth for MCP (stdio):** `App\Mcp\Auth\McpUserResolver` logs in the user
+  resolved from `MCP_USER_ID` or `MCP_USER_EMAIL` (throws a clear error if
+  missing). `App\Providers\McpServiceProvider` boots in console only when
+  running `mcp:serve` and calls the resolver so every tool runs as that
+  authenticated user. Registered in `bootstrap/providers.php`.
+- **Tools (read-only MVP):** invokable/attribute-style tools under
+  `app/Mcp/Tools/` registered in `routes/mcp.php`:
+  `taskflow.projects.list` (member-only, archived/search/limit),
+  `taskflow.projects.get` (by encrypted `key`, authorized via `ProjectPolicy`),
+  `taskflow.teams.list` (teams the user belongs to with role),
+  `taskflow.tasks.mine` (assigned to user, filters status/priority/due/limit),
+  `taskflow.tasks.by_project` (project membership + policy checked),
+  `taskflow.tasks.get` (by encrypted `key`, `TaskPolicy::view`),
+  `taskflow.dashboard.summary` (uses `DashboardMetricsService`, gated by
+  `ProjectPolicy` viewAny).
+- **Integration:** added `taskflow` to `opencode.json` as a local stdio server
+  pointing to `php artisan mcp:serve` with `MCP_USER_EMAIL=owner@taskflow.test`.
+- **Formatting helper:** `App\Mcp\Support\McpResponse::json()` for consistent
+  output.
+
+**Decisions:**
+
+- **`php-mcp/laravel` v4.0 over v3.x:** v3 only supports up to Laravel 12; v4
+  adds Laravel 13 support.
+- **stdio first:** simplest for local OpenCode usage. Auth via env is
+  acceptable for local dev and keeps the surface small.
+- **Encrypt keys everywhere:** tools accept/return the encrypted route keys
+  (`projectKey`/`taskKey`) to stay consistent with Round 17's encrypted-URL
+  design.
+- **Reuse existing gates:** policies and `DashboardMetricsService` are used
+  directly (no new authorization logic). Unknown users / missing env throw
+  explicit runtime exceptions.
+- **Manual registration in `routes/mcp.php`:** explicit and easy to review;
+  elements cached/discovered via `php artisan mcp:discover`.
+
+**Verification:** `php artisan mcp:discover` lists **7 tools**; a quick
+Tinker smoke test logged in as `owner@taskflow.test` and
+`taskflow.projects.list` returned projects the user can access (encrypted
+keys included). `make test` **365 passed** (2109 assertions). Pint cleaned
+the new MCP files/routes/config/migration. PHPStan reports pre-existing
+issues in unrelated files; the MCP code itself was iterated to be compatible
+with the project's strictness.
+
+**Status (end of session):** branch `feature/115-taskflow-mcp-server` (from
+`develop`), issue [#115] opened. Next: commit, push, PR to `develop`.
+
+---
+
 ## 2026-10-21 — Round 20: v1.2.0 released (#113) + backlog merged
 
 **Context:** the session resumed with the GitHub MCP fix (Round 19) already
