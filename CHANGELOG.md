@@ -9,6 +9,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing yet.
 
+## [1.3.0] - 2026-11-05
+
+Feature release: the TaskFlow MCP server can now write tasks, and the README
+documents everything the product can do and how to use the MCP from OpenCode.
+
+### Added
+
+- **MCP task write tools** (#119) — the local TaskFlow MCP server
+  (`php artisan mcp:serve`) exposes `taskflow.tasks.create` and
+  `taskflow.tasks.update` next to the existing read tools. Creation authorizes
+  through the task policy create gate and reuses the `CreateTaskAction`; updates
+  authorize through the task gates and reuse the `UpdateTaskAction` plus the
+  status/assign transitions, dispatching the queued task-created/task-updated
+  notifications on change.
+
+### Fixed
+
+- **IdCipher tamper unit test** (#121) — the tamper swapped the final base64 char
+  between `A` and `B`; when the token ended in `A` the swap only flipped a padding
+  bit, so the tampered token decrypted to the original id instead of being
+  refused.
+
+### Changed
+
+- **README documents the MCP server** (#121) — the features list gained an MCP
+  bullet and a dedicated section with the full tools table (read + write) and how
+  to connect/use the server from OpenCode.
+
 ## [1.2.0] - 2026-10-21
 
 Feature release: opaque resource ids in URLs, one shared sign-in form, a
@@ -234,7 +262,8 @@ parallel agent rounds on `develop`, all green on 6 CI checks.
   `feature/21-cloud-run` and `feature/22-managed-data` branches, unmerged and
   unverified against a real GCP project.
 
-[Unreleased]: https://github.com/bianquiviri/taskflow/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/bianquiviri/taskflow/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/bianquiviri/taskflow/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/bianquiviri/taskflow/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/bianquiviri/taskflow/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/bianquiviri/taskflow/compare/v1.0.1...v1.1.0

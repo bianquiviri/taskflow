@@ -13,30 +13,6 @@ parameters:
 			path: app/Actions/AcceptInvitationAction.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$owner\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Actions/AddCommentAction.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:members\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Actions/AddCommentAction.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$owner_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Actions/AssignTaskAction.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:members\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Actions/AssignTaskAction.php
-
-		-
 			message: '#^Cannot call method canTransitionTo\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
@@ -239,24 +215,6 @@ parameters:
 			identifier: property.notFound
 			count: 1
 			path: app/Policies/CommentPolicy.php
-
-		-
-			message: '#^Parameter \#2 \$project of method App\\Policies\\CommentPolicy\:\:isProjectMember\(\) expects App\\Models\\Project, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Policies/CommentPolicy.php
-
-		-
-			message: '#^Parameter \#2 \$project of method App\\Policies\\TaskPolicy\:\:isProjectManager\(\) expects App\\Models\\Project, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Policies/TaskPolicy.php
-
-		-
-			message: '#^Parameter \#2 \$project of method App\\Policies\\TaskPolicy\:\:isProjectMember\(\) expects App\\Models\\Project, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 2
-			path: app/Policies/TaskPolicy.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$role\.$#'

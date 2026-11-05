@@ -23,6 +23,10 @@ layered architecture, GitFlow, and CI/CD from day one.**
 - **UX** — Inertia + Vue 3 shell with dark mode, design-system tokens, form
   components, empty states and optimistic UI.
 - **Async** — queued transactional mail (Redis → Mailpit locally).
+- **MCP (agents)** — a local Model Context Protocol server (`php artisan
+  mcp:serve`) exposes the domain to AI agents (OpenCode) through tools: list/get
+  projects, tasks, teams and dashboard metrics, plus task **create/update**
+  writes that reuse the domain actions and policies.
 
 ## Stack
 
@@ -138,6 +142,57 @@ contents and restart OpenCode — no secret ever enters the working tree.
 > inherit the shell's environment, so `{env:GITHUB_TOKEN}` would silently
 > expand to an empty string and the server would answer
 > `400 Authorization header is badly formatted`.
+
+### TaskFlow MCP server (local tools for agents)
+
+Besides the operational servers, TaskFlow ships a **local MCP server** that
+exposes its own domain to AI agents (OpenCode) through tools:
+
+```sh
+php artisan mcp:serve      # stdio server (the entry wired into OpenCode)
+php artisan mcp:discover   # list the registered MCP elements
+```
+
+`opencode.json` wires it as the `taskflow` local server:
+
+```jsonc
+"taskflow": {
+  "type": "local",
+  "command": ["/Users/bianquiviri/Code/taskflow/scripts/mcp-taskflow.sh"],
+  "enabled": true,
+  "env": { "APP_ENV": "local", "MCP_USER_EMAIL": "owner@taskflow.test" }
+}
+```
+
+The server authenticates as the configured user — `MCP_USER_ID` or
+`MCP_USER_EMAIL` (it throws a clear error when neither is set) — and runs every
+tool through the same policies/services as the HTTP layer, addressing tasks and
+projects by their encrypted route keys.
+
+**Tools exposed by the TaskFlow server:**
+
+| Tool | What it does |
+| ---- | ------------ |
+| `taskflow.projects.list` | List the projects the user can access (filters: `archived`, `search`, `limit`). |
+| `taskflow.projects.get` | Get a project by its encrypted key. |
+| `taskflow.teams.list` | List the teams of the user with the user's role. |
+| `taskflow.tasks.mine` | List tasks assigned to the user (filters: `status`, `priority`, `due`, `limit`). |
+| `taskflow.tasks.by_project` | List tasks of a project (filters: `status`, `assigneeId`, `search`, `limit`). |
+| `taskflow.tasks.get` | Get a task by its encrypted key. |
+| `taskflow.tasks.create` | **Create** a task in a project (`projectKey`, `title`, `description?`, `priority?`, `dueDate?`). |
+| `taskflow.tasks.update` | **Update** a task (`taskKey` + optional fields, `status` transitions, `assigneeId`). |
+| `taskflow.dashboard.summary` | Dashboard metrics for the user. |
+
+**Using it from OpenCode:** once connected, `opencode mcp list` shows the server
+as connected and the tools above become available in any session — e.g. *"list
+my tasks"*, *"create a task called X in project Y"*. Write tools go through the
+same authorization as the HTTP API (create requires a project manager;
+update/status/assign require an assigned member or manager) and dispatch the
+queued notification email on task changes.
+
+**MCP user:** by default the server acts as the dev seeder account
+`owner@taskflow.test` (via `MCP_USER_EMAIL`); set `MCP_USER_ID` (or change
+`MCP_USER_EMAIL`) in the `taskflow` server env to act as another user.
 
 ## GitFlow
 

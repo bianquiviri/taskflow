@@ -32,8 +32,8 @@ it('describes an entry with its actor, its action, its target and when it happen
             'url' => route('projects.show', $project),
         ])
         ->and($entry['icon'])->toBe('plus')
-        ->and($entry['day'])->toBe(now()->toDateString())
-        ->and(Carbon::parse($entry['at'])->toDateTimeString())->toBe(now()->toDateTimeString());
+        ->and($entry['day'])->toBe($created->created_at->toDateString())
+        ->and(Carbon::parse($entry['at'])->toDateTimeString())->toBe($created->created_at->toDateTimeString());
 });
 
 it('reads the history of the project and of its tasks as a single feed', function () {

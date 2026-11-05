@@ -30,6 +30,270 @@ of truth for the project's evolution.
 
 ---
 
+## 2026-11-05 — Round 23: README MCP docs (#121) + IdCipher tamper fix
+
+**Context:** follow-up of the Round-22 MCP write tools (#119, PR #120 merged):
+the user asked for the project README to document **everything TaskFlow can do**
+and **how to use the MCP — connect to it and use it from OpenCode**.
+
+**What shipped (branch `feature/121-readme-mcp-usage`, issue #121 → PR #122):**
+
+- README **Features**: new **MCP (agents)** bullet — local `php artisan mcp:serve`
+  server exposing the domain to AI agents through read + write tools.
+- README new section **TaskFlow MCP server (local tools for agents)**: commands
+  (`php artisan mcp:serve`, `php artisan mcp:discover`), `opencode.json` wiring
+  (`taskflow` → `scripts/mcp-taskflow.sh`, `MCP_USER_EMAIL=owner@taskflow.test`),
+  auth (`MCP_USER_ID` / `MCP_USER_EMAIL`), full tools table (read + write) and
+  usage from OpenCode.
+
+**The backend test that failed and why:**
+
+- CI on PR #122 went red: `Tests\Unit\IdCipherTest > it refuses a token whose
+  ciphertext was tampered with` — *"Failed asserting that 42 is null"*.
+- Root cause: the test's tamper swapped the final base64 char between `A` and
+  `B`. When the token's final char is `A`, the swap only flips a **padding** bit of
+  the last base64 group, so the tampered token stayed byte-identical to the
+  original and `IdCipher::decrypt()` returned the id (`42`) instead of `null`.
+- Fix: swap to `E` when the final char is `A (`A -> E: 'A'`) so the replacement always
+  flips a real data bit. Verified the old logic was a no-op on a token ending in
+  `A` and the new logic makes `decrypt()` return `null`.
+
+**Verification:** `make lint` green (PHPStan OK · Pint PASS · ESLint OK) ·
+`make test` **383 passed** (2127 assertions, 12 processes) · PR #122 CI **6/6
+green** on the re-run (Pint, PHPStan, Pest, Vitest+ESLint, Playwright, Docker
+image) · squash merged (`--admin`) → issue #121 closed (`COMPLETED`).
+
+**Status (end of session):** PR #122 merged into `develop` (README docs + IdCipher
+tamper fix). Open issues: #23, #24 (deferred cloud slice). Next: cloud #23/#24 or a
+new feature round.
+
+---
+
+## 2026-11-04 — Round 22: MCP task write tools (#119) + close of the #117 bug
+
+**Context:** follow-up of the Round-21 MCP server (#115, PRs #116/#118 merged).
+The user picked up the two open items: close the #117 bug and continue with the
+write tools of the MCP server (issue #119).
+
+**Closed:** issue **#117** (MCP tools misresolved encrypted keys / `tasks.mine`
+crash) — already fixed and merged via PR #118, so it was closed as
+`completed` with `state_reason: completed`.
+
+**What shipped (branch `feature/119-mcp-write-tools`, from `develop`):**
+
+- New MCP write tools: `taskflow.tasks.create` and `taskflow.tasks.update`.
+- **Create**: decrypts the `projectKey` via `IdCipher`, authorizes via
+  `Gate::authorize('create', [Task::class, $project])`, reuses
+  `CreateTaskAction`, returns the created task payload (encrypted `key` included)
+  and dispatches the queued `TaskCreatedNotification` to the project owner.
+- **Update**: decrypts the `taskKey` via `IdCipher`, authorizes via
+  `Gate::authorize('update', $task)`, reuses `UpdateTaskAction` (fields), and for
+  `status` authorizes `changeStatus` + reuses `ChangeTaskStatusAction`, for
+  `assigneeId` authorizes `assign` + reuses `AssignTaskAction`. Notifies
+  `TaskUpdatedNotification` (assignee ?? project owner) when anything changed.
+- New queued notifications: `App\Notifications\TaskCreatedNotification` and
+  `App\Notifications\TaskUpdatedNotification` (`ShouldQueue`, mail + action link
+  `tasks.show` with encrypted key).
+
+**Decisions:**
+
+- Tools take flat optional params (title/description/priority/dueDate/status/
+  assigneeId) instead of a generic array payload, so the MCP JSON schema stays
+  explicit; actions still own the business logic (no duplication).
+- Notifications go through notifiable-based `->notify()` (same pattern as the
+  task-comment mention flow) so they are capturable/assertable in tests.
+
+**Verification:** `make lint` green (PHPStan OK · Pint PASS · ESLint OK) ·
+`make test` **383 passed** (2127 assertions, 12 processes). TDD: RED (classes
+missing → 6 failures) → GREEN (11 MCP write-tool tests passing, incl. policy
+denial, forged keys, status transitions, assign, notifications).
+
+**Status (end of session):** work on `feature/119-mcp-write-tools` (from
+`develop`, clean tree) — code + tests written, gates green. Next: commit
+(`feat(mcp): …` + `docs: …`) and open the PR to `develop` (`Closes #119`).
+
+---
+
+## 2026-10-30 — Hotfix round: MCP lint blockers repaired + activity feed flake
+
+**Context:** follow-up on the `feature/115-taskflow-mcp-server` work-in-progress:
+the branch was red on `make lint` (PHPStan) and carried a corrupted lockfile.
+
+**What was fixed:**
+
+- `package-lock.json`: restored via `git checkout --` — it had been corrupted by
+  an accidental npm regeneration outside the project (the Round-11 fingerprint:
+  `name: taskflow` → `html`, dropped `libc` fields). No dependency change.
+- `app/Mcp/Tools/Projects/ListProjectsTool.php`: added the `Carbon` import and a
+  `/** @var Carbon|null $archivedAt */` annotation (PHPStan: `toISOString()` on
+  string); fixed the unresolvable-type error on the `map` closure.
+- `app/Mcp/Tools/Tasks/GetTaskTool.php`, `ListMyTasksTool.php`,
+  `ListTasksByProjectTool.php`: removed the always-true `instanceof TaskStatus` /
+  `instanceof TaskPriority` ternaries (native enums already narrow the type) and
+  read `->value` directly.
+- `phpstan-baseline.neon`: regenerated; removed 7 stale ignore entries that no
+  longer matched (AddCommentAction, AssignTaskAction, CommentPolicy, TaskPolicy)
+  — they became obsolete once the `@return` relation docblocks landed on `Task`.
+- `app/Models/Task.php`: Pint formatting fix (missing blank line between methods).
+- `tests/Feature/ActivityFeedTest.php`: fixed the known flake — the assertion
+  compared against two fresh `now()` calls; it now compares against the persisted
+  `created_at` of the created entry.
+
+**Verification:** `make lint` green (PHPStan `[OK] No errors` · Pint PASS 224
+files · ESLint ✓) · `make test` **372 passed** (2116 assertions, 12 processes) ·
+MCP tool tests **7 passed**.
+
+**Status (end of session):** bug-fixing round on `feature/115-taskflow-mcp-server`.
+The branch still carries the uncommitted #115 WIP (McpUserResolver, GetDashboard-
+SummaryTool, GetProjectTool, config/mcp.php, opencode.json, tests/Feature/Mcp).
+Next: commit the fixes, push, and open the PR to `develop`.
+
+---
+
+## 2026-10-29 — Round 21: TaskFlow exposed as a local MCP server (#115)
+
+**Context:** The product asked to make TaskFlow usable by OpenCode as an MCP
+server (stdio). Goal: expose a read-only subset of TaskFlow's domain while
+reusing the existing architecture (`Actions`, `Policies`, `Services`, `Models`)
+instead of duplicating business logic.
+
+**Approach:** Install **`php-mcp/laravel` v4.0** (adds Laravel 13 support),
+wire a local stdio server, authenticate as a configured user from the
+environment, and register tools that delegate to policies and services.
+
+**What shipped (branch `feature/115-taskflow-mcp-server`, issue [#115]):**
+
+- **Dependencies / scaffolding:** `php-mcp/laravel:^4.0` installed via composer
+  (and `php-mcp/server`), config published to `config/mcp.php` (renamed server
+  to `TaskFlow`), MCP sessions migration published and run, `routes/mcp.php`
+  created.
+- **Auth for MCP (stdio):** `App\Mcp\Auth\McpUserResolver` logs in the user
+  resolved from `MCP_USER_ID` or `MCP_USER_EMAIL` (throws a clear error if
+  missing). `App\Providers\McpServiceProvider` boots in console only when
+  running `mcp:serve` and calls the resolver so every tool runs as that
+  authenticated user. Registered in `bootstrap/providers.php`.
+- **Tools (read-only MVP):** invokable/attribute-style tools under
+  `app/Mcp/Tools/` registered in `routes/mcp.php`:
+  `taskflow.projects.list` (member-only, archived/search/limit),
+  `taskflow.projects.get` (by encrypted `key`, authorized via `ProjectPolicy`),
+  `taskflow.teams.list` (teams the user belongs to with role),
+  `taskflow.tasks.mine` (assigned to user, filters status/priority/due/limit),
+  `taskflow.tasks.by_project` (project membership + policy checked),
+  `taskflow.tasks.get` (by encrypted `key`, `TaskPolicy::view`),
+  `taskflow.dashboard.summary` (uses `DashboardMetricsService`, gated by
+  `ProjectPolicy` viewAny).
+- **Integration:** added `taskflow` to `opencode.json` as a local stdio server
+  pointing to `php artisan mcp:serve` with `MCP_USER_EMAIL=owner@taskflow.test`.
+- **Formatting helper:** `App\Mcp\Support\McpResponse::json()` for consistent
+  output.
+
+**Decisions:**
+
+- **`php-mcp/laravel` v4.0 over v3.x:** v3 only supports up to Laravel 12; v4
+  adds Laravel 13 support.
+- **stdio first:** simplest for local OpenCode usage. Auth via env is
+  acceptable for local dev and keeps the surface small.
+- **Encrypt keys everywhere:** tools accept/return the encrypted route keys
+  (`projectKey`/`taskKey`) to stay consistent with Round 17's encrypted-URL
+  design.
+- **Reuse existing gates:** policies and `DashboardMetricsService` are used
+  directly (no new authorization logic). Unknown users / missing env throw
+  explicit runtime exceptions.
+- **Manual registration in `routes/mcp.php`:** explicit and easy to review;
+  elements cached/discovered via `php artisan mcp:discover`.
+
+**Verification:** `php artisan mcp:discover` lists **7 tools**; a quick
+Tinker smoke test logged in as `owner@taskflow.test` and
+`taskflow.projects.list` returned projects the user can access (encrypted
+keys included). `make test` **365 passed** (2109 assertions). Pint cleaned
+the new MCP files/routes/config/migration. PHPStan reports pre-existing
+issues in unrelated files; the MCP code itself was iterated to be compatible
+with the project's strictness.
+
+**Status (end of session):** branch `feature/115-taskflow-mcp-server` (from
+`develop`), issue [#115] opened. Next: commit, push, PR to `develop`.
+
+---
+
+## 2026-10-21 — Round 20: v1.2.0 released (#113) + backlog merged
+
+**Context:** the session resumed with the GitHub MCP fix (Round 19) already
+pushed and PR **#112** open. The instruction was *"sube los cambios al
+repositorio"* — so the first job was to establish what was actually still
+missing, not to push again.
+
+**What the repository was actually missing:**
+
+- PR **#112** (#111, GitHub MCP auth) had been merged by the maintainer while the
+  session was paused → `develop` had it as `23cb41d`.
+- PR **#108** (#107, PRs assigned to the maintainer) was still open with CI
+  **6/6 green** → squash-merged as `315092d`.
+- The local `develop` and `main` were **stale** (`develop` 1 commit behind,
+  `main` 10 behind): the working tree looked dirty by comparison, but the
+  checkout had simply reverted to an older `develop`. Fast-forwarded both.
+- **Housekeeping:** the `stash@{0}` left over from Round 11 was inspected before
+  being dropped — it held exactly the corrupt `package-lock.json` fingerprint
+  documented twice already (`name: taskflow → html`, `libc` fields dropped), the
+  residue of an npm regeneration outside the project. Applying it would have
+  **reintroduced** that bug, so it was discarded. Two local-only branches
+  (`bugfix/79-fix-broken-nav-links`, `release/v1.0.0`) whose content was
+  already in `develop`/`main` (verified with `git log --cherry-pick
+  --right-only`, not with `--is-ancestor`, which is too strict after a squash
+  merge) were deleted.
+
+**The release train — v1.2.0 (issue [#113], branch `release/v1.2.0`):**
+
+`develop` was **8 commits** over `main` (v1.1.1): #101, #102, #97, #99, #109,
+#111, #105, #107. A feature release, so **v1.2.0**.
+
+- `CHANGELOG.md` gained the `[1.2.0]` section (Added / Fixed / Changed) and the
+  link refs were rewired (`[Unreleased]` now compares from `v1.2.0`).
+- PR **#114** → `main`, assigned to the maintainer, CI **6/6 green**, merged
+  with `--merge --admin` → `e551c4d`.
+- Annotated tag **`v1.2.0`** pushed; GitHub **Release** published as *Latest*,
+  its notes **single-sourced from the CHANGELOG section** (the `awk` extraction
+  is what keeps the two diffable).
+- `main` synced back into `develop` as a clean fast-forward, so both branches
+  sit on `e551c4d` and the recurring CHANGELOG conflict (Round 13) cannot
+  happen again.
+
+**Decisions:**
+
+- **v1.2.0, not v2.0.0**, even though encrypted ids (#101) is a *breaking*
+  change: a numeric id in a URL is now a 404, so old bookmarks die. It is not
+  a major bump because there is no public API and no external consumer — the
+  app is self-hosted and still in development. The break is stated loudly
+  anyway: in the CHANGELOG, in the release notes, in the PR body and in issue
+  #113, so nobody upgrades blind.
+- **The release branch carried the CHANGELOG only** — no code changes — so the
+  diff between `main` and `develop` stays exactly "what shipped". The DEVLOG
+  entry for the release is a separate `docs:` commit on `develop` afterwards,
+  the same shape as `71c9710` (`docs: log the v1.1.1 release in the DEVLOG`).
+- **The release notes are generated from the CHANGELOG**, not written twice.
+
+**Gotcha worth remembering:** the repository's **default branch is `develop`**,
+not `main`. GitHub closes an issue referenced with `Closes #N` in a PR body only
+when that PR lands in the **default** branch — so the release PR (#114, merged
+into `main`) left issue **#113 open** and it had to be closed by hand. Same
+family as the Round 13 CHANGELOG conflict: the *release* path touches
+`main`, while the *automation* reasons about `develop`.
+
+**Verification:** `make lint` green (PHPStan no errors · Pint 206 files ·
+ESLint 0) · `make test` **365 passed** (2109 assertions, 12 processes) ·
+`make test-fe` **548 passed** (68 files) · `make e2e` **15 passed** · CI **6/6**
+on PR #114. Release verified with `gh release list` (v1.2.0 → *Latest*) and
+`git ls-remote --tags`.
+
+**Status (end of session):** `main` = `e551c4d` (the commit tagged `v1.2.0`)
+and `develop` = that same tree plus this DEVLOG commit, which ships with the
+next release — exactly like `71c9710` did for v1.1.1. GitHub Release published
+as *Latest*. Issues #111, #107 and #113 closed. Open issues: **#23** (custom
+domain) and **#24** (deployment docs) — the deferred cloud slice, owned by
+`infra-agent`. Next: the cloud phase (#23/#24), or a new feature round on
+`develop`.
+
+---
+
 ## 2026-10-21 — Round 19: the GitHub MCP server never connected (#111)
 
 **Context:** The session opened with another failed OpenCode component:

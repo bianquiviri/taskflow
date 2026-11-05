@@ -50,5 +50,11 @@ it('refuses a token whose ciphertext was tampered with', function () {
     $cipher = app(IdCipher::class);
     $token = $cipher->encrypt(42);
 
-    expect($cipher->decrypt(substr($token, 0, -1).'A'))->toBeNull();
+    $chars = str_split($token);
+    // Replace the final base64 char with one that flips a real data bit: the
+    // low bits of the last group are padding, so swapping `A -> B` can leave the
+    // decoded payload untouched and turn the tamper into a no-op.
+    $chars[count($chars) - 1] = $chars[count($chars) - 1] === 'A' ? 'E' : 'A';
+
+    expect($cipher->decrypt(implode('', $chars)))->toBeNull();
 });
