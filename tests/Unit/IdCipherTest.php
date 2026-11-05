@@ -51,7 +51,10 @@ it('refuses a token whose ciphertext was tampered with', function () {
     $token = $cipher->encrypt(42);
 
     $chars = str_split($token);
-    $chars[count($chars) - 1] = $chars[count($chars) - 1] === 'A' ? 'B' : 'A';
+    // Replace the final base64 char with one that flips a real data bit: the
+    // low bits of the last group are padding, so swapping `A -> B` can leave the
+    // decoded payload untouched and turn the tamper into a no-op.
+    $chars[count($chars) - 1] = $chars[count($chars) - 1] === 'A' ? 'E' : 'A';
 
     expect($cipher->decrypt(implode('', $chars)))->toBeNull();
 });
