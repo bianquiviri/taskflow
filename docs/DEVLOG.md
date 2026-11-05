@@ -30,6 +30,34 @@ of truth for the project's evolution.
 
 ---
 
+## 2026-11-05 — Round 24: v1.3.0 released
+
+**Context:** the release round for **v1.3.0** — the PR to `main` was requested
+and opened as `release/v1.3.0` → PR **#123**.
+
+**What shipped in the release:**
+
+- **MCP task write tools** (#119, PR #120) — `taskflow.tasks.create` /
+  `taskflow.tasks.update` MCP tools on the local TaskFlow MCP server.
+- **IdCipher tamper test fix** (#121, PR #122) — the tamper now flips a real
+  ciphertext data bit, so a tampered token is always refused (backend suite was
+  red on PR #122 and is green again after the fix).
+- **README MCP documentation** (#121, PR #122) — capabilities + dedicated MCP
+  section with the full tools table (read + write) and how to connect/use from
+  OpenCode.
+
+**Release:** `release/v1.3.0` → PR #123 → merge `4356532` into `main` → tag
+`v1.3.0` → GitHub Release published as *Latest*.
+
+**Verification:** PR #123 CI 6/6 green · tag + release verified with
+`gh release list` / `gh release view v1.3.0`.
+
+**Status (end of session):** `main` = `develop` = `4356532` (tag `v1.3.0`), release
+v1.3.0 published as *Latest*. Open issues: #23, #24 (deferred cloud slice). Next:
+cloud #23/#24 or a new feature round.
+
+---
+
 ## 2026-11-05 — Round 23: README MCP docs (#121) + IdCipher tamper fix
 
 **Context:** follow-up of the Round-22 MCP write tools (#119, PR #120 merged):
