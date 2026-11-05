@@ -30,6 +30,45 @@ of truth for the project's evolution.
 
 ---
 
+## 2026-11-05 — Round 23: README MCP docs (#121) + IdCipher tamper fix
+
+**Context:** follow-up of the Round-22 MCP write tools (#119, PR #120 merged):
+the user asked for the project README to document **everything TaskFlow can do**
+and **how to use the MCP — connect to it and use it from OpenCode**.
+
+**What shipped (branch `feature/121-readme-mcp-usage`, issue #121 → PR #122):**
+
+- README **Features**: new **MCP (agents)** bullet — local `php artisan mcp:serve`
+  server exposing the domain to AI agents through read + write tools.
+- README new section **TaskFlow MCP server (local tools for agents)**: commands
+  (`php artisan mcp:serve`, `php artisan mcp:discover`), `opencode.json` wiring
+  (`taskflow` → `scripts/mcp-taskflow.sh`, `MCP_USER_EMAIL=owner@taskflow.test`),
+  auth (`MCP_USER_ID` / `MCP_USER_EMAIL`), full tools table (read + write) and
+  usage from OpenCode.
+
+**The backend test that failed and why:**
+
+- CI on PR #122 went red: `Tests\Unit\IdCipherTest > it refuses a token whose
+  ciphertext was tampered with` — *"Failed asserting that 42 is null"*.
+- Root cause: the test's tamper swapped the final base64 char between `A` and
+  `B`. When the token's final char is `A`, the swap only flips a **padding** bit of
+  the last base64 group, so the tampered token stayed byte-identical to the
+  original and `IdCipher::decrypt()` returned the id (`42`) instead of `null`.
+- Fix: swap to `E` when the final char is `A (`A -> E: 'A'`) so the replacement always
+  flips a real data bit. Verified the old logic was a no-op on a token ending in
+  `A` and the new logic makes `decrypt()` return `null`.
+
+**Verification:** `make lint` green (PHPStan OK · Pint PASS · ESLint OK) ·
+`make test` **383 passed** (2127 assertions, 12 processes) · PR #122 CI **6/6
+green** on the re-run (Pint, PHPStan, Pest, Vitest+ESLint, Playwright, Docker
+image) · squash merged (`--admin`) → issue #121 closed (`COMPLETED`).
+
+**Status (end of session):** PR #122 merged into `develop` (README docs + IdCipher
+tamper fix). Open issues: #23, #24 (deferred cloud slice). Next: cloud #23/#24 or a
+new feature round.
+
+---
+
 ## 2026-11-04 — Round 22: MCP task write tools (#119) + close of the #117 bug
 
 **Context:** follow-up of the Round-21 MCP server (#115, PRs #116/#118 merged).
