@@ -30,6 +30,51 @@ of truth for the project's evolution.
 
 ---
 
+## 2026-11-04 — Round 22: MCP task write tools (#119) + close of the #117 bug
+
+**Context:** follow-up of the Round-21 MCP server (#115, PRs #116/#118 merged).
+The user picked up the two open items: close the #117 bug and continue with the
+write tools of the MCP server (issue #119).
+
+**Closed:** issue **#117** (MCP tools misresolved encrypted keys / `tasks.mine`
+crash) — already fixed and merged via PR #118, so it was closed as
+`completed` with `state_reason: completed`.
+
+**What shipped (branch `feature/119-mcp-write-tools`, from `develop`):**
+
+- New MCP write tools: `taskflow.tasks.create` and `taskflow.tasks.update`.
+- **Create**: decrypts the `projectKey` via `IdCipher`, authorizes via
+  `Gate::authorize('create', [Task::class, $project])`, reuses
+  `CreateTaskAction`, returns the created task payload (encrypted `key` included)
+  and dispatches the queued `TaskCreatedNotification` to the project owner.
+- **Update**: decrypts the `taskKey` via `IdCipher`, authorizes via
+  `Gate::authorize('update', $task)`, reuses `UpdateTaskAction` (fields), and for
+  `status` authorizes `changeStatus` + reuses `ChangeTaskStatusAction`, for
+  `assigneeId` authorizes `assign` + reuses `AssignTaskAction`. Notifies
+  `TaskUpdatedNotification` (assignee ?? project owner) when anything changed.
+- New queued notifications: `App\Notifications\TaskCreatedNotification` and
+  `App\Notifications\TaskUpdatedNotification` (`ShouldQueue`, mail + action link
+  `tasks.show` with encrypted key).
+
+**Decisions:**
+
+- Tools take flat optional params (title/description/priority/dueDate/status/
+  assigneeId) instead of a generic array payload, so the MCP JSON schema stays
+  explicit; actions still own the business logic (no duplication).
+- Notifications go through notifiable-based `->notify()` (same pattern as the
+  task-comment mention flow) so they are capturable/assertable in tests.
+
+**Verification:** `make lint` green (PHPStan OK · Pint PASS · ESLint OK) ·
+`make test` **383 passed** (2127 assertions, 12 processes). TDD: RED (classes
+missing → 6 failures) → GREEN (11 MCP write-tool tests passing, incl. policy
+denial, forged keys, status transitions, assign, notifications).
+
+**Status (end of session):** work on `feature/119-mcp-write-tools` (from
+`develop`, clean tree) — code + tests written, gates green. Next: commit
+(`feat(mcp): …` + `docs: …`) and open the PR to `develop` (`Closes #119`).
+
+---
+
 ## 2026-10-30 — Hotfix round: MCP lint blockers repaired + activity feed flake
 
 **Context:** follow-up on the `feature/115-taskflow-mcp-server` work-in-progress:
